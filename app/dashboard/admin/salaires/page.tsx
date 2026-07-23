@@ -9,6 +9,13 @@ import {
   Calendar, Banknote
 } from "lucide-react";
 
+interface LigneDeduction {
+  date: string;
+  type: string;
+  motif: string;
+  montant: number | string;
+}
+
 interface Salaire {
   personnel_id: number;
   matricule: string;
@@ -18,6 +25,13 @@ interface Salaire {
   statut_agent: string;
   salaire_base: number;
   prime_mensuelle: number;
+  prime_responsabilite?: number;
+  prime_craie?: number;
+  retenue_sanction?: number;
+  autres_retenues?: number;
+  details_lignes?: LigneDeduction[];
+  total_brut?: number;
+  total_deductions?: number;
   salaire_total: number;
   paiement_id: number | null;
   montant_paye: number | null;
@@ -34,8 +48,14 @@ interface Toast {
 }
 
 const MOIS = [
-  "Octobre","Novembre","Décembre","Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre"
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
 ];
+
+const formatFG = (num: number) => {
+  if (!num && num !== 0) return "0";
+  return Math.abs(num).toLocaleString('fr-FR').replace(/\s/g, ' /');
+};
 
 export default function SalairesPage() {
   const [salaires, setSalaires] = useState<Salaire[]>([]);
@@ -49,14 +69,48 @@ export default function SalairesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // ⭐ IMPRESSION BULLETIN DE PAIE
+  // Formulaire de détails pour le paiement (permet d'avoir des champs vides '')
+  const [formSalaireBase, setFormSalaireBase] = useState<number | string>('');
+  const [formPrimeMensuelle, setFormPrimeMensuelle] = useState<number | string>('');
+  const [formPrimeResponsabilite, setFormPrimeResponsabilite] = useState<number | string>('');
+  const [formPrimeCraie, setFormPrimeCraie] = useState<number | string>('');
+  const [formRetenueSanction, setFormRetenueSanction] = useState<number | string>('');
+  const [formAutresRetenues, setFormAutresRetenues] = useState<number | string>('');
+  const [formLignesDeductions, setFormLignesDeductions] = useState<LigneDeduction[]>([]);
+
+  // ⭐ IMPRESSION BULLETIN DE PAIE EXACT (SELON LE PDF OFFICIEL)
   const printBulletin = (agent: Salaire, mois: string, annee: string) => {
     const moisLabel = MOIS[parseInt(mois) - 1];
-    const salaireBase = Number(agent.salaire_base || 0);
-    const prime = Number(agent.prime_mensuelle || 0);
-    const total = salaireBase + prime;
-    const datePaiement = agent.date_paiement || new Date().toISOString().split('T')[0];
-    const reference = agent.reference_transaction || `SAL-${annee}${String(mois).padStart(2,'0')}-${agent.matricule}`;
+    const dateEmission = new Date().toLocaleDateString('fr-FR');
+
+    const baseAmount = Number(agent.salaire_base || 0);
+    const primeMensuelle = Number(agent.prime_mensuelle || 0);
+    const primeResponsabilite = Number(agent.prime_responsabilite || 0);
+    const primeCraie = Number(agent.prime_craie || 0);
+
+    const calculatedBrut = baseAmount + primeMensuelle + primeResponsabilite + primeCraie;
+    const brutTotal = agent.total_brut && agent.total_brut > 0 ? agent.total_brut : calculatedBrut;
+
+    const lignes = Array.isArray(agent.details_lignes) ? agent.details_lignes : [];
+
+    const sumLignes = lignes.reduce((acc, row) => acc + Number(row.montant || 0), 0);
+    const fixedRetenues = Number(agent.retenue_sanction || 0) + Number(agent.autres_retenues || 0);
+    const totalDeductions = agent.total_deductions && agent.total_deductions > 0 ? agent.total_deductions : (sumLignes + fixedRetenues);
+
+    const netTotal = agent.montant_paye ? Number(agent.montant_paye) : (brutTotal - totalDeductions);
+
+    const lignesRowsHTML = lignes.length > 0 ? lignes.map(l => `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 9px 8px; color: #555;">${l.date}</td>
+        <td style="padding: 9px 8px; font-weight: 500; color: #111;">${l.type}</td>
+        <td style="padding: 9px 8px; color: #333; text-transform: uppercase;">${l.motif}</td>
+        <td style="padding: 9px 8px; text-align: right; font-weight: bold; color: #dc2626;">- ${formatFG(Number(l.montant || 0))} FG</td>
+      </tr>
+    `).join('') : `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td colspan="4" style="padding: 12px 8px; color: #888; text-align: center; font-style: italic;">Aucune retenue ni avance pour cette période</td>
+      </tr>
+    `;
 
     const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -65,61 +119,38 @@ export default function SalairesPage() {
   <title>Bulletin de Paie - ${agent.employe} - ${moisLabel} ${annee}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: white; padding: 20px; }
-    .page { max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: white; padding: 25px; }
+    .page { max-width: 850px; margin: 0 auto; }
+    .header-center { text-align: center; position: relative; margin-bottom: 20px; }
+    .header-logo { position: absolute; left: 0; top: 0; height: 75px; object-fit: contain; }
+    .header-center h2 { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+    .header-center p { font-size: 11px; font-style: italic; color: #333; margin-bottom: 6px; }
+    .header-center h3 { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+    .header-center h1 { font-size: 18px; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; }
+    .line-divider { border-bottom: 2px solid #1a3c6e; width: 100%; margin-top: 6px; }
 
-    /* EN-TÊTE */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a3c6e; padding-bottom: 14px; margin-bottom: 16px; }
-    .logo-area { display: flex; align-items: center; gap: 12px; }
-    .logo-area img { height: 70px; object-fit: contain; }
-    .school-info h1 { font-size: 17px; font-weight: bold; color: #1a3c6e; }
-    .school-info p { font-size: 10px; color: #555; line-height: 1.5; }
-    .bulletin-title { text-align: right; }
-    .bulletin-title h2 { font-size: 16px; font-weight: bold; color: #1a3c6e; text-transform: uppercase; letter-spacing: 1px; }
-    .bulletin-title .period { font-size: 13px; color: #e05c00; font-weight: bold; margin-top: 4px; }
-    .bulletin-title .ref { font-size: 9px; color: #888; margin-top: 3px; }
+    .period-title { font-size: 14px; font-weight: bold; margin: 16px 0 14px 0; }
 
-    /* INFOS EMPLOYÉ */
-    .employee-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .info-box { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; }
-    .info-box h3 { font-size: 10px; text-transform: uppercase; color: #1a3c6e; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px; }
-    .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-    .info-label { color: #666; font-size: 10px; }
-    .info-value { font-weight: bold; font-size: 10px; color: #111; }
+    .emp-banner { background-color: #1a3c6e; color: white; padding: 10px 14px; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; margin-bottom: 20px; }
+    .summary-col { padding: 10px 14px; border-right: 1px solid #e2e8f0; }
+    .summary-col:last-child { border-right: none; }
+    .summary-label { font-size: 11px; font-weight: bold; color: #334155; }
+    .summary-val { font-size: 13px; font-weight: bold; text-align: right; margin-top: 6px; }
 
-    /* TABLEAU SALAIRE */
-    .salary-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    .salary-table thead tr { background-color: #1a3c6e; color: white; }
-    .salary-table thead th { padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
-    .salary-table thead th:last-child, .salary-table thead th:nth-last-child(2) { text-align: right; }
-    .salary-table tbody tr:nth-child(even) { background-color: #f7f9fc; }
-    .salary-table tbody tr:hover { background-color: #edf2ff; }
-    .salary-table tbody td { padding: 7px 10px; border-bottom: 1px solid #e8e8e8; font-size: 10px; }
-    .salary-table tbody td:last-child, .salary-table tbody td:nth-last-child(2) { text-align: right; }
-    .salary-table .cat { color: #1a3c6e; font-style: italic; font-size: 9px; background: #f0f4ff !important; font-weight: bold; }
-    .salary-table tfoot tr { background-color: #1a3c6e; color: white; }
-    .salary-table tfoot td { padding: 9px 10px; font-weight: bold; font-size: 11px; }
-    .salary-table tfoot td:last-child { text-align: right; font-size: 14px; }
+    .deductions-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+    .deductions-table th { padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: left; font-size: 11px; font-weight: bold; color: #475569; }
+    .deductions-table th:last-child { text-align: right; }
 
-    /* NET À PAYER */
-    .net-box { background: linear-gradient(135deg, #1a3c6e, #2563b0); color: white; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .net-box .label { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-    .net-box .amount { font-size: 22px; font-weight: bold; }
-    .net-box .currency { font-size: 12px; opacity: 0.8; margin-left: 6px; }
-    .net-box .mode { font-size: 10px; opacity: 0.75; margin-top: 3px; }
+    .totaux-banner { background-color: #1a3c6e; color: white; display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr; padding: 10px 14px; font-weight: bold; font-size: 12px; }
+    .totaux-row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr; padding: 12px 14px; background: white; border: 1px solid #e2e8f0; border-top: none; font-size: 12px; font-weight: bold; }
 
-    /* SIGNATURES */
-    .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 10px; }
-    .sig-box { border: 1px solid #ddd; border-radius: 6px; padding: 10px; text-align: center; }
-    .sig-box .sig-title { font-size: 9px; text-transform: uppercase; color: #1a3c6e; font-weight: bold; margin-bottom: 40px; }
-    .sig-box .sig-name { font-size: 9px; color: #555; border-top: 1px solid #ccc; padding-top: 4px; margin-top: 4px; }
-
-    /* FOOTER */
-    .footer { margin-top: 16px; text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
-    .footer span { color: #1a3c6e; }
-
-    /* WATERMARK si non payé */
-    .unpaid-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; color: rgba(255,0,0,0.07); font-weight: bold; text-transform: uppercase; pointer-events: none; white-space: nowrap; }
+    .footer-doc { margin-top: 40px; font-size: 10px; color: #475569; }
+    .sig-section { float: right; margin-top: 25px; text-align: center; width: 300px; }
+    .sig-title { font-size: 11px; margin-bottom: 4px; }
+    .sig-name { font-size: 12px; font-weight: bold; color: #000; margin-bottom: 4px; }
+    .sig-date { font-size: 10px; color: #64748b; margin-bottom: 40px; }
+    .sig-line { border-bottom: 1px solid #334155; width: 100%; margin-bottom: 4px; }
 
     @media print {
       body { padding: 10px; }
@@ -129,131 +160,82 @@ export default function SalairesPage() {
 </head>
 <body>
   <div class="page">
-    ${agent.statut !== 'paye' ? '<div class="unpaid-watermark">Brouillon</div>' : ''}
+    <!-- EN-TÊTE GUINÉE ET ÉCOLE -->
+    <div class="header-center">
+      <img src="/img/logo.jpg" class="header-logo" alt="Logo EIEF" onerror="this.style.display='none'" />
+      <h2>REPUBLIQUE DE GUINEE</h2>
+      <p>Travail - Justice - Solidarite</p>
+      <h3>ECOLE INTERNATIONALE LES ENFANTS DU FUTUR</h3>
+      <h1>LISTE DE PAIE DETAILLEE</h1>
+      <div class="line-divider"></div>
+    </div>
 
-    <!-- EN-TÊTE -->
-    <div class="header">
-      <div class="logo-area">
-        <img src="/img/logo.jpg" alt="Logo EIEF" onerror="this.style.display='none'" />
-        <div class="school-info">
-          <h1>E.I.E.F</h1>
-          <p>École Internationale d'Enseignement Francophone<br>
-          Conakry, République de Guinée<br>
-          Tél: +224 000 000 000</p>
-        </div>
+    <!-- PÉRIODE -->
+    <div class="period-title">Periode : ${moisLabel} ${annee}</div>
+
+    <!-- BANNIÈRE EMPLOYÉ -->
+    <div class="emp-banner">
+      <div>1. ${agent.employe.toUpperCase()} &mdash; ${agent.poste.toUpperCase()} ${agent.departement ? '(GROUPE PÉDAGOGIQUE ' + agent.departement.toUpperCase() + ')' : ''}</div>
+      <div>Net : ${formatFG(netTotal)} FG</div>
+    </div>
+
+    <!-- RECAP BRUT / DEDUCTIONS / NET -->
+    <div class="summary-grid">
+      <div class="summary-col">
+        <div class="summary-label">Salaire Brut</div>
+        <div class="summary-val">${formatFG(brutTotal)} FG</div>
       </div>
-      <div class="bulletin-title">
-        <h2>Bulletin de Paie</h2>
-        <div class="period">${moisLabel} ${annee}</div>
-        <div class="ref">Réf: ${reference}</div>
+      <div class="summary-col">
+        <div class="summary-label">Total Deductions</div>
+        <div class="summary-val">${formatFG(totalDeductions)} FG</div>
+      </div>
+      <div class="summary-col">
+        <div class="summary-label">Net a payer</div>
+        <div class="summary-val">${formatFG(netTotal)} FG</div>
       </div>
     </div>
 
-    <!-- INFOS EMPLOYÉ & EMPLOYEUR -->
-    <div class="employee-section">
-      <div class="info-box">
-        <h3>🏢 Employeur</h3>
-        <div class="info-row"><span class="info-label">Établissement</span><span class="info-value">E.I.E.F</span></div>
-        <div class="info-row"><span class="info-label">Adresse</span><span class="info-value">Conakry, Guinée</span></div>
-        <div class="info-row"><span class="info-label">N° RCCM</span><span class="info-value">GN-CNK-2024-001</span></div>
-        <div class="info-row"><span class="info-label">Période</span><span class="info-value">${moisLabel} ${annee}</span></div>
-        <div class="info-row"><span class="info-label">Date émission</span><span class="info-value">${new Date().toLocaleDateString('fr-FR')}</span></div>
-      </div>
-      <div class="info-box">
-        <h3>👤 Salarié</h3>
-        <div class="info-row"><span class="info-label">Nom & Prénom</span><span class="info-value">${agent.employe}</span></div>
-        <div class="info-row"><span class="info-label">Matricule</span><span class="info-value">${agent.matricule}</span></div>
-        <div class="info-row"><span class="info-label">Poste</span><span class="info-value">${agent.poste}</span></div>
-        <div class="info-row"><span class="info-label">Département</span><span class="info-value">${agent.departement || '-'}</span></div>
-        <div class="info-row"><span class="info-label">Statut</span><span class="info-value">${agent.statut_agent || 'Actif'}</span></div>
-      </div>
-    </div>
-
-    <!-- TABLEAU DES ÉLÉMENTS DE SALAIRE -->
-    <table class="salary-table">
+    <!-- TABLEAU DÉTAILLÉ DES DÉDUCTIONS & AVANCES -->
+    <table class="deductions-table">
       <thead>
         <tr>
-          <th style="width:50%">Désignation</th>
-          <th>Base / Unité</th>
-          <th>Taux</th>
-          <th>Gains (GNF)</th>
-          <th>Retenues (GNF)</th>
+          <th style="width: 15%;">Date</th>
+          <th style="width: 15%;">Type</th>
+          <th style="width: 50%;">Motif</th>
+          <th style="width: 20%; text-align: right;">Montant</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="cat"><td colspan="5">RÉMUNÉRATION DE BASE</td></tr>
-        <tr>
-          <td>Salaire de base</td>
-          <td>Mensuel</td>
-          <td>100%</td>
-          <td>${salaireBase.toLocaleString('fr-FR')}</td>
-          <td>-</td>
-        </tr>
-        ${prime > 0 ? `
-        <tr class="cat"><td colspan="5">PRIMES &amp; AVANTAGES</td></tr>
-        <tr>
-          <td>Prime mensuelle</td>
-          <td>Forfait</td>
-          <td>-</td>
-          <td>${prime.toLocaleString('fr-FR')}</td>
-          <td>-</td>
-        </tr>` : ''}
-        <tr class="cat"><td colspan="5">COTISATIONS &amp; RETENUES</td></tr>
-        <tr>
-          <td>Cotisation CNSS (employé)</td>
-          <td>Salaire brut</td>
-          <td>3.6%</td>
-          <td>-</td>
-          <td>0</td>
-        </tr>
-        <tr>
-          <td>Impôt sur le revenu (IR)</td>
-          <td>Salaire imposable</td>
-          <td>-</td>
-          <td>-</td>
-          <td>0</td>
-        </tr>
+        ${lignesRowsHTML}
       </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="3">TOTAL NET À PAYER</td>
-          <td>${total.toLocaleString('fr-FR')}</td>
-          <td>0</td>
-        </tr>
-      </tfoot>
     </table>
 
-    <!-- NET À PAYER -->
-    <div class="net-box">
-      <div>
-        <div class="label">💰 Net à payer</div>
-        <div class="mode">Mode: ${agent.mode_paiement || 'Virement bancaire'} • ${agent.statut === 'paye' ? '✅ Payé le ' + datePaiement : '⏳ En attente'}</div>
-      </div>
-      <div>
-        <span class="amount">${total.toLocaleString('fr-FR')}</span>
-        <span class="currency">GNF</span>
-      </div>
+    <!-- TOTAUX GÉNÉRAUX -->
+    <div class="totaux-banner">
+      <div>TOTAUX GENERAUX</div>
+      <div>Brut</div>
+      <div>Deductions</div>
+      <div>Net a payer</div>
+    </div>
+    <div class="totaux-row">
+      <div>1 employe(s)</div>
+      <div>${formatFG(brutTotal)}</div>
+      <div>${formatFG(totalDeductions)}</div>
+      <div>${formatFG(netTotal)} FG</div>
     </div>
 
-    <!-- SIGNATURES -->
-    <div class="signatures">
-      <div class="sig-box">
-        <div class="sig-title">Le Salarié</div>
-        <div class="sig-name">${agent.employe}</div>
-      </div>
-      <div class="sig-box">
-        <div class="sig-title">Le Comptable</div>
-        <div class="sig-name">Signature &amp; Cachet</div>
-      </div>
-      <div class="sig-box">
-        <div class="sig-title">Direction Générale</div>
-        <div class="sig-name">Signature &amp; Cachet</div>
-      </div>
-    </div>
+    <!-- FOOTER ET SIGNATURE DU DIRECTEUR -->
+    <div class="footer-doc">
+      <p style="text-align: center; font-style: italic;">Document genere automatiquement - ECOLE INTERNATIONALE LES ENFANTS DU FUTUR</p>
+      <p style="text-align: center; margin-top: 3px;">Date d'emission : ${dateEmission}</p>
 
-    <!-- FOOTER -->
-    <div class="footer">
-      <p>Ce bulletin de paie doit être conservé sans limitation de durée — <span>E.I.E.F © ${annee}</span> — Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+      <div class="sig-section">
+        <div class="sig-title">Directeur</div>
+        <div class="sig-name">TAMBA SOSSO DEMBADOUNO</div>
+        <div class="sig-date">Date de signature : ${dateEmission}</div>
+        <div class="sig-line"></div>
+        <div style="font-size: 9px; font-style: italic; color: #64748b;">Signature et cachet</div>
+      </div>
     </div>
   </div>
 
@@ -291,20 +273,74 @@ export default function SalairesPage() {
 
   const openPaymentModal = (agent: Salaire) => {
     setSelectedAgent(agent);
+    setFormSalaireBase(agent.salaire_base ? agent.salaire_base : '');
+    setFormPrimeMensuelle(agent.prime_mensuelle ? agent.prime_mensuelle : '');
+    setFormPrimeResponsabilite(agent.prime_responsabilite ? agent.prime_responsabilite : '');
+    setFormPrimeCraie(agent.prime_craie ? agent.prime_craie : '');
+    setFormRetenueSanction(agent.retenue_sanction ? agent.retenue_sanction : '');
+    setFormAutresRetenues(agent.autres_retenues ? agent.autres_retenues : '');
+
+    const todayISO = new Date().toISOString().split('T')[0];
+    if (agent.details_lignes && agent.details_lignes.length > 0) {
+      setFormLignesDeductions(agent.details_lignes);
+    } else {
+      setFormLignesDeductions([
+        { date: todayISO, type: "Avance", motif: "AVANCE SUR SALAIRE", montant: 200000 },
+        { date: todayISO, type: "Bon", motif: "POUR SON TÉLÉPHONE", montant: 100000 },
+        { date: todayISO, type: "Avance", motif: "MANQUEMENT AU SERVICE", montant: 300000 },
+        { date: todayISO, type: "Avance", motif: "MANQUEMENT AUX PRINCIPES DU SERVICE", montant: 300000 }
+      ]);
+    }
+
     setModePaiement("virement");
     setShowModal(true);
+  };
+
+  const addLigneDeduction = () => {
+    const todayISO = new Date().toISOString().split('T')[0];
+    setFormLignesDeductions(prev => [...prev, { date: todayISO, type: "Avance", motif: "", montant: '' }]);
+  };
+
+  const removeLigneDeduction = (index: number) => {
+    setFormLignesDeductions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateLigneDeduction = (index: number, field: keyof LigneDeduction, value: any) => {
+    setFormLignesDeductions(prev => prev.map((l, i) => i === index ? { ...l, [field]: value } : l));
   };
 
   const handlePayer = async () => {
     if (!selectedAgent) return;
     setSubmitting(true);
+
+    const valBase = Number(formSalaireBase || 0);
+    const valPrimeM = Number(formPrimeMensuelle || 0);
+    const valPrimeR = Number(formPrimeResponsabilite || 0);
+    const valPrimeC = Number(formPrimeCraie || 0);
+    const valRetenueS = Number(formRetenueSanction || 0);
+    const valAutresR = Number(formAutresRetenues || 0);
+
+    const calculatedBrut = valBase + valPrimeM + valPrimeR + valPrimeC;
+    const sumLignes = formLignesDeductions.reduce((acc, row) => acc + Number(row.montant || 0), 0);
+    const calculatedDeductions = valRetenueS + valAutresR + sumLignes;
+    const calculatedTotalNet = calculatedBrut - calculatedDeductions;
+
     try {
       const res = await fetch('/api/admin/salaires', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personnel_id: selectedAgent.personnel_id,
-          montant: selectedAgent.salaire_total,
+          salaire_base: valBase,
+          prime_mensuelle: valPrimeM,
+          prime_responsabilite: valPrimeR,
+          prime_craie: valPrimeC,
+          retenue_sanction: valRetenueS,
+          autres_retenues: valAutresR,
+          details_lignes: formLignesDeductions,
+          total_brut: calculatedBrut,
+          total_deductions: calculatedDeductions,
+          montant: calculatedTotalNet,
           mois: parseInt(selectedMois),
           annee: parseInt(selectedAnnee),
           mode_paiement: modePaiement,
@@ -313,18 +349,31 @@ export default function SalairesPage() {
       });
 
       if (res.ok) {
-        // ✅ Mise à jour optimiste immédiate du statut dans la liste
         const today = new Date().toISOString().split('T')[0];
         setSalaires(prev =>
           prev.map(s =>
             s.personnel_id === selectedAgent.personnel_id
-              ? { ...s, statut: "paye", date_paiement: today, mode_paiement: modePaiement }
+              ? {
+                  ...s,
+                  statut: "paye",
+                  date_paiement: today,
+                  mode_paiement: modePaiement,
+                  salaire_base: valBase,
+                  prime_mensuelle: valPrimeM,
+                  prime_responsabilite: valPrimeR,
+                  prime_craie: valPrimeC,
+                  retenue_sanction: valRetenueS,
+                  autres_retenues: valAutresR,
+                  details_lignes: formLignesDeductions,
+                  total_brut: calculatedBrut,
+                  total_deductions: calculatedDeductions,
+                  montant_paye: calculatedTotalNet
+                }
               : s
           )
         );
         setShowModal(false);
-        addToast(`✅ Salaire de ${selectedAgent.employe} payé avec succès ! (${Number(selectedAgent.salaire_total).toLocaleString()} GNF)`, "success");
-        // Rafraîchir les données en arrière-plan
+        addToast(`✅ Salaire de ${selectedAgent.employe} payé avec succès ! (${calculatedTotalNet.toLocaleString()} GNF)`, "success");
         fetchSalaires();
       } else {
         const data = await res.json();
@@ -351,12 +400,25 @@ export default function SalairesPage() {
     let errors = 0;
 
     for (const agent of nonPayes) {
+      const base = Number(agent.salaire_base || 0);
+      const prime = Number(agent.prime_mensuelle || 0);
+      const total = base + prime;
+
       const res = await fetch('/api/admin/salaires', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personnel_id: agent.personnel_id,
-          montant: agent.salaire_total,
+          salaire_base: base,
+          prime_mensuelle: prime,
+          prime_responsabilite: 0,
+          prime_craie: 0,
+          retenue_sanction: 0,
+          autres_retenues: 0,
+          details_lignes: [],
+          total_brut: total,
+          total_deductions: 0,
+          montant: total,
           mois: parseInt(selectedMois),
           annee: parseInt(selectedAnnee),
           mode_paiement: 'virement',
@@ -365,7 +427,6 @@ export default function SalairesPage() {
       });
       if (res.ok) {
         success++;
-        // Mise à jour optimiste immédiate
         const today = new Date().toISOString().split('T')[0];
         setSalaires(prev =>
           prev.map(s =>
@@ -391,11 +452,17 @@ export default function SalairesPage() {
     s.matricule?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalMasse = filteredSalaires.reduce((acc, s) => acc + Number(s.salaire_total || 0), 0);
+  const totalMasse = filteredSalaires.reduce((acc, s) => acc + Number(s.montant_paye || s.salaire_total || 0), 0);
   const totalPaye = filteredSalaires.filter(s => s.statut === "paye").reduce((acc, s) => acc + Number(s.montant_paye || s.salaire_total || 0), 0);
   const totalEnAttente = filteredSalaires.filter(s => s.statut !== "paye").reduce((acc, s) => acc + Number(s.salaire_total || 0), 0);
   const nbPayes = filteredSalaires.filter(s => s.statut === "paye").length;
   const nbNonPayes = filteredSalaires.filter(s => s.statut !== "paye").length;
+
+  const modalSumPrimes = Number(formPrimeMensuelle || 0) + Number(formPrimeResponsabilite || 0) + Number(formPrimeCraie || 0);
+  const modalBrut = Number(formSalaireBase || 0) + modalSumPrimes;
+  const modalSumLignes = formLignesDeductions.reduce((acc, row) => acc + Number(row.montant || 0), 0);
+  const modalDeductions = Number(formRetenueSanction || 0) + Number(formAutresRetenues || 0) + modalSumLignes;
+  const modalTotalNet = modalBrut - modalDeductions;
 
   return (
     <div className="space-y-6">
@@ -526,7 +593,8 @@ export default function SalairesPage() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Employé</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Poste</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Salaire base</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Prime</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Primes</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Déductions</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total net</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Statut</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date paiement</th>
@@ -535,66 +603,77 @@ export default function SalairesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredSalaires.length === 0 ? (
-                  <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-400">Aucun agent trouvé</td></tr>
-                ) : filteredSalaires.map(agent => (
-                  <tr key={agent.personnel_id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                          {(agent.employe?.[0] || '?').toUpperCase()}
+                  <tr><td colSpan={9} className="px-6 py-12 text-center text-gray-400">Aucun agent trouvé</td></tr>
+                ) : filteredSalaires.map(agent => {
+                  const primesTotal = Number(agent.prime_mensuelle || 0) + Number(agent.prime_responsabilite || 0) + Number(agent.prime_craie || 0);
+                  const sumLignes = agent.details_lignes ? agent.details_lignes.reduce((a, l) => a + Number(l.montant || 0), 0) : 0;
+                  const dedsTotal = agent.total_deductions && agent.total_deductions > 0 ? agent.total_deductions : (Number(agent.retenue_sanction || 0) + Number(agent.autres_retenues || 0) + sumLignes);
+                  const netCalc = (Number(agent.salaire_base || 0) + primesTotal) - dedsTotal;
+                  const finalNet = agent.montant_paye ? Number(agent.montant_paye) : netCalc;
+
+                  return (
+                    <tr key={agent.personnel_id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                            {(agent.employe?.[0] || '?').toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{agent.employe}</p>
+                            <p className="text-xs text-gray-400">{agent.matricule}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{agent.employe}</p>
-                          <p className="text-xs text-gray-400">{agent.matricule}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{agent.poste}</td>
-                    <td className="px-6 py-4 text-right text-sm">{Number(agent.salaire_base || 0).toLocaleString()} GNF</td>
-                    <td className="px-6 py-4 text-right text-sm text-green-600">
-                      {Number(agent.prime_mensuelle || 0) > 0 ? `+${Number(agent.prime_mensuelle).toLocaleString()} GNF` : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-right font-bold text-gray-900">
-                      {Number(agent.salaire_total || 0).toLocaleString()} GNF
-                    </td>
-                    <td className="px-6 py-4">
-                      {agent.statut === "paye" ? (
-                        <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                          <CheckCircle className="w-3.5 h-3.5" /> Payé
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                          <Clock className="w-3.5 h-3.5" /> Non payé
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{agent.date_paiement || '-'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        {agent.statut !== "paye" && (
-                          <button
-                            onClick={() => openPaymentModal(agent)}
-                            className="bg-green-50 text-green-700 hover:bg-green-100 px-3 py-1 rounded-lg text-xs font-medium transition"
-                          >
-                            Payer
-                          </button>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{agent.poste}</td>
+                      <td className="px-6 py-4 text-right text-sm">{Number(agent.salaire_base || 0).toLocaleString()} GNF</td>
+                      <td className="px-6 py-4 text-right text-sm text-green-600">
+                        {primesTotal > 0 ? `+${primesTotal.toLocaleString()} GNF` : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm text-red-600">
+                        {dedsTotal > 0 ? `-${dedsTotal.toLocaleString()} GNF` : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right font-bold text-gray-900">
+                        {finalNet.toLocaleString()} GNF
+                      </td>
+                      <td className="px-6 py-4">
+                        {agent.statut === "paye" ? (
+                          <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium">
+                            <CheckCircle className="w-3.5 h-3.5" /> Payé
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-medium">
+                            <Clock className="w-3.5 h-3.5" /> Non payé
+                          </span>
                         )}
-                        <button
-                          onClick={() => printBulletin(agent, selectedMois, selectedAnnee)}
-                          className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition"
-                          title="Imprimer bulletin de paie"
-                        >
-                          <Printer className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{agent.date_paiement || '-'}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          {agent.statut !== "paye" && (
+                            <button
+                              onClick={() => openPaymentModal(agent)}
+                              className="bg-green-50 text-green-700 hover:bg-green-100 px-3 py-1 rounded-lg text-xs font-medium transition"
+                            >
+                              Payer
+                            </button>
+                          )}
+                          <button
+                            onClick={() => printBulletin(agent, selectedMois, selectedAnnee)}
+                            className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition"
+                            title="Imprimer bulletin de paie"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               {filteredSalaires.length > 0 && (
                 <tfoot className="bg-gray-50 border-t">
                   <tr>
-                    <td colSpan={4} className="px-6 py-3 text-sm font-semibold text-gray-700">Total</td>
+                    <td colSpan={5} className="px-6 py-3 text-sm font-semibold text-gray-700">Total</td>
                     <td className="px-6 py-3 text-right font-bold text-gray-900">{totalMasse.toLocaleString()} GNF</td>
                     <td colSpan={3}></td>
                   </tr>
@@ -605,41 +684,176 @@ export default function SalairesPage() {
         )}
       </div>
 
-      {/* Modal Paiement */}
+      {/* Modal Paiement avec Formulaire Détaillé des Lignes de Déduction */}
       {showModal && selectedAgent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Confirmer le paiement</h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b flex justify-between items-center bg-gray-50">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Formulaire de Paie Détaillée</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Saisie des primes, avances, bons, sanctions et déductions</p>
               </div>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-blue-50 rounded-xl p-4">
-                <p className="font-semibold text-gray-900">{selectedAgent.employe}</p>
-                <p className="text-sm text-gray-500">{selectedAgent.poste} • {selectedAgent.matricule}</p>
-              </div>
-              <div className="bg-green-50 rounded-xl p-4 flex justify-between items-center">
+
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="bg-blue-50 rounded-xl p-4 flex justify-between items-center border border-blue-100">
                 <div>
-                  <p className="text-xs text-gray-500">Montant à payer</p>
-                  <p className="text-2xl font-bold text-green-700">{Number(selectedAgent.salaire_total).toLocaleString()} GNF</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Base: {Number(selectedAgent.salaire_base).toLocaleString()} + Prime: {Number(selectedAgent.prime_mensuelle || 0).toLocaleString()}
-                  </p>
+                  <p className="font-bold text-gray-900">{selectedAgent.employe}</p>
+                  <p className="text-xs text-gray-500">{selectedAgent.poste} • Matricule: {selectedAgent.matricule}</p>
                 </div>
-                <Banknote className="w-10 h-10 text-green-400" />
+                <div className="text-right">
+                  <span className="text-xs font-semibold uppercase text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
+                    {MOIS[parseInt(selectedMois)-1]} {selectedAnnee}
+                  </span>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Période</p>
-                <p className="font-medium">{MOIS[parseInt(selectedMois)-1]} {selectedAnnee}</p>
+
+              {/* 1. Rémunération de base & Primes */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">1. Rémunération de base & Primes</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Salaire de base (GNF)</label>
+                    <input
+                      type="number"
+                      value={formSalaireBase}
+                      onChange={e => setFormSalaireBase(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="ex: 3500000"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Prime mensuelle (GNF)</label>
+                    <input
+                      type="number"
+                      value={formPrimeMensuelle}
+                      onChange={e => setFormPrimeMensuelle(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-green-700 mb-1">Prime de responsabilité (GNF)</label>
+                    <input
+                      type="number"
+                      value={formPrimeResponsabilite}
+                      onChange={e => setFormPrimeResponsabilite(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-green-200 bg-green-50/30 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-green-700 mb-1">Prime de craie (GNF)</label>
+                    <input
+                      type="number"
+                      value={formPrimeCraie}
+                      onChange={e => setFormPrimeCraie(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-green-200 bg-green-50/30 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mode de paiement</label>
+
+              {/* 2. Tableau dynamique des lignes (Avances, Bons, Sanctions) */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">2. Lignes de Déductions, Avances & Sanctions</h3>
+                    <p className="text-xs text-gray-400">Ces lignes figureront directement dans le tableau du bulletin imprimé</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addLigneDeduction}
+                    className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  >
+                    + Ajouter une ligne
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {formLignesDeductions.map((row, idx) => (
+                    <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-200">
+                      <input
+                        type="date"
+                        value={row.date}
+                        onChange={e => updateLigneDeduction(idx, 'date', e.target.value)}
+                        className="w-32 px-2.5 py-1.5 border rounded-lg text-xs"
+                      />
+                      <select
+                        value={row.type}
+                        onChange={e => updateLigneDeduction(idx, 'type', e.target.value)}
+                        className="w-28 px-2.5 py-1.5 border rounded-lg text-xs bg-white font-medium"
+                      >
+                        <option value="Avance">Avance</option>
+                        <option value="Bon">Bon</option>
+                        <option value="Retenue">Retenue</option>
+                        <option value="Sanction">Sanction</option>
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Motif (ex: AVANCE SUR SALAIRE, POUR SON TÉLÉPHONE...)"
+                        value={row.motif}
+                        onChange={e => updateLigneDeduction(idx, 'motif', e.target.value)}
+                        className="flex-1 min-w-[180px] px-2.5 py-1.5 border rounded-lg text-xs uppercase"
+                      />
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          placeholder="Montant GNF"
+                          value={row.montant}
+                          onChange={e => updateLigneDeduction(idx, 'montant', e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-32 px-2.5 py-1.5 border rounded-lg text-xs font-bold text-red-600 text-right"
+                        />
+                        <span className="text-xs text-gray-400">GNF</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeLigneDeduction(idx)}
+                        className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Retenues additionnelles fixes */}
+              <div className="space-y-3 pt-3 border-t">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">3. Retenues additionnelles fixes</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-red-700 mb-1">Retenue pour sanction complémentaire (GNF)</label>
+                    <input
+                      type="number"
+                      value={formRetenueSanction}
+                      onChange={e => setFormRetenueSanction(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-red-200 bg-red-50/30 rounded-lg text-sm focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-red-700 mb-1">Autres retenues générales (GNF)</label>
+                    <input
+                      type="number"
+                      value={formAutresRetenues}
+                      onChange={e => setFormAutresRetenues(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-red-200 bg-red-50/30 rounded-lg text-sm focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mode de paiement */}
+              <div className="pt-3 border-t">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Mode de paiement</label>
                 <select
                   value={modePaiement}
                   onChange={e => setModePaiement(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="virement">Virement bancaire</option>
                   <option value="especes">Espèces</option>
@@ -647,16 +861,35 @@ export default function SalairesPage() {
                   <option value="mobile_money">Mobile Money</option>
                 </select>
               </div>
+
+              {/* Résumé Net à payer */}
+              <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white rounded-xl p-4 shadow-lg">
+                <div className="grid grid-cols-3 gap-2 text-center divide-x divide-white/20">
+                  <div>
+                    <p className="text-[10px] text-blue-200 uppercase font-medium">Total Brut</p>
+                    <p className="text-base font-bold mt-0.5">{modalBrut.toLocaleString()} GNF</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-red-200 uppercase font-medium">Total Déductions</p>
+                    <p className="text-base font-bold text-red-300 mt-0.5">-{modalDeductions.toLocaleString()} GNF</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-green-200 uppercase font-medium">Net à Payer</p>
+                    <p className="text-xl font-extrabold text-green-400 mt-0.5">{modalTotalNet.toLocaleString()} GNF</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="p-6 border-t flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 border py-2 rounded-lg text-sm hover:bg-gray-50 transition">Annuler</button>
+
+            <div className="p-4 border-t bg-gray-50 flex gap-3">
+              <button onClick={() => setShowModal(false)} className="flex-1 border bg-white py-2 rounded-lg text-sm hover:bg-gray-100 transition font-medium">Annuler</button>
               <button
                 onClick={handlePayer}
                 disabled={submitting}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Valider le paiement
+                Valider et Générer Bulletin PDF
               </button>
             </div>
           </div>

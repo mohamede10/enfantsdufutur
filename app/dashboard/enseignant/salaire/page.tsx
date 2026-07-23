@@ -1,4 +1,4 @@
-﻿// app/dashboard/enseignant/salaire/page.tsx
+// app/dashboard/enseignant/salaire/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,6 +13,13 @@ const MOIS_NOMS = [
   "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"
 ];
 
+interface LigneDeduction {
+  date: string;
+  type: string;
+  motif: string;
+  montant: number;
+}
+
 interface Profil {
   employe: string;
   matricule: string;
@@ -24,6 +31,13 @@ interface Profil {
 interface Salaire {
   salaire_base: number;
   prime_mensuelle: number;
+  prime_responsabilite?: number;
+  prime_craie?: number;
+  retenue_sanction?: number;
+  autres_retenues?: number;
+  details_lignes?: LigneDeduction[];
+  total_brut?: number;
+  total_deductions?: number;
   salaire_total: number;
 }
 
@@ -33,6 +47,15 @@ interface Paiement {
   date_paiement: string;
   mode_paiement: string;
   reference_transaction: string;
+  salaire_base?: number;
+  prime_mensuelle?: number;
+  prime_responsabilite?: number;
+  prime_craie?: number;
+  retenue_sanction?: number;
+  autres_retenues?: number;
+  details_lignes?: LigneDeduction[];
+  total_brut?: number;
+  total_deductions?: number;
 }
 
 interface HistoriqueItem {
@@ -50,6 +73,11 @@ interface SalaireData {
   paiement: Paiement | null;
   historique: HistoriqueItem[];
 }
+
+const formatFG = (num: number) => {
+  if (!num && num !== 0) return "0";
+  return Math.abs(num).toLocaleString('fr-FR').replace(/\s/g, ' /');
+};
 
 export default function EnseignantSalairePage() {
   const [data, setData] = useState<SalaireData | null>(null);
@@ -87,8 +115,38 @@ export default function EnseignantSalairePage() {
     const { profil, salaire, paiement } = data;
     const moisLabel = MOIS_NOMS[selectedMois - 1];
     const anneeLabel = selectedAnnee.toString();
-    const reference = paiement?.reference_transaction || `SAL-${anneeLabel}${String(selectedMois).padStart(2, '0')}-${profil.matricule}`;
-    const datePaiement = paiement?.date_paiement || new Date().toISOString().split('T')[0];
+    const dateEmission = new Date().toLocaleDateString('fr-FR');
+    const todayISO = new Date().toISOString().split('T')[0];
+
+    const baseAmount = Number(salaire.salaire_base || 0);
+    const primeMensuelle = Number(salaire.prime_mensuelle || 0);
+    const primeResponsabilite = Number(salaire.prime_responsabilite || 0);
+    const primeCraie = Number(salaire.prime_craie || 0);
+
+    const calculatedBrut = baseAmount + primeMensuelle + primeResponsabilite + primeCraie;
+    const brutTotal = (paiement?.total_brut || salaire?.total_brut) ? (paiement?.total_brut || salaire?.total_brut)! : calculatedBrut;
+
+    const rawLignes = paiement?.details_lignes || salaire?.details_lignes;
+    const lignes = Array.isArray(rawLignes) ? rawLignes : [];
+
+    const sumLignes = lignes.reduce((acc, row) => acc + Number(row.montant || 0), 0);
+    const fixedRetenues = Number(salaire.retenue_sanction || 0) + Number(salaire.autres_retenues || 0);
+    const totalDeductions = (paiement?.total_deductions || salaire?.total_deductions) ? (paiement?.total_deductions || salaire?.total_deductions)! : (sumLignes + fixedRetenues);
+
+    const netTotal = paiement?.montant_paye ? Number(paiement.montant_paye) : (brutTotal - totalDeductions);
+
+    const lignesRowsHTML = lignes.length > 0 ? lignes.map(l => `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 9px 8px; color: #555;">${l.date}</td>
+        <td style="padding: 9px 8px; font-weight: 500; color: #111;">${l.type}</td>
+        <td style="padding: 9px 8px; color: #333; text-transform: uppercase;">${l.motif}</td>
+        <td style="padding: 9px 8px; text-align: right; font-weight: bold; color: #dc2626;">- ${formatFG(Number(l.montant || 0))} FG</td>
+      </tr>
+    `).join('') : `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td colspan="4" style="padding: 12px 8px; color: #888; text-align: center; font-style: italic;">Aucune retenue ni avance pour cette période</td>
+      </tr>
+    `;
 
     const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -97,124 +155,126 @@ export default function EnseignantSalairePage() {
   <title>Bulletin de Paie - ${profil.employe} - ${moisLabel} ${anneeLabel}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: white; padding: 20px; }
-    .page { max-width: 800px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a3c6e; padding-bottom: 14px; margin-bottom: 16px; }
-    .logo-area { display: flex; align-items: center; gap: 12px; }
-    .logo-area img { height: 70px; object-fit: contain; }
-    .school-info h1 { font-size: 17px; font-weight: bold; color: #1a3c6e; }
-    .school-info p { font-size: 10px; color: #555; line-height: 1.5; }
-    .bulletin-title { text-align: right; }
-    .bulletin-title h2 { font-size: 16px; font-weight: bold; color: #1a3c6e; text-transform: uppercase; letter-spacing: 1px; }
-    .bulletin-title .period { font-size: 13px; color: #e05c00; font-weight: bold; margin-top: 4px; }
-    .bulletin-title .ref { font-size: 9px; color: #888; margin-top: 3px; }
-    .employee-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .info-box { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; }
-    .info-box h3 { font-size: 10px; text-transform: uppercase; color: #1a3c6e; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 8px; }
-    .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-    .info-label { color: #666; font-size: 10px; }
-    .info-value { font-weight: bold; font-size: 10px; color: #111; }
-    .salary-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    .salary-table thead tr { background-color: #1a3c6e; color: white; }
-    .salary-table thead th { padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
-    .salary-table thead th:last-child, .salary-table thead th:nth-last-child(2) { text-align: right; }
-    .salary-table tbody tr:nth-child(even) { background-color: #f7f9fc; }
-    .salary-table tbody td { padding: 7px 10px; border-bottom: 1px solid #e8e8e8; font-size: 10px; }
-    .salary-table tbody td:last-child, .salary-table tbody td:nth-last-child(2) { text-align: right; }
-    .salary-table .cat { color: #1a3c6e; font-style: italic; font-size: 9px; background: #f0f4ff !important; font-weight: bold; }
-    .salary-table tfoot tr { background-color: #1a3c6e; color: white; }
-    .salary-table tfoot td { padding: 9px 10px; font-weight: bold; }
-    .salary-table tfoot td:last-child { text-align: right; font-size: 14px; }
-    .net-box { background: linear-gradient(135deg, #1a3c6e, #2563b0); color: white; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .net-box .label { font-size: 13px; font-weight: bold; text-transform: uppercase; }
-    .net-box .amount { font-size: 22px; font-weight: bold; }
-    .net-box .currency { font-size: 12px; opacity: 0.8; margin-left: 6px; }
-    .net-box .mode { font-size: 10px; opacity: 0.75; margin-top: 3px; }
-    .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 10px; }
-    .sig-box { border: 1px solid #ddd; border-radius: 6px; padding: 10px; text-align: center; }
-    .sig-box .sig-title { font-size: 9px; text-transform: uppercase; color: #1a3c6e; font-weight: bold; margin-bottom: 40px; }
-    .sig-box .sig-name { font-size: 9px; color: #555; border-top: 1px solid #ccc; padding-top: 4px; }
-    .footer { margin-top: 16px; text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
-    .footer span { color: #1a3c6e; }
-    .unpaid-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 80px; color: rgba(255,0,0,0.07); font-weight: bold; text-transform: uppercase; pointer-events: none; white-space: nowrap; }
-    @media print { body { padding: 10px; } }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: white; padding: 25px; }
+    .page { max-width: 850px; margin: 0 auto; }
+    .header-center { text-align: center; position: relative; margin-bottom: 20px; }
+    .header-logo { position: absolute; left: 0; top: 0; height: 75px; object-fit: contain; }
+    .header-center h2 { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+    .header-center p { font-size: 11px; font-style: italic; color: #333; margin-bottom: 6px; }
+    .header-center h3 { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+    .header-center h1 { font-size: 18px; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; }
+    .line-divider { border-bottom: 2px solid #1a3c6e; width: 100%; margin-top: 6px; }
+
+    .period-title { font-size: 14px; font-weight: bold; margin: 16px 0 14px 0; }
+
+    .emp-banner { background-color: #1a3c6e; color: white; padding: 10px 14px; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; margin-bottom: 20px; }
+    .summary-col { padding: 10px 14px; border-right: 1px solid #e2e8f0; }
+    .summary-col:last-child { border-right: none; }
+    .summary-label { font-size: 11px; font-weight: bold; color: #334155; }
+    .summary-val { font-size: 13px; font-weight: bold; text-align: right; margin-top: 6px; }
+
+    .deductions-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+    .deductions-table th { padding: 8px; border-bottom: 1px solid #cbd5e1; text-align: left; font-size: 11px; font-weight: bold; color: #475569; }
+    .deductions-table th:last-child { text-align: right; }
+
+    .totaux-banner { background-color: #1a3c6e; color: white; display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr; padding: 10px 14px; font-weight: bold; font-size: 12px; }
+    .totaux-row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr; padding: 12px 14px; background: white; border: 1px solid #e2e8f0; border-top: none; font-size: 12px; font-weight: bold; }
+
+    .footer-doc { margin-top: 40px; font-size: 10px; color: #475569; }
+    .sig-section { float: right; margin-top: 25px; text-align: center; width: 300px; }
+    .sig-title { font-size: 11px; margin-bottom: 4px; }
+    .sig-name { font-size: 12px; font-weight: bold; color: #000; margin-bottom: 4px; }
+    .sig-date { font-size: 10px; color: #64748b; margin-bottom: 40px; }
+    .sig-line { border-bottom: 1px solid #334155; width: 100%; margin-bottom: 4px; }
+
+    @media print {
+      body { padding: 10px; }
+      .page { max-width: 100%; }
+    }
   </style>
 </head>
 <body>
   <div class="page">
-    ${!paiement || paiement.statut !== 'paye' ? '<div class="unpaid-watermark">Brouillon</div>' : ''}
-    <div class="header">
-      <div class="logo-area">
-        <img src="/img/logo.jpg" alt="Logo EIEF" onerror="this.style.display=none" />
-        <div class="school-info">
-          <h1>E.I.E.F</h1>
-          <p>Ecole Internationale d Enseignement Francophone<br>Conakry, Republique de Guinee<br>Tel: +224 000 000 000</p>
-        </div>
+    <!-- EN-TÊTE GUINÉE ET ÉCOLE -->
+    <div class="header-center">
+      <img src="/img/logo.jpg" class="header-logo" alt="Logo EIEF" onerror="this.style.display='none'" />
+      <h2>REPUBLIQUE DE GUINEE</h2>
+      <p>Travail - Justice - Solidarite</p>
+      <h3>ECOLE INTERNATIONALE LES ENFANTS DU FUTUR</h3>
+      <h1>LISTE DE PAIE DETAILLEE</h1>
+      <div class="line-divider"></div>
+    </div>
+
+    <!-- PÉRIODE -->
+    <div class="period-title">Periode : ${moisLabel} ${anneeLabel}</div>
+
+    <!-- BANNIÈRE EMPLOYÉ -->
+    <div class="emp-banner">
+      <div>1. ${profil.employe.toUpperCase()} &mdash; ${profil.poste.toUpperCase()} ${profil.departement ? '(GROUPE PÉDAGOGIQUE ' + profil.departement.toUpperCase() + ')' : ''}</div>
+      <div>Net : ${formatFG(netTotal)} FG</div>
+    </div>
+
+    <!-- RECAP BRUT / DEDUCTIONS / NET -->
+    <div class="summary-grid">
+      <div class="summary-col">
+        <div class="summary-label">Salaire Brut</div>
+        <div class="summary-val">${formatFG(brutTotal)} FG</div>
       </div>
-      <div class="bulletin-title">
-        <h2>Bulletin de Paie</h2>
-        <div class="period">${moisLabel} ${anneeLabel}</div>
-        <div class="ref">Ref: ${reference}</div>
+      <div class="summary-col">
+        <div class="summary-label">Total Deductions</div>
+        <div class="summary-val">${formatFG(totalDeductions)} FG</div>
+      </div>
+      <div class="summary-col">
+        <div class="summary-label">Net a payer</div>
+        <div class="summary-val">${formatFG(netTotal)} FG</div>
       </div>
     </div>
-    <div class="employee-section">
-      <div class="info-box">
-        <h3>Employeur</h3>
-        <div class="info-row"><span class="info-label">Etablissement</span><span class="info-value">E.I.E.F</span></div>
-        <div class="info-row"><span class="info-label">Adresse</span><span class="info-value">Conakry, Guinee</span></div>
-        <div class="info-row"><span class="info-label">Periode</span><span class="info-value">${moisLabel} ${anneeLabel}</span></div>
-        <div class="info-row"><span class="info-label">Date emission</span><span class="info-value">${new Date().toLocaleDateString('fr-FR')}</span></div>
-      </div>
-      <div class="info-box">
-        <h3>Salarie</h3>
-        <div class="info-row"><span class="info-label">Nom et Prenom</span><span class="info-value">${profil.employe}</span></div>
-        <div class="info-row"><span class="info-label">Matricule</span><span class="info-value">${profil.matricule || '-'}</span></div>
-        <div class="info-row"><span class="info-label">Poste</span><span class="info-value">${profil.poste}</span></div>
-        <div class="info-row"><span class="info-label">Departement</span><span class="info-value">${profil.departement || '-'}</span></div>
-        <div class="info-row"><span class="info-label">Statut</span><span class="info-value">${profil.statut_agent || 'Actif'}</span></div>
-      </div>
-    </div>
-    <table class="salary-table">
+
+    <!-- TABLEAU DÉTAILLÉ DES DÉDUCTIONS & AVANCES -->
+    <table class="deductions-table">
       <thead>
         <tr>
-          <th style="width:50%">Designation</th>
-          <th>Base / Unite</th>
-          <th>Taux</th>
-          <th>Gains (GNF)</th>
-          <th>Retenues (GNF)</th>
+          <th style="width: 15%;">Date</th>
+          <th style="width: 15%;">Type</th>
+          <th style="width: 50%;">Motif</th>
+          <th style="width: 20%; text-align: right;">Montant</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="cat"><td colspan="5">REMUNERATION DE BASE</td></tr>
-        <tr><td>Salaire de base</td><td>Mensuel</td><td>100%</td><td>${salaire.salaire_base.toLocaleString('fr-FR')}</td><td>-</td></tr>
-        ${salaire.prime_mensuelle > 0 ? `<tr class="cat"><td colspan="5">PRIMES ET AVANTAGES</td></tr><tr><td>Prime mensuelle</td><td>Forfait</td><td>-</td><td>${salaire.prime_mensuelle.toLocaleString('fr-FR')}</td><td>-</td></tr>` : ''}
-        <tr class="cat"><td colspan="5">COTISATIONS ET RETENUES</td></tr>
-        <tr><td>Cotisation CNSS (employe)</td><td>Salaire brut</td><td>3.6%</td><td>-</td><td>0</td></tr>
-        <tr><td>Impot sur le revenu (IR)</td><td>Salaire imposable</td><td>-</td><td>-</td><td>0</td></tr>
+        ${lignesRowsHTML}
       </tbody>
-      <tfoot>
-        <tr><td colspan="3">TOTAL NET A PAYER</td><td>${salaire.salaire_total.toLocaleString('fr-FR')}</td><td>0</td></tr>
-      </tfoot>
     </table>
-    <div class="net-box">
-      <div>
-        <div class="label">Net a payer</div>
-        <div class="mode">Mode: ${paiement?.mode_paiement || 'Virement bancaire'} - ${paiement?.statut === 'paye' ? 'Paye le ' + datePaiement : 'En attente'}</div>
-      </div>
-      <div>
-        <span class="amount">${salaire.salaire_total.toLocaleString('fr-FR')}</span>
-        <span class="currency">GNF</span>
-      </div>
+
+    <!-- TOTAUX GÉNÉRAUX -->
+    <div class="totaux-banner">
+      <div>TOTAUX GENERAUX</div>
+      <div>Brut</div>
+      <div>Deductions</div>
+      <div>Net a payer</div>
     </div>
-    <div class="signatures">
-      <div class="sig-box"><div class="sig-title">Le Salarie</div><div class="sig-name">${profil.employe}</div></div>
-      <div class="sig-box"><div class="sig-title">Le Comptable</div><div class="sig-name">Signature et Cachet</div></div>
-      <!--<div class="sig-box"><div class="sig-title">Direction Generale</div><div class="sig-name">Signature et Cachet</div></div>-->
+    <div class="totaux-row">
+      <div>1 employe(s)</div>
+      <div>${formatFG(brutTotal)}</div>
+      <div>${formatFG(totalDeductions)}</div>
+      <div>${formatFG(netTotal)} FG</div>
     </div>
-    <div class="footer">
-      <p>Ce bulletin de paie doit etre conserve sans limitation de duree - <span>E.I.E.F (c) ${anneeLabel}</span> - Genere le ${new Date().toLocaleDateString('fr-FR')} a ${new Date().toLocaleTimeString('fr-FR')}</p>
+
+    <!-- FOOTER ET SIGNATURE DU DIRECTEUR -->
+    <div class="footer-doc">
+      <p style="text-align: center; font-style: italic;">Document genere automatiquement - ECOLE INTERNATIONALE LES ENFANTS DU FUTUR</p>
+      <p style="text-align: center; margin-top: 3px;">Date d'emission : ${dateEmission}</p>
+
+      <div class="sig-section">
+        <div class="sig-title">Directeur</div>
+        <div class="sig-name">TAMBA SOSSO DEMBADOUNO</div>
+        <div class="sig-date">Date de signature : ${dateEmission}</div>
+        <div class="sig-line"></div>
+        <div style="font-size: 9px; font-style: italic; color: #64748b;">Signature et cachet</div>
+      </div>
     </div>
   </div>
+
   <script>window.onload = function(){ window.print(); }<\/script>
 </body>
 </html>`;
@@ -250,6 +310,9 @@ export default function EnseignantSalairePage() {
   const isPaye = paiement?.statut === "paye";
   const nbPayesHistorique = historique.filter(h => h.statut === "paye").length;
   const totalPercu = historique.filter(h => h.statut === "paye").reduce((a, h) => a + h.montant, 0);
+
+  const primesCumulees = Number(salaire.prime_mensuelle || 0) + Number(salaire.prime_responsabilite || 0) + Number(salaire.prime_craie || 0);
+  const retenuesCumulees = Number(salaire.retenue_sanction || 0) + Number(salaire.autres_retenues || 0);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -313,10 +376,10 @@ export default function EnseignantSalairePage() {
         <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-green-50 p-2.5 rounded-xl"><TrendingUp className="w-5 h-5 text-green-600" /></div>
-            <p className="text-sm text-gray-500 font-medium">Prime mensuelle</p>
+            <p className="text-sm text-gray-500 font-medium">Total Primes</p>
           </div>
           <p className="text-2xl font-bold text-green-600">
-            {salaire.prime_mensuelle > 0 ? `+${salaire.prime_mensuelle.toLocaleString('fr-FR')}` : '-'}
+            {primesCumulees > 0 ? `+${primesCumulees.toLocaleString('fr-FR')}` : '-'}
           </p>
           <p className="text-xs text-gray-400 mt-1">GNF</p>
         </div>
@@ -388,28 +451,55 @@ export default function EnseignantSalairePage() {
             <span className="text-sm text-gray-600">Salaire de base</span>
             <span className="text-sm font-semibold text-gray-900">+{salaire.salaire_base.toLocaleString('fr-FR')} GNF</span>
           </div>
-          {salaire.prime_mensuelle > 0 && (
+          
+          {(salaire.prime_mensuelle > 0 || Number(salaire.prime_responsabilite || 0) > 0 || Number(salaire.prime_craie || 0) > 0) && (
             <>
               <div className="flex justify-between items-center px-6 py-3 bg-green-50/50">
                 <span className="text-xs font-bold text-green-700 uppercase tracking-wide">Primes et avantages</span>
               </div>
-              <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
-                <span className="text-sm text-gray-600">Prime mensuelle</span>
-                <span className="text-sm font-semibold text-green-600">+{salaire.prime_mensuelle.toLocaleString('fr-FR')} GNF</span>
-              </div>
+              {salaire.prime_mensuelle > 0 && (
+                <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
+                  <span className="text-sm text-gray-600">Prime mensuelle</span>
+                  <span className="text-sm font-semibold text-green-600">+{salaire.prime_mensuelle.toLocaleString('fr-FR')} GNF</span>
+                </div>
+              )}
+              {Number(salaire.prime_responsabilite || 0) > 0 && (
+                <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
+                  <span className="text-sm text-gray-600">Prime de responsabilite</span>
+                  <span className="text-sm font-semibold text-green-600">+{Number(salaire.prime_responsabilite).toLocaleString('fr-FR')} GNF</span>
+                </div>
+              )}
+              {Number(salaire.prime_craie || 0) > 0 && (
+                <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
+                  <span className="text-sm text-gray-600">Prime de craie</span>
+                  <span className="text-sm font-semibold text-green-600">+{Number(salaire.prime_craie).toLocaleString('fr-FR')} GNF</span>
+                </div>
+              )}
             </>
           )}
-          <div className="flex justify-between items-center px-6 py-3 bg-gray-50/50">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Cotisations et retenues</span>
+
+          <div className="flex justify-between items-center px-6 py-3 bg-red-50/50">
+            <span className="text-xs font-bold text-red-700 uppercase tracking-wide">Cotisations et retenues</span>
           </div>
-          <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
-            <span className="text-sm text-gray-600">Cotisation CNSS (3.6%)</span>
-            <span className="text-sm text-gray-400">0 GNF</span>
-          </div>
-          <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
-            <span className="text-sm text-gray-600">Impot sur le revenu (IR)</span>
-            <span className="text-sm text-gray-400">0 GNF</span>
-          </div>
+          {Number(salaire.retenue_sanction || 0) > 0 && (
+            <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
+              <span className="text-sm text-red-600 font-medium">Retenue pour sanction</span>
+              <span className="text-sm font-semibold text-red-600">-{Number(salaire.retenue_sanction).toLocaleString('fr-FR')} GNF</span>
+            </div>
+          )}
+          {Number(salaire.autres_retenues || 0) > 0 && (
+            <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
+              <span className="text-sm text-red-600 font-medium">Autres retenues</span>
+              <span className="text-sm font-semibold text-red-600">-{Number(salaire.autres_retenues).toLocaleString('fr-FR')} GNF</span>
+            </div>
+          )}
+          {Number(salaire.retenue_sanction || 0) === 0 && Number(salaire.autres_retenues || 0) === 0 && (
+            <div className="flex justify-between items-center px-6 py-3 hover:bg-gray-50">
+              <span className="text-sm text-gray-600">Retenues / Sanctions</span>
+              <span className="text-sm text-gray-400">0 GNF</span>
+            </div>
+          )}
+
           <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50">
             <span className="font-bold text-gray-900">NET A PAYER</span>
             <span className="text-xl font-bold text-indigo-700">{salaire.salaire_total.toLocaleString('fr-FR')} GNF</span>
