@@ -39,7 +39,7 @@ const menuItems = {
     { name: "Élèves", href: "/dashboard/admin/eleves", icon: Users },
     { name: "Classes", href: "/dashboard/admin/classes", icon: GraduationCap },
     { name: "Personnel", href: "/dashboard/admin/personnel", icon: Users },
-    { name: "Paiements", href: "/dashboard/admin/finances/paiements", icon: CreditCard },
+    //{ name: "Paiements", href: "/dashboard/admin/finances/paiements", icon: CreditCard },
     { name: "Salaires", href: "/dashboard/admin/salaires", icon: Users },
     { name: "Rapports", href: "/dashboard/admin/rapports", icon: FileText },
     { name: "Cantine", href: "/dashboard/admin/cantine", icon: Utensils },

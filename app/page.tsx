@@ -31,6 +31,10 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loadedImages, setLoadedImages] = useState<boolean[]>([]);
 
+  // PWA Installation
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showIOSModal, setShowIOSModal] = useState(false);
+
   // Statistiques animées
   const [stats, setStats] = useState({
     students: 0,
@@ -44,6 +48,31 @@ export default function HomePage() {
     teachers: 85,
     classes: 32,
     success: 100
+  };
+
+  // Capture événement beforeinstallprompt (Android/Chrome)
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const installAndroid = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    } else {
+      // Navigateur ne supporte pas le prompt → ouvrir guide
+      alert('Pour installer : ouvrez ce site dans Chrome sur Android, puis appuyez sur ⋮ → "Ajouter à l\'écran d\'accueil"');
+    }
+  };
+
+  const installIOS = () => {
+    setShowIOSModal(true);
   };
 
   // Redirection si déjà connecté
@@ -459,24 +488,88 @@ export default function HomePage() {
             <div className="flex flex-col items-center justify-center text-center md:text-right">
               <div className="bg-white/10 backdrop-blur rounded-xl p-6 w-full">
                 <div className="text-4xl mb-2">📱</div>
-                <p className="text-white font-semibold mb-2">Application mobile disponible</p>
-                <p className="text-blue-100 text-sm mb-4">iOS & Android</p>
+                <p className="text-white font-semibold mb-2">Installer l'application</p>
+                <p className="text-blue-100 text-xs mb-4">Accès rapide depuis votre écran d'accueil</p>
                 <div className="flex justify-center gap-3">
-                  <div className="bg-black rounded-lg px-3 py-1 flex items-center gap-2 cursor-pointer hover:bg-gray-900 transition">
+                  <button
+                    onClick={installIOS}
+                    className="bg-black rounded-lg px-3 py-2 flex items-center gap-2 hover:bg-gray-900 transition active:scale-95"
+                  >
                     <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.05 20.28c-.98.95-2.05.86-3.08.42-1.1-.47-2.11-.48-3.24 0-1.72.74-2.69.22-3.24-.42-2.2-2.58-2.88-6.18-1.47-8.56.84-1.42 2.22-2.28 3.66-2.28 1.44 0 2.34.72 3.24.72.9 0 2.28-.96 3.9-.72 1.44.24 2.52 1.08 3.18 2.28-2.52 1.56-2.16 4.92.42 6.36-.6 1.44-1.44 2.88-2.4 4.2zM12 5.4c-.48-1.2-1.44-2.04-2.52-2.16-1.08-.12-2.16.48-2.64 1.56-1.08.48-2.16 1.56-2.64 3.12.48-.12 1.08-.24 1.68-.24.96 0 1.92.24 2.64.72.72.48 1.08 1.2 1.2 2.04.12.84-.12 1.68-.48 2.4.96.48 2.04.72 3.12.72 1.08 0 2.16-.24 3.12-.72-.36-.72-.6-1.56-.48-2.4.12-.84.48-1.56 1.2-2.04.72-.48 1.68-.72 2.64-.72.6 0 1.2.12 1.68.24-.48-1.56-1.56-2.64-2.64-3.12-.48-1.08-1.56-1.68-2.64-1.56-1.08.12-2.04.96-2.52 2.16z" />
                     </svg>
-                    <span className="text-xs text-white">App Store</span>
-                  </div>
-                  <div className="bg-black rounded-lg px-3 py-1 flex items-center gap-2 cursor-pointer hover:bg-gray-900 transition">
+                    <div className="text-left">
+                      <div className="text-white/60 text-[9px] leading-none">Installer sur</div>
+                      <div className="text-xs text-white font-semibold">iPhone / iPad</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={installAndroid}
+                    className="bg-black rounded-lg px-3 py-2 flex items-center gap-2 hover:bg-gray-900 transition active:scale-95"
+                  >
                     <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zM14.5 11.293l5.5-5.5-2.5 2.5-2.5 2.5-2.5-2.5-2.5-2.5-2.5 2.5 5.5 5.5z" />
+                      <path d="M17.523 15.341A7.5 7.5 0 1 0 6.477 15.34l-1.19 2.109a.75.75 0 1 0 1.3.742L7.79 16.1a7.463 7.463 0 0 0 4.21 1.294 7.463 7.463 0 0 0 4.21-1.294l1.203 2.092a.75.75 0 1 0 1.3-.742l-1.19-2.109ZM9 10.5a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM4.5 12a7.5 7.5 0 1 1 15 0A7.5 7.5 0 0 1 4.5 12Z" />
                     </svg>
-                    <span className="text-xs text-white">Google Play</span>
-                  </div>
+                    <div className="text-left">
+                      <div className="text-white/60 text-[9px] leading-none">Installer sur</div>
+                      <div className="text-xs text-white font-semibold">Android</div>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>
+
+            {/* Modal instructions iOS */}
+            {showIOSModal && (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSModal(false)}>
+                <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm mx-4 mb-0 sm:mb-0 shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">📱</span>
+                      <h3 className="font-bold text-gray-900 text-lg">Installer sur iOS</h3>
+                    </div>
+                    <button onClick={() => setShowIOSModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-5">Suivez ces étapes dans <strong>Safari</strong> pour ajouter l'application à votre écran d'accueil :</p>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">1</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Ouvrir dans Safari</p>
+                        <p className="text-xs text-gray-500">Assurez-vous d'utiliser le navigateur Safari sur votre iPhone ou iPad</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Appuyer sur Partager</p>
+                        <p className="text-xs text-gray-500">Touchez l'icône <strong>⎋ Partager</strong> en bas de l'écran (ou en haut sur iPad)</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">"Sur l'écran d'accueil"</p>
+                        <p className="text-xs text-gray-500">Faites défiler et sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong></p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">✓</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Confirmer</p>
+                        <p className="text-xs text-gray-500">Appuyez sur <strong>Ajouter</strong> en haut à droite</p>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowIOSModal(false)}
+                    className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+                  >
+                    J'ai compris
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

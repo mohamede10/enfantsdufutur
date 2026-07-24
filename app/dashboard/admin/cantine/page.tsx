@@ -533,10 +533,10 @@ export default function CantinePage() {
             <thead className="bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-900 uppercase">
               <tr>
                 <th className="px-6 py-3">Plat Principal</th>
-                <th className="px-6 py-3">Accompagnement</th>
-                <th className="px-6 py-3">Dessert</th>
+                {/*<th className="px-6 py-3">Accompagnement</th>
+                <th className="px-6 py-3">Dessert</th>*/}
                 <th className="px-6 py-3">Prix Annuel</th>
-                <th className="px-6 py-3">Regime Special</th>
+                {/*<th className="px-6 py-3">Regime Special</th>*/} 
                 <th className="px-6 py-3">Actions</th>
               </tr>
             </thead>
@@ -544,18 +544,18 @@ export default function CantinePage() {
               {menus.map((m) => (
                 <tr key={m.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-blue-900">{m.plat}</td>
-                  <td className="px-6 py-4 text-gray-900">{m.accompagnement}</td>
-                  <td className="px-6 py-4 text-gray-900">{m.dessert}</td>
+                  {/*<td className="px-6 py-4 text-gray-900">{m.accompagnement}</td>*/}
+                  {/*<td className="px-6 py-4 text-gray-900">{m.dessert}</td>*/}
                   <td className="px-6 py-4 font-medium text-purple-600">
                     {m.prix_annuel ? `${m.prix_annuel.toLocaleString()} GNF` : "—"}
                   </td>
-                  <td className="px-6 py-4">
+                  {/*<td className="px-6 py-4">
                     {m.regime_special ? (
                       <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs font-medium">Oui</span>
                     ) : (
                       <span className="text-gray-900 text-xs">-</span>
                     )}
-                  </td>
+                  </td>*/}
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button
@@ -610,7 +610,7 @@ export default function CantinePage() {
                   className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div>
+              {/*<div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Accompagnement</label>
                 <input
                   required
@@ -631,7 +631,7 @@ export default function CantinePage() {
                   onChange={e => setFormData({ ...formData, dessert: e.target.value })}
                   className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
+              </div>*/}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Prix Annuel (GNF)</label>
                 <input
@@ -643,9 +643,8 @@ export default function CantinePage() {
                   onChange={e => setFormData({ ...formData, prix_annuel: e.target.value })}
                   className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-400 mt-1">Laissez vide si non defini</p>
               </div>
-              <div className="flex items-center gap-2 py-2">
+              {/*<div className="flex items-center gap-2 py-2">
                 <input
                   type="checkbox"
                   id="regime_special"
@@ -656,7 +655,7 @@ export default function CantinePage() {
                 <label htmlFor="regime_special" className="text-sm font-medium text-gray-900 select-none cursor-pointer">
                   Option de regime special disponible (vegetarien, allergies...)
                 </label>
-              </div>
+              </div>*/}
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
