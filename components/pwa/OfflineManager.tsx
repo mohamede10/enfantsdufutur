@@ -143,7 +143,7 @@ export function OfflineManager() {
         if (!navigator.onLine) {
           console.log(`[OfflineManager] Navigator is offline, queueing ${method} ${url}`);
           const item = await addToSyncQueue(url, method, bodyStr, headers);
-          
+
           if ((window as any).showOfflineToast) {
             (window as any).showOfflineToast(
               `Mode hors ligne : Modification enregistrée localement. Elle sera synchronisée au retour de la connexion.`,
@@ -172,7 +172,7 @@ export function OfflineManager() {
         } catch (err) {
           console.warn(`[OfflineManager] Network error during fetch, queueing ${method} ${url}`, err);
           const item = await addToSyncQueue(url, method, bodyStr, headers);
-          
+
           if ((window as any).showOfflineToast) {
             (window as any).showOfflineToast(
               `Erreur réseau : Action mise en attente pour synchronisation ultérieure.`,
@@ -216,13 +216,12 @@ export function OfflineManager() {
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`pointer-events-auto p-4 rounded-xl shadow-xl flex items-start gap-3 border transition-all duration-300 transform translate-y-0 animate-fade-in ${
-              toast.type === "success"
+            className={`pointer-events-auto p-4 rounded-xl shadow-xl flex items-start gap-3 border transition-all duration-300 transform translate-y-0 animate-fade-in ${toast.type === "success"
                 ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                 : toast.type === "warning"
-                ? "bg-amber-50 border-amber-200 text-amber-800"
-                : "bg-blue-50 border-blue-200 text-blue-800"
-            }`}
+                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                  : "bg-blue-50 border-blue-200 text-blue-800"
+              }`}
           >
             <div className="flex-shrink-0 mt-0.5">
               {toast.type === "success" && <CheckCircle className="w-5 h-5 text-emerald-600" />}
@@ -238,7 +237,7 @@ export function OfflineManager() {
       {!isOnline && (
         <div className="fixed top-16 left-0 right-0 z-[9999] bg-rose-600 text-white text-xs sm:text-sm py-2 px-4 shadow-md flex items-center justify-center gap-2 font-semibold select-none animate-pulse">
           <WifiOff className="w-4 h-4" />
-          <span>Vous êtes actuellement hors connexion. Mode hors ligne activé.</span>
+          <span>Vous êtes actuellement hors connexion.</span>
         </div>
       )}
 

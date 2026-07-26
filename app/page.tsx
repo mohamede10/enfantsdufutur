@@ -34,6 +34,7 @@ export default function HomePage() {
   // PWA Installation
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showAndroidModal, setShowAndroidModal] = useState(false);
 
   // Statistiques animées
   const [stats, setStats] = useState({
@@ -61,13 +62,15 @@ export default function HomePage() {
   }, []);
 
   const installAndroid = async () => {
+    setShowAndroidModal(true);
+  };
+
+  const doInstallAndroid = async () => {
     if (deferredPrompt) {
+      setShowAndroidModal(false);
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;
       setDeferredPrompt(null);
-    } else {
-      // Navigateur ne supporte pas le prompt → ouvrir guide
-      alert('Pour installer : ouvrez ce site dans Chrome sur Android, puis appuyez sur ⋮ → "Ajouter à l\'écran d\'accueil"');
     }
   };
 
@@ -522,10 +525,10 @@ export default function HomePage() {
             {/* Modal instructions iOS */}
             {showIOSModal && (
               <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSModal(false)}>
-                <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm mx-4 mb-0 sm:mb-0 shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">📱</span>
+                      <span className="text-2xl">🍎</span>
                       <h3 className="font-bold text-gray-900 text-lg">Installer sur iOS</h3>
                     </div>
                     <button onClick={() => setShowIOSModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
@@ -564,6 +567,66 @@ export default function HomePage() {
                   <button
                     onClick={() => setShowIOSModal(false)}
                     className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+                  >
+                    J'ai compris
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modal instructions Android */}
+            {showAndroidModal && (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowAndroidModal(false)}>
+                <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🤖</span>
+                      <h3 className="font-bold text-gray-900 text-lg">Installer sur Android</h3>
+                    </div>
+                    <button onClick={() => setShowAndroidModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-5">Suivez ces étapes dans <strong>Chrome</strong> pour ajouter l'application à votre écran d'accueil :</p>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">1</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Ouvrir dans Chrome</p>
+                        <p className="text-xs text-gray-500">Assurez-vous d'utiliser le navigateur Chrome sur votre appareil Android</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Appuyer sur le menu ⋮</p>
+                        <p className="text-xs text-gray-500">Touchez les <strong>trois points ⋮</strong> en haut à droite de Chrome</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">"Ajouter à l'écran d'accueil"</p>
+                        <p className="text-xs text-gray-500">Sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong> dans le menu</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">✓</div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Confirmer</p>
+                        <p className="text-xs text-gray-500">Appuyez sur <strong>Ajouter</strong> pour installer l'application</p>
+                      </div>
+                    </div>
+                  </div>
+                  {deferredPrompt && (
+                    <button
+                      onClick={doInstallAndroid}
+                      className="w-full mt-4 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition"
+                    >
+                      Installer maintenant
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowAndroidModal(false)}
+                    className="w-full mt-3 bg-gray-100 text-gray-200 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
                   >
                     J'ai compris
                   </button>
