@@ -1,0 +1,31 @@
+Si vous voulez pousser vers les deux remotes
+Option 1 : Pousser vers les deux séparément
+# D'abord vers enfantsdufutur (mohamed10)
+git push enfantsdufutur main
+
+# Ensuite vers origin (cotechservices)
+git push origin main
+
+Option 2 : Pousser vers les deux en une commande
+git push --all
+
+Si vous avez des conflits
+Si le remote a des changements que vous n'avez pas localement :
+
+# 1. Récupérer les changements
+git pull enfantsdufutur main
+
+# 2. Résoudre les conflits si nécessaire
+
+# 3. Pousser à nouveau
+git push enfantsdufutur main
+
+
+Pour résumer la situation actuelle
+Vous avez deux remotes configurés :
+
+enfantdufutur : Le repository sur GitHub de Mohamed (pour le développement)
+origin : Le repository sur GitHub de Cotech Services (pour le déploiement)
+Vous pouvez pousser vers les deux séparément (Option 1) ou vers les deux en une seule commande (Option 2).
+
+Si vous rencontrez des conflits avec enfantsdufutur, faites un git pull avant de pousser.

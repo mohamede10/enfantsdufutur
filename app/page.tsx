@@ -62,7 +62,13 @@ export default function HomePage() {
   }, []);
 
   const installAndroid = async () => {
-    setShowAndroidModal(true);
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    } else {
+      setShowAndroidModal(true);
+    }
   };
 
   const doInstallAndroid = async () => {
@@ -76,6 +82,13 @@ export default function HomePage() {
 
   const installIOS = () => {
     setShowIOSModal(true);
+  };
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
   };
 
   // Redirection si déjà connecté
@@ -422,7 +435,7 @@ export default function HomePage() {
       </section>
 
       {/* ========== FEATURES ========== */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-10 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -446,197 +459,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Bannière de pub */}
-      <div className="container mx-auto px-4 mt-8">
-        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl overflow-hidden shadow-xl">
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative z-10 grid md:grid-cols-2 gap-8 p-8 md:p-12">
-            <div className="text-white">
-              <div className="inline-block bg-white/20 rounded-full px-4 py-1 text-sm mb-4">
-                Innovation & Excellence
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold mb-4">
-                La première école 100% digitale de Guinée
-              </h3>
-              <p className="text-blue-100 mb-6">
-                Découvrez notre plateforme de gestion scolaire intégrée. Suivez la scolarité de vos enfants en temps réel,
-                accédez aux cours en ligne, et communiquez directement avec les enseignants.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-sm">Cours en ligne</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-sm">Paiements sécurisés</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-sm">Application mobile</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-sm">Suivi en temps réel</span>
-                </div>
-              </div>
-              <Link href="/platform">
-                <button className="mt-6 bg-white text-blue-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2">
-                  Découvrir la plateforme
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </Link>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center md:text-right">
-              <div className="bg-white/10 backdrop-blur rounded-xl p-6 w-full">
-                <div className="text-4xl mb-2">📱</div>
-                <p className="text-white font-semibold mb-2">Installer l'application</p>
-                <p className="text-blue-100 text-xs mb-4">Accès rapide depuis votre écran d'accueil</p>
-                <div className="flex justify-center gap-3">
-                  <button
-                    onClick={installIOS}
-                    className="bg-black rounded-lg px-3 py-2 flex items-center gap-2 hover:bg-gray-900 transition active:scale-95"
-                  >
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.05 20.28c-.98.95-2.05.86-3.08.42-1.1-.47-2.11-.48-3.24 0-1.72.74-2.69.22-3.24-.42-2.2-2.58-2.88-6.18-1.47-8.56.84-1.42 2.22-2.28 3.66-2.28 1.44 0 2.34.72 3.24.72.9 0 2.28-.96 3.9-.72 1.44.24 2.52 1.08 3.18 2.28-2.52 1.56-2.16 4.92.42 6.36-.6 1.44-1.44 2.88-2.4 4.2zM12 5.4c-.48-1.2-1.44-2.04-2.52-2.16-1.08-.12-2.16.48-2.64 1.56-1.08.48-2.16 1.56-2.64 3.12.48-.12 1.08-.24 1.68-.24.96 0 1.92.24 2.64.72.72.48 1.08 1.2 1.2 2.04.12.84-.12 1.68-.48 2.4.96.48 2.04.72 3.12.72 1.08 0 2.16-.24 3.12-.72-.36-.72-.6-1.56-.48-2.4.12-.84.48-1.56 1.2-2.04.72-.48 1.68-.72 2.64-.72.6 0 1.2.12 1.68.24-.48-1.56-1.56-2.64-2.64-3.12-.48-1.08-1.56-1.68-2.64-1.56-1.08.12-2.04.96-2.52 2.16z" />
-                    </svg>
-                    <div className="text-left">
-                      <div className="text-white/60 text-[9px] leading-none">Installer sur</div>
-                      <div className="text-xs text-white font-semibold">iPhone / iPad</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={installAndroid}
-                    className="bg-black rounded-lg px-3 py-2 flex items-center gap-2 hover:bg-gray-900 transition active:scale-95"
-                  >
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.523 15.341A7.5 7.5 0 1 0 6.477 15.34l-1.19 2.109a.75.75 0 1 0 1.3.742L7.79 16.1a7.463 7.463 0 0 0 4.21 1.294 7.463 7.463 0 0 0 4.21-1.294l1.203 2.092a.75.75 0 1 0 1.3-.742l-1.19-2.109ZM9 10.5a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM4.5 12a7.5 7.5 0 1 1 15 0A7.5 7.5 0 0 1 4.5 12Z" />
-                    </svg>
-                    <div className="text-left">
-                      <div className="text-white/60 text-[9px] leading-none">Installer sur</div>
-                      <div className="text-xs text-white font-semibold">Android</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal instructions iOS */}
-            {showIOSModal && (
-              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSModal(false)}>
-                <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🍎</span>
-                      <h3 className="font-bold text-gray-900 text-lg">Installer sur iOS</h3>
-                    </div>
-                    <button onClick={() => setShowIOSModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-                  </div>
-                  <p className="text-sm text-gray-500 mb-5">Suivez ces étapes dans <strong>Safari</strong> pour ajouter l'application à votre écran d'accueil :</p>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">1</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Ouvrir dans Safari</p>
-                        <p className="text-xs text-gray-500">Assurez-vous d'utiliser le navigateur Safari sur votre iPhone ou iPad</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">2</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Appuyer sur Partager</p>
-                        <p className="text-xs text-gray-500">Touchez l'icône <strong>⎋ Partager</strong> en bas de l'écran (ou en haut sur iPad)</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">3</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">"Sur l'écran d'accueil"</p>
-                        <p className="text-xs text-gray-500">Faites défiler et sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong></p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">✓</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Confirmer</p>
-                        <p className="text-xs text-gray-500">Appuyez sur <strong>Ajouter</strong> en haut à droite</p>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowIOSModal(false)}
-                    className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
-                  >
-                    J'ai compris
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Modal instructions Android */}
-            {showAndroidModal && (
-              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowAndroidModal(false)}>
-                <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🤖</span>
-                      <h3 className="font-bold text-gray-900 text-lg">Installer sur Android</h3>
-                    </div>
-                    <button onClick={() => setShowAndroidModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-                  </div>
-                  <p className="text-sm text-gray-500 mb-5">Suivez ces étapes dans <strong>Chrome</strong> pour ajouter l'application à votre écran d'accueil :</p>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">1</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Ouvrir dans Chrome</p>
-                        <p className="text-xs text-gray-500">Assurez-vous d'utiliser le navigateur Chrome sur votre appareil Android</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">2</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Appuyer sur le menu ⋮</p>
-                        <p className="text-xs text-gray-500">Touchez les <strong>trois points ⋮</strong> en haut à droite de Chrome</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-100 text-green-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">3</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">"Ajouter à l'écran d'accueil"</p>
-                        <p className="text-xs text-gray-500">Sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong> dans le menu</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 text-blue-700 rounded-full w-7 h-7 flex items-center justify-center font-bold text-sm shrink-0">✓</div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Confirmer</p>
-                        <p className="text-xs text-gray-500">Appuyez sur <strong>Ajouter</strong> pour installer l'application</p>
-                      </div>
-                    </div>
-                  </div>
-                  {deferredPrompt && (
-                    <button
-                      onClick={doInstallAndroid}
-                      className="w-full mt-4 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition"
-                    >
-                      Installer maintenant
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowAndroidModal(false)}
-                    className="w-full mt-3 bg-gray-100 text-gray-200 py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
-                  >
-                    J'ai compris
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Témoignages */}
       <div className="container mx-auto px-4 mt-10 mb-10">
         <div className="text-center mb-10">
