@@ -228,9 +228,9 @@ export default function LoginPage() {
               {/* Register link */}
               <div className="mt-6 text-center">
                 <p className="text-gray-900">
-                  Je n'ai pas encore de compte ?{" "}
+                  Pas encore de compte ?{" "}
                   <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
-                    Je m'inscription
+                    S'inscrire
                   </Link>
                 </p>
               </div>
