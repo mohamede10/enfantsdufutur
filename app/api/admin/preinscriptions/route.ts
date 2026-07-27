@@ -604,43 +604,75 @@ export async function DELETE(request: NextRequest) {
           SELECT utilisateur_id FROM eleves WHERE id = $1
         `, [eleveId]);
 
-        if (eleveInfo.rows.length > 0 && eleveInfo.rows[0].utilisateur_id) {
-          await query(`DELETE FROM sessions WHERE utilisateur_id = $1`, [eleveInfo.rows[0].utilisateur_id]);
-          await query(`DELETE FROM utilisateurs WHERE id = $1`, [eleveInfo.rows[0].utilisateur_id]);
+        // ⭐ NOUVEAU : Supprimer d'abord les réinscriptions et leurs dépendances
+        if (eleveInfo.rows.length > 0) {
+          const utilisateurId = eleveInfo.rows[0].utilisateur_id;
+          
+          // 1. Supprimer les échéances de paiement liées aux réinscriptions
+          await query(`
+            DELETE FROM echeances_paiement 
+            WHERE reinscription_id IN (
+              SELECT id FROM reinscriptions WHERE eleve_id = $1
+            )
+          `, [eleveId]);
+          
+          // 2. Supprimer les réinscriptions de l'élève
+          await query(`DELETE FROM reinscriptions WHERE eleve_id = $1`, [eleveId]);
+          
+          // 3. Supprimer les échéances de paiement liées à la pré-inscription
+          await query(`DELETE FROM echeances_paiement WHERE preinscription_id = $1`, [id]);
+          
+          // 4. Supprimer les paiements liés à l'élève
+          await query(`DELETE FROM paiements WHERE eleve_id = $1`, [eleveId]);
+          
+          // 5. Supprimer les sessions de l'utilisateur
+          await query(`DELETE FROM sessions WHERE utilisateur_id = $1`, [utilisateurId]);
+          
+          // 6. Supprimer les dépendances de l'élève
+          await query(`DELETE FROM presences WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM notes WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM soumissions_devoirs WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM emprunts_bibliotheque WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM reservations_cantine WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM transactions_cantine WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM inscriptions_transport WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM inscriptions_cantine WHERE eleve_id = $1`, [eleveId]);
+          await query(`DELETE FROM ventes_librairie WHERE eleve_id = $1`, [eleveId]);
+          
+          // 7. Supprimer le lien parent-élève
+          await query(`DELETE FROM lien_parent_eleve WHERE eleve_id = $1`, [eleveId]);
+          
+          // 8. Supprimer l'inscription
+          await query(`DELETE FROM inscriptions WHERE eleve_id = $1`, [eleveId]);
+          
+          // 9. Supprimer l'élève
+          await query(`DELETE FROM eleves WHERE id = $1`, [eleveId]);
+          
+          // 10. Enfin, supprimer l'utilisateur
+          await query(`DELETE FROM utilisateurs WHERE id = $1`, [utilisateurId]);
+          
+          console.log(`✅ Élève ${eleveId} et utilisateur ${utilisateurId} supprimés`);
         }
-
-        await query(`DELETE FROM lien_parent_eleve WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM paiements WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM presences WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM notes WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM inscriptions WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM soumissions_devoirs WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM emprunts_bibliotheque WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM reservations_cantine WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM transactions_cantine WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM inscriptions_transport WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM inscriptions_cantine WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM ventes_librairie WHERE eleve_id = $1`, [eleveId]);
-        await query(`DELETE FROM eleves WHERE id = $1`, [eleveId]);
-
-        console.log(`✅ Élève ${eleveId} supprimé`);
       }
 
-      await query(`DELETE FROM paiements WHERE preinscription_id = $1`, [id]);
+      // ⭐ Supprimer les échéances de paiement (au cas où)
       await query(`DELETE FROM echeances_paiement WHERE preinscription_id = $1`, [id]);
-      await query(`DELETE FROM inscriptions WHERE preinscription_id = $1`, [id]);
+      
+      // Supprimer les autres dépendances de la pré-inscription
+      await query(`DELETE FROM paiements WHERE preinscription_id = $1`, [id]);
       await query(`DELETE FROM commandes_fournitures WHERE preinscription_id = $1`, [id]);
       await query(`DELETE FROM preinscription_transport WHERE preinscription_id = $1`, [id]);
       await query(`DELETE FROM preinscription_cantine WHERE preinscription_id = $1`, [id]);
+      await query(`DELETE FROM inscriptions WHERE preinscription_id = $1`, [id]);
+      
+      // Supprimer la pré-inscription
       await query(`DELETE FROM preinscriptions WHERE id = $1`, [id]);
 
       await query('COMMIT');
 
       return NextResponse.json({
         success: true,
-        message: preinscription.statut === 'valide'
-          ? "Pré-inscription et élève associé supprimés avec succès"
-          : "Pré-inscription supprimée avec succès"
+        message: "Pré-inscription supprimée avec succès"
       });
     } catch (error) {
       await query('ROLLBACK');
