@@ -403,7 +403,7 @@ export default function PaiementLibreModal({
                 </div>
               )}
 
-              {/* ⭐ MESSAGE DE FINALISATION */}
+              {/* MESSAGE DE FINALISATION */}
               {restant === 0 && (
                 <div className="mt-6 bg-green-50 p-4 rounded-lg text-center border-2 border-green-200">
                   <CheckCircle className="w-10 h-10 text-green-600 mx-auto mb-2" />
