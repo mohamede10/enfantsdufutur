@@ -91,7 +91,7 @@ export default function NotesDirecteurPage() {
     setSaving(true);
     setMessage({ type: "", text: "" });
 
-    // Filter out rows where 'valeur' is empty (don't save empty notes)
+    // Filter out rows where 'value' is empty (don't save empty notes)
     const notesToSave = Object.values(notesForm).filter(n => n.valeur !== "" && n.valeur !== null);
 
     try {
