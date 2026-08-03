@@ -26,6 +26,9 @@ const routeRoles: Record<string, string[]> = {
   "/dashboard/enseignant": ["ENSEIGNANT"],
   "/enseignant": ["ENSEIGNANT"],
 
+  "/dashboard/directeur_etudes": ["DIRECTEUR_ETUDES"],
+  "/directeur_etudes": ["DIRECTEUR_ETUDES"],
+
   // Routes génériques (toujours en dernier)
   "/dashboard/admin": ["SUPER_ADMIN", "COMPTABLE"],
   "/admin": ["SUPER_ADMIN", "COMPTABLE"],
@@ -79,5 +82,6 @@ export const config = {
     "/parent/:path*",
     "/eleve/:path*",
     "/enseignant/:path*",
+    "/directeur_etudes/:path*",
   ],
 };

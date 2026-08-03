@@ -76,6 +76,8 @@ export default function BibliothequeAdminPage() {
     livre_id: "", eleve_id: "", date_retour_prevue: ""
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [eleveSearchOpen, setEleveSearchOpen] = useState(false);
+  const [eleveSearchTerm, setEleveSearchTerm] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
@@ -227,6 +229,15 @@ export default function BibliothequeAdminPage() {
     e.livre_titre.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.eleve_nom.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const filteredElevesForSelect = eleves.filter(e => {
+    const term = eleveSearchTerm.toLowerCase();
+    const nom = (e.enfant_nom || e.nom || "").toLowerCase();
+    const prenom = (e.enfant_prenom || e.prenom || "").toLowerCase();
+    const matricule = (e.matricule || "").toLowerCase();
+    const dossier = (e.numero_dossier || "").toLowerCase();
+    return nom.includes(term) || prenom.includes(term) || matricule.includes(term) || dossier.includes(term);
+  });
 
   const stats = {
     totalLivres: livres.reduce((acc, l) => acc + l.quantite, 0),
@@ -539,14 +550,67 @@ export default function BibliothequeAdminPage() {
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="relative">
                 <label className="block text-sm mb-1">Élève</label>
-                <select required value={empruntData.eleve_id} onChange={e => setEmpruntData({ ...empruntData, eleve_id: e.target.value })} className="w-full border p-2 rounded-lg">
-                  <option value="">Sélectionner un élève</option>
-                  {eleves.map(e => (
-                    <option key={e.id} value={e.id}>{e.prenom} {e.nom} ({e.matricule})</option>
-                  ))}
-                </select>
+                <div 
+                  className="w-full border p-2 rounded-lg cursor-pointer flex justify-between items-center bg-white"
+                  onClick={() => setEleveSearchOpen(!eleveSearchOpen)}
+                >
+                  {empruntData.eleve_id ? (
+                    (() => {
+                      const selected = eleves.find(e => e.id.toString() === empruntData.eleve_id.toString());
+                      if (!selected) return "Sélectionner un élève";
+                      return `${selected.enfant_prenom || selected.prenom || ''} ${selected.enfant_nom || selected.nom || ''} - Mat: ${selected.matricule || 'N/A'} - Dos: ${selected.numero_dossier || 'N/A'}`;
+                    })()
+                  ) : (
+                    <span className="text-gray-500">Sélectionner un élève</span>
+                  )}
+                </div>
+                
+                {eleveSearchOpen && (
+                  <>
+                    <div className="fixed inset-0 z-[5]" onClick={() => setEleveSearchOpen(false)}></div>
+                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 flex flex-col">
+                      <div className="p-2 border-b sticky top-0 bg-white">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="text"
+                            className="w-full pl-8 pr-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Rechercher par nom, matricule, dossier..."
+                            value={eleveSearchTerm}
+                            onChange={(e) => setEleveSearchTerm(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      <div className="overflow-y-auto flex-1">
+                        {filteredElevesForSelect.length > 0 ? (
+                          filteredElevesForSelect.map(e => (
+                            <div
+                              key={e.id}
+                              className={`px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm ${empruntData.eleve_id === e.id.toString() ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
+                              onClick={() => {
+                                setEmpruntData({ ...empruntData, eleve_id: e.id.toString() });
+                                setEleveSearchOpen(false);
+                                setEleveSearchTerm("");
+                              }}
+                            >
+                              <div className="font-medium">{e.enfant_prenom || e.prenom} {e.enfant_nom || e.nom}</div>
+                              <div className="text-xs text-gray-500 flex gap-2">
+                                <span>Mat: {e.matricule || 'N/A'}</span>
+                                {e.numero_dossier && <span>• Dos: {e.numero_dossier}</span>}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-3 text-sm text-center text-gray-500">Aucun élève trouvé</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <div>
                 <label className="block text-sm mb-1">Date de retour prévue</label>

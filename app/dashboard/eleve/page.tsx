@@ -210,6 +210,12 @@ export default function EleveDashboard() {
             color: "purple",
           },
           {
+            href: "/dashboard/eleve/cours",
+            icon: BookOpen,
+            label: "Mes cours",
+            color: "blue",
+          },
+          {
             href: "/dashboard/eleve/quiz",
             icon: Brain,
             label: "Espace révision",

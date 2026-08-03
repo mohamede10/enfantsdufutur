@@ -131,61 +131,7 @@ export default function EnseignantClassesPage() {
                 <span className="font-medium text-gray-900">{classe.effectif}</span>
               </div>
 
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm">Heures/semaine</span>
-                </div>
-                <span className="font-medium text-gray-900">{classe.heuresSemaine}h</span>
-              </div>
 
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm">Présence</span>
-                </div>
-                <span className={`font-medium ${
-                  (classe.presence || 0) >= 90 ? 'text-green-600' : 
-                  (classe.presence || 0) >= 75 ? 'text-orange-500' : 'text-red-500'
-                }`}>
-                  {classe.presence || 0}%
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <GraduationCap className="w-4 h-4" />
-                  <span className="text-sm">Moyenne</span>
-                </div>
-                <span className={`font-medium ${
-                  (classe.moyenne || 0) >= 14 ? 'text-green-600' : 
-                  (classe.moyenne || 0) >= 10 ? 'text-orange-500' : 'text-red-500'
-                }`}>
-                  {classe.moyenne || 0}/20
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-2 border-t border-gray-100">
-                <Link 
-                  href={`/dashboard/enseignant/classes/${classe.id}/presences`}
-                  className="flex-1 text-center text-xs bg-blue-50 text-blue-600 px-2 py-1.5 rounded-lg hover:bg-blue-100 transition font-medium"
-                >
-                  Présences
-                </Link>
-                <Link 
-                  href={`/dashboard/enseignant/classes/${classe.id}/devoirs`}
-                  className="flex-1 text-center text-xs bg-orange-50 text-orange-600 px-2 py-1.5 rounded-lg hover:bg-orange-100 transition font-medium"
-                >
-                  Devoirs
-                </Link>
-                <Link 
-                  href={`/dashboard/enseignant/classes/${classe.id}/notes`}
-                  className="flex-1 text-center text-xs bg-green-50 text-green-600 px-2 py-1.5 rounded-lg hover:bg-green-100 transition font-medium"
-                >
-                  Notes
-                </Link>
-              </div>
             </div>
           </div>
         ))}

@@ -9,7 +9,7 @@ import {
   User, Users, Briefcase, CreditCard,
   Calendar, Phone, Mail, MapPin,
   CheckCircle, XCircle, Clock, Award,
-  TrendingUp, Download, Filter, Plus as PlusIcon, X, GraduationCap 
+  TrendingUp, Download, Filter, Plus as PlusIcon, X, GraduationCap, AlertTriangle
 } from "lucide-react";
 
 interface ClasseAssignee {
@@ -79,6 +79,9 @@ export default function GestionPersonnelPage() {
   const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [personnelToDelete, setPersonnelToDelete] = useState<Personnel | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<number[]>([]);
@@ -127,7 +130,7 @@ export default function GestionPersonnelPage() {
   // ⭐ Fonction pour récupérer les classes assignées d'un enseignant depuis la BD
   const fetchAssignedClasses = async (personnelId: number): Promise<ClasseAssignee[]> => {
     try {
-      const response = await fetch(`/api/admin/enseignants/${personnelId}/classes`);
+      const response = await fetch(`/api/admin/enseignants/${personnelId}/classes/`);
       if (response.ok) {
         const data = await response.json();
         return data;
@@ -189,20 +192,30 @@ export default function GestionPersonnelPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Voulez-vous vraiment supprimer cet agent ? Cette action est irréversible.")) {
-      try {
-        const res = await fetch(`/api/admin/personnel?id=${id}`, { method: "DELETE" });
-        if (res.ok) {
-          showNotification("Agent supprimé avec succès ✅", "success");
-          fetchPersonnel();
-        } else {
-          showNotification("Erreur lors de la suppression ❌", "error");
-        }
-      } catch (e) { 
-        console.error(e);
-        showNotification("Erreur lors de la suppression ❌", "error");
+  const openDeleteModal = (agent: Personnel) => {
+    setPersonnelToDelete(agent);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!personnelToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/personnel?id=${personnelToDelete.id}`, { method: "DELETE" });
+      if (res.ok) {
+        showNotification("Agent supprimé avec succès ✅", "success");
+        fetchPersonnel();
+        setShowDeleteModal(false);
+        setPersonnelToDelete(null);
+      } else {
+        const data = await res.json();
+        showNotification(data.error || "Erreur lors de la suppression ❌", "error");
       }
+    } catch (e) { 
+      console.error(e);
+      showNotification("Erreur lors de la suppression ❌", "error");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -284,7 +297,7 @@ export default function GestionPersonnelPage() {
     if (!currentPersonnelId) return;
 
     try {
-      const response = await fetch(`/api/admin/enseignants/${currentPersonnelId}/assignations`, {
+      const response = await fetch(`/api/admin/enseignants/${currentPersonnelId}/assignations/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -329,7 +342,7 @@ export default function GestionPersonnelPage() {
 
     try {
       const response = await fetch(
-        `/api/admin/enseignants/${enseignantId}/assignations?classeId=${classeId}`,
+        `/api/admin/enseignants/${enseignantId}/assignations/?classeId=${classeId}`,
         { method: "DELETE" }
       );
 
@@ -612,7 +625,7 @@ export default function GestionPersonnelPage() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDelete(agent.id)} 
+                        onClick={() => openDeleteModal(agent)} 
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition" 
                         title="Supprimer"
                       >
@@ -1084,6 +1097,82 @@ export default function GestionPersonnelPage() {
               <button onClick={handleAssignClasses} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />
                 Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ MODALE DE CONFIRMATION DE SUPPRESSION */}
+      {showDeleteModal && personnelToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b bg-red-50 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-bold text-red-900">Confirmer la suppression</h2>
+              </div>
+              <button 
+                onClick={() => {
+                  if (!deleting) {
+                    setShowDeleteModal(false);
+                    setPersonnelToDelete(null);
+                  }
+                }}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700 text-sm">
+                Êtes-vous sûr de vouloir supprimer cet agent ?
+              </p>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">
+                  {(personnelToDelete.prenom?.[0] || '?').toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">{personnelToDelete.prenom} {personnelToDelete.nom}</p>
+                  <p className="text-xs text-gray-500">{personnelToDelete.matricule} • {getPosteLabel(personnelToDelete.type)}</p>
+                </div>
+              </div>
+              <p className="text-xs text-red-600 font-medium bg-red-50 p-3 rounded-lg flex items-center gap-2 border border-red-100">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                Cette action désassociera ses cours et supprimera son compte définitivement.
+              </p>
+            </div>
+
+            <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setPersonnelToDelete(null);
+                }}
+                disabled={deleting}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-white font-medium transition disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 font-medium transition flex items-center gap-2 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Supprimer
+                  </>
+                )}
               </button>
             </div>
           </div>

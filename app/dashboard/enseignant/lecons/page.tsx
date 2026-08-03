@@ -1,38 +1,291 @@
 // app/dashboard/enseignant/lecons/page.tsx
 "use client";
 
-import { useState } from "react";
-import { Plus, Edit, Trash2, Eye, Download, Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Edit, Trash2, Eye, Download, Search, Filter, Loader2, Video, FileText } from "lucide-react";
 import Link from "next/link";
+
+interface Lecon {
+  id: number;
+  titre: string;
+  description: string;
+  fichier: string;
+  video_url: string;
+  matiere: string;
+  classe: string;
+  date: string;
+  vues: number;
+}
+
+interface Enseignement {
+  id: number;
+  classe: string;
+  matiere: string;
+}
 
 export default function EnseignantLeconsPage() {
   const [showForm, setShowForm] = useState(false);
-  const [lecons, setLecons] = useState([
-    { id: 1, titre: "Les équations du premier degré", matiere: "Mathématiques", classe: "5ème A", date: "2025-05-20", fichier: "equations.pdf", vues: 24 },
-    { id: 2, titre: "Les fractions", matiere: "Mathématiques", classe: "6ème B", date: "2025-05-18", fichier: "fractions.pdf", vues: 18 },
-    { id: 3, titre: "Théorème de Pythagore", matiere: "Mathématiques", classe: "4ème A", date: "2025-05-15", fichier: "pythagore.pdf", vues: 22 },
-  ]);
+  const [lecons, setLecons] = useState<Lecon[]>([]);
+  const [enseignements, setEnseignements] = useState<Enseignement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Form state
+  const [titre, setTitre] = useState("");
+  const [description, setDescription] = useState("");
+  const [enseignementId, setEnseignementId] = useState("");
+  const [fichier, setFichier] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [leconsRes, enseignementsRes] = await Promise.all([
+        fetch("/api/enseignant/lecons"),
+        fetch("/api/enseignant/enseignements")
+      ]);
+
+      if (!leconsRes.ok || !enseignementsRes.ok) {
+        throw new Error("Erreur lors du chargement des données");
+      }
+
+      const leconsData = await leconsRes.json();
+      const enseignementsData = await enseignementsRes.json();
+      
+      setLecons(leconsData);
+      setEnseignements(enseignementsData);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Erreur serveur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!titre || !enseignementId) {
+      alert("Veuillez remplir les champs obligatoires");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("enseignement_id", enseignementId);
+      formData.append("titre", titre);
+      formData.append("description", description);
+      if (videoUrl) formData.append("video_url", videoUrl);
+      if (fichier) formData.append("fichier", fichier);
+
+      const response = await fetch("/api/enseignant/lecons", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la création");
+      }
+
+      // Reset form
+      setTitre("");
+      setDescription("");
+      setEnseignementId("");
+      setFichier(null);
+      setVideoUrl("");
+      setShowForm(false);
+      
+      // Refresh list
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <span className="ml-2 text-gray-600">Chargement...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center">
+        <p className="font-medium">❌ {error}</p>
+        <button 
+          onClick={fetchData}
+          className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center"><div><h1 className="text-2xl font-bold">Mes leçons</h1><p className="text-gray-900">Gérez vos cours et supports pédagogiques</p></div>
-        <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Plus className="w-4 h-4" />Nouvelle leçon</button></div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Mes leçons</h1>
+          <p className="text-gray-900">Gérez vos cours et supports pédagogiques</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition">
+          <Plus className="w-4 h-4" /> Nouvelle leçon
+        </button>
+      </div>
 
       {showForm && (
-        <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="text-lg font-semibold mb-4">Ajouter une leçon</h3>
-          <div className="grid md:grid-cols-2 gap-4"><div><label className="block text-sm mb-1">Titre *</label><input type="text" className="w-full px-3 py-2 border rounded-lg" /></div>
-            <div><label className="block text-sm mb-1">Classe *</label><select className="w-full px-3 py-2 border rounded-lg"><option>5ème A</option><option>4ème A</option><option>6ème B</option></select></div>
-            <div><label className="block text-sm mb-1">Fichier PDF</label><input type="file" accept=".pdf" className="w-full" /></div>
-            <div><label className="block text-sm mb-1">Lien vidéo (optionnel)</label><input type="url" placeholder="https://..." className="w-full px-3 py-2 border rounded-lg" /></div>
-            <div className="md:col-span-2"><label className="block text-sm mb-1">Description</label><textarea rows={3} className="w-full px-3 py-2 border rounded-lg"></textarea></div></div>
-          <div className="flex justify-end gap-3 mt-4"><button onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg">Annuler</button><button className="px-4 py-2 bg-blue-600 text-white rounded-lg">Publier</button></div>
-        </div>
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h3 className="text-lg font-semibold mb-4">Ajouter une leçon</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Titre *</label>
+              <input 
+                type="text" 
+                value={titre}
+                onChange={(e) => setTitre(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Classe / Matière *</label>
+              <select 
+                value={enseignementId}
+                onChange={(e) => setEnseignementId(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">Sélectionnez une classe</option>
+                {enseignements.map(e => (
+                  <option key={e.id} value={e.id}>{e.classe} - {e.matiere}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Fichier (PDF, Image, etc.)</label>
+              <input 
+                type="file" 
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={(e) => setFichier(e.target.files?.[0] || null)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Lien vidéo YouTube (optionnel)</label>
+              <input 
+                type="url" 
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://youtube.com/..." 
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1 text-gray-700">Description</label>
+              <textarea 
+                rows={3} 
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              ></textarea>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium">Annuler</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2">
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Publier
+            </button>
+          </div>
+        </form>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b flex justify-between items-center"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900" /><input type="text" placeholder="Rechercher..." className="pl-9 pr-4 py-1.5 border rounded-lg text-sm" /></div></div>
-        <div className="overflow-x-auto"><table className="w-full"><thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs">Titre</th><th className="px-6 py-3 text-left text-xs">Classe</th><th className="px-6 py-3 text-left text-xs">Date</th><th className="px-6 py-3 text-left text-xs">Vues</th><th className="px-6 py-3 text-left text-xs">Actions</th></tr></thead>
-          <tbody>{lecons.map((l) => (<tr key={l.id} className="border-t hover:bg-gray-50"><td className="px-6 py-4 font-medium">{l.titre}</td><td className="px-6 py-4">{l.classe}</td><td className="px-6 py-4">{l.date}</td><td className="px-6 py-4">{l.vues}</td><td className="px-6 py-4 flex gap-2"><button className="text-blue-600"><Eye className="w-4 h-4" /></button><button className="text-green-600"><Edit className="w-4 h-4" /></button><button className="text-red-600"><Trash2 className="w-4 h-4" /></button></td></tr>))}</tbody></table></div>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input type="text" placeholder="Rechercher une leçon..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          {lecons.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+              <p>Aucune leçon publiée pour le moment.</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-white border-b">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Leçon</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classe</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Fichier</th>
+                  {/*<th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>*/}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {lecons.map((l) => (
+                  <tr key={l.id} className="hover:bg-blue-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{l.titre}</div>
+                      {l.description && <div className="text-sm text-gray-500 truncate max-w-xs">{l.description}</div>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-1">
+                        {l.classe}
+                      </span>
+                      <div className="text-sm text-gray-600">{l.matiere}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {l.date || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex justify-center gap-3">
+                        {l.fichier ? (
+                          <a href={l.fichier} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600" title="Voir le fichier">
+                            <FileText className="w-5 h-5" />
+                          </a>
+                        ) : <div className="w-5" />}
+                        {l.video_url ? (
+                          <a href={l.video_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-600" title="Voir la vidéo">
+                            <Video className="w-5 h-5" />
+                          </a>
+                        ) : <div className="w-5" />}
+                      </div>
+                    </td>
+                    {/*
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex justify-end gap-2">
+                        <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Modifier">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Supprimer">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                    */}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );

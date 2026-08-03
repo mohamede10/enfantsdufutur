@@ -11,9 +11,9 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const userEmail = session.user?.email;
-    if (!userEmail) {
-      return NextResponse.json({ error: "Email non trouvé" }, { status: 400 });
+    const userId = (session.user as any).id;
+    if (!userId) {
+      return NextResponse.json({ error: "ID utilisateur non trouvé" }, { status: 400 });
     }
 
     // Récupérer l'ID du personnel (enseignant)
@@ -21,8 +21,8 @@ export async function GET() {
       SELECT p.id 
       FROM personnels p
       JOIN utilisateurs u ON p.utilisateur_id = u.id
-      WHERE u.email = $1 AND p.type = 'enseignant'
-    `, [userEmail]);
+      WHERE u.id = $1 AND LOWER(p.type) = 'enseignant'
+    `, [userId]);
 
     if (personnelResult.rows.length === 0) {
       return NextResponse.json({ error: "Enseignant non trouvé" }, { status: 404 });

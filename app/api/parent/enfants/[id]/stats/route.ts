@@ -106,19 +106,43 @@ export async function GET(
     // 5. TOTAL DES FRAIS
     const totalFraisGeneral = fraisBase + transportTotal + cantineTotal + fournituresTotal;
 
-    // 6. PAIEMENTS EFFECTUÉS
+    // 6. PAIEMENTS EFFECTUÉS - ⭐ MODIFICATION IMPORTANTE
+    // Inclure les paiements liés à l'élève OU à sa pré-inscription
     const paiementsDirects = await query(`
       SELECT COALESCE(SUM(montant), 0) as total_paye_direct
       FROM paiements
-      WHERE eleve_id = $1 AND statut = 'valide'
+      WHERE (
+        eleve_id = $1 
+        OR preinscription_id IN (
+          SELECT preinscription_id 
+          FROM inscriptions 
+          WHERE eleve_id = $1
+        )
+        OR reinscription_id IN (
+          SELECT id 
+          FROM reinscriptions 
+          WHERE eleve_id = $1
+        )
+      )
+      AND statut = 'valide'
     `, [eleveId]);
 
     const echeancesPayees = await query(`
       SELECT COALESCE(SUM(e.montant), 0) as total_paye_echeances
       FROM echeances_paiement e
-      JOIN preinscriptions p ON e.preinscription_id = p.id
-      JOIN inscriptions i ON i.preinscription_id = p.id
-      WHERE i.eleve_id = $1 AND e.statut = 'paye'
+      WHERE (
+        e.preinscription_id IN (
+          SELECT preinscription_id 
+          FROM inscriptions 
+          WHERE eleve_id = $1
+        )
+        OR e.reinscription_id IN (
+          SELECT id 
+          FROM reinscriptions 
+          WHERE eleve_id = $1
+        )
+      )
+      AND e.statut = 'paye'
     `, [eleveId]);
 
     const totalPayeDirect = Number(paiementsDirects.rows[0]?.total_paye_direct) || 0;
@@ -135,6 +159,8 @@ export async function GET(
       cantineTotal,
       fournituresTotal,
       totalFraisGeneral,
+      totalPayeDirect,
+      totalPayeEcheances,
       totalPaye,
       montantAPayer,
       soldeRestant

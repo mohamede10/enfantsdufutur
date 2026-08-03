@@ -51,37 +51,7 @@ export async function GET() {
     `);
     const totalDepenses = Number(depensesResult.rows[0]?.total_depenses) || 0;
 
-    // ⭐⭐⭐ 3. TOTAL À PAYER (TOUTES LES PRÉ-INSCRIPTIONS) ⭐⭐⭐
-    const totalAPayerResult = await query(`
-      SELECT COALESCE(SUM(montant_total_plan), 0) as total_a_payer
-      FROM preinscriptions
-      WHERE statut IN ('en_attente', 'valide')
-    `);
-    const totalAPayer = Number(totalAPayerResult.rows[0]?.total_a_payer) || 0;
-
-    // ⭐⭐⭐ 4. TOTAL PAYÉ (par pré-inscription) ⭐⭐⭐
-    const totalPayeResult = await query(`
-      SELECT COALESCE(SUM(montant), 0) as total_paye
-      FROM paiements
-      WHERE statut IN ('valide', 'paye')
-        AND preinscription_id IS NOT NULL
-    `);
-    const totalPaye = Number(totalPayeResult.rows[0]?.total_paye) || 0;
-
-    // ⭐⭐⭐ 5. SOLDE RESTANT = TOTAL À PAYER - TOTAL PAYÉ ⭐⭐⭐
-    const soldeRestant = Math.max(0, totalAPayer - totalPaye);
-
-    // ⭐⭐⭐ 6. TAUX DE RECOUVREMENT ⭐⭐⭐
-    const tauxRecouvrement = totalAPayer > 0 ? Math.round((totalPaye / totalAPayer) * 100) : 0;
-
-    // ⭐⭐⭐ 7. DÉTAIL PAR CATÉGORIE ⭐⭐⭐
-    const inscriptionResult = await query(`
-      SELECT COALESCE(SUM(montant_total_plan), 0) as total
-      FROM preinscriptions
-      WHERE statut IN ('en_attente', 'valide')
-    `);
-    const totalInscription = Number(inscriptionResult.rows[0]?.total) || 0;
-
+    // ⭐⭐⭐ SERVICES OPTIONNELS ⭐⭐⭐
     const transportResult = await query(`
       SELECT COALESCE(SUM(pt.prix), 0) as total_transport
       FROM preinscriptions p
@@ -105,6 +75,38 @@ export async function GET() {
       WHERE p.statut IN ('en_attente', 'valide')
     `);
     const totalFournitures = Number(fournituresResult.rows[0]?.total_fournitures) || 0;
+
+    // ⭐⭐⭐ 3. TOTAL À PAYER (TOUTES LES PRÉ-INSCRIPTIONS + SERVICES) ⭐⭐⭐
+    const totalAPayerResult = await query(`
+      SELECT COALESCE(SUM(montant_total_plan), 0) as total_a_payer
+      FROM preinscriptions
+      WHERE statut IN ('en_attente', 'valide')
+    `);
+    const totalAPayerBase = Number(totalAPayerResult.rows[0]?.total_a_payer) || 0;
+    const totalAPayer = totalAPayerBase + totalTransport + totalCantine + totalFournitures;
+
+    // ⭐⭐⭐ 4. TOTAL PAYÉ (par pré-inscription) ⭐⭐⭐
+    const totalPayeResult = await query(`
+      SELECT COALESCE(SUM(montant), 0) as total_paye
+      FROM paiements
+      WHERE statut IN ('valide', 'paye')
+        AND preinscription_id IS NOT NULL
+    `);
+    const totalPaye = Number(totalPayeResult.rows[0]?.total_paye) || 0;
+
+    // ⭐⭐⭐ 5. SOLDE RESTANT = TOTAL À PAYER - TOTAL PAYÉ ⭐⭐⭐
+    const soldeRestant = Math.max(0, totalAPayer - totalPaye);
+
+    // ⭐⭐⭐ 6. TAUX DE RECOUVREMENT ⭐⭐⭐
+    const tauxRecouvrement = totalAPayer > 0 ? Math.round((totalPaye / totalAPayer) * 100) : 0;
+
+    // ⭐⭐⭐ 7. DÉTAIL PAR CATÉGORIE ⭐⭐⭐
+    const inscriptionResult = await query(`
+      SELECT COALESCE(SUM(montant_total_plan), 0) as total
+      FROM preinscriptions
+      WHERE statut IN ('en_attente', 'valide')
+    `);
+    const totalInscription = Number(inscriptionResult.rows[0]?.total) || 0;
 
     const scolariteResult = await query(`
       SELECT COALESCE(SUM(f.montant), 0) as total_scolarite

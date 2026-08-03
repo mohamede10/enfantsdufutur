@@ -62,6 +62,11 @@ const menuItems = {
     { name: "Annonces", href: "/dashboard/directeur/annonces", icon: Bell },
     { name: "Messages", href: "/dashboard/directeur/messages", icon: MessageSquare },
   ],
+  DIRECTEUR_ETUDES: [
+    { name: "Dashboard", href: "/dashboard/directeur_etudes", icon: LayoutDashboard },
+    { name: "Notes", href: "/dashboard/directeur_etudes/notes", icon: FileText },
+    { name: "Bulletins", href: "/dashboard/directeur_etudes/bulletins", icon: FileText },
+  ],
   COMPTABLE: [
     { name: "Dashboard", href: "/dashboard/comptable", icon: LayoutDashboard },
     { name: "Préinscriptions", href: "/dashboard/comptable/preinscriptions", icon: Users },
@@ -81,7 +86,7 @@ const menuItems = {
   ENSEIGNANT: [
     { name: "Dashboard", href: "/dashboard/enseignant", icon: LayoutDashboard },
     { name: "Classes", href: "/dashboard/enseignant/classes", icon: GraduationCap },
-    { name: "Élèves", href: "/dashboard/enseignant/eleves", icon: Users },
+    // { name: "Élèves", href: "/dashboard/enseignant/eleves", icon: Users },
     { name: "Leçons", href: "/dashboard/enseignant/lecons", icon: BookOpen },
     { name: "Devoirs", href: "/dashboard/enseignant/devoirs", icon: BookMarked },
     { name: "Évaluations", href: "/dashboard/enseignant/evaluations", icon: GraduationCap },
@@ -163,7 +168,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       "SUPER_ADMIN": menuItems.SUPER_ADMIN,
       "ADMIN": menuItems.SUPER_ADMIN,
       "DIRECTEUR_GENERAL": menuItems.DIRECTEUR,
-      "DIRECTEUR_ETUDES": menuItems.DIRECTEUR,
+      "DIRECTEUR_ETUDES": menuItems.DIRECTEUR_ETUDES,
       "COMPTABLE": menuItems.SUPER_ADMIN,
       "SECRETARIAT": menuItems.SUPER_ADMIN,
       "SURVEILLANT": menuItems.SUPER_ADMIN,

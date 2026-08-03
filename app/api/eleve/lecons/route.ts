@@ -31,16 +31,16 @@ export async function GET(req: NextRequest) {
         l.fichier_url,
         l.video_url,
         l.date_publication,
-        m.nom AS matiere,
-        m.id AS matiere_id,
+        COALESCE(m.nom, 'Général') AS matiere,
+        COALESCE(m.id, 0) AS matiere_id,
         CONCAT(u.prenom, ' ', u.nom) AS enseignant
       FROM public.lecons l
       JOIN public.enseignements en ON en.id = l.enseignement_id
-      JOIN public.matieres m ON m.id = en.matiere_id
+      LEFT JOIN public.matieres m ON m.id = en.matiere_id
       JOIN public.personnels p ON p.id = en.enseignant_id
       JOIN public.utilisateurs u ON u.id = p.utilisateur_id
       WHERE en.classe_id = $1
-      ORDER BY m.nom, l.date_publication DESC`,
+      ORDER BY matiere, l.date_publication DESC`,
       [classeId]
     );
 

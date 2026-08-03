@@ -174,14 +174,27 @@ export async function DELETE(request: NextRequest) {
     }
 
     const personnel = await query("SELECT utilisateur_id FROM personnels WHERE id = $1", [id]);
-    if (personnel.rows.length > 0) {
-      await query("DELETE FROM personnels WHERE id = $1", [id]);
-      await query("DELETE FROM utilisateurs WHERE id = $1", [personnel.rows[0].utilisateur_id]);
+    if (personnel.rows.length === 0) {
+      return NextResponse.json({ error: "Agent non trouvé" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    const utilisateurId = personnel.rows[0].utilisateur_id;
+
+    // 1. Nettoyer/délier les dépendances qui ont des contraintes de clé étrangère
+    try {
+      await query("UPDATE enseignements SET enseignant_id = NULL WHERE enseignant_id = $1", [id]);
+      await query("DELETE FROM paiements_salaires WHERE personnel_id = $1", [id]);
+    } catch (e) {
+      console.warn("Avertissement lors du nettoyage des dépendances personnel:", e);
+    }
+
+    // 2. Supprimer la fiche personnel puis l'utilisateur
+    await query("DELETE FROM personnels WHERE id = $1", [id]);
+    await query("DELETE FROM utilisateurs WHERE id = $1", [utilisateurId]);
+
+    return NextResponse.json({ success: true, message: "Personnel supprimé avec succès" });
+  } catch (error: any) {
     console.error("Erreur DELETE personnel:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Erreur lors de la suppression du personnel" }, { status: 500 });
   }
 }

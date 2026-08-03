@@ -405,7 +405,7 @@ export default function ParentDashboard() {
       </div>
 
       {/* STATISTIQUES GLOBALES */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mb-8">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex items-center gap-2 mb-1"><Users className="w-5 h-5" /><p className="text-sm opacity-90">Enfants inscrits</p></div>
           <p className="text-3xl font-bold">{statsGlobales.totalEnfants}</p>
@@ -425,7 +425,7 @@ export default function ParentDashboard() {
           <div className="flex items-center gap-2 mb-1 text-gray-900"><CreditCard className="w-5 h-5 text-green-600" /><p className="text-sm">Montant payé</p></div>
           <p className="text-lg font-bold text-green-600">{statsGlobales.totalPaye.toLocaleString()} GNF</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        {/*<div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-2 mb-1 text-gray-900"><Utensils className="w-5 h-5 text-orange-600" /><p className="text-sm">Cantine</p></div>
           <p className="text-lg font-bold text-orange-600">{statsGlobales.totalCantine.toLocaleString()} GNF</p>
         </div>
@@ -436,7 +436,7 @@ export default function ParentDashboard() {
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-2 mb-1 text-gray-900"><ShoppingCart className="w-5 h-5 text-purple-600" /><p className="text-sm">Fournitures</p></div>
           <p className="text-lg font-bold text-purple-600">{statsGlobales.totalFournitures.toLocaleString()} GNF</p>
-        </div>
+        </div>*/}
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-2 mb-1 text-gray-900"><CreditCard className="w-5 h-5 text-red-600" /><p className="text-sm">Solde restant</p></div>
           <p className="text-lg font-bold text-red-600">{statsGlobales.soldeRestant.toLocaleString()} GNF</p>
