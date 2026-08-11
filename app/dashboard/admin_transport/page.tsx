@@ -105,7 +105,7 @@ export default function AdminTransportDashboard() {
             Dashboard Transport
           </h1>
           <p className="text-gray-500 mt-1">
-            Bienvenue {session.user?.prenom} {session.user?.nom}
+            Bienvenue {(session?.user as any)?.prenom} {(session?.user as any)?.nom}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -261,7 +261,7 @@ export default function AdminTransportDashboard() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between py-2 border-b border-gray-50">
               <span className="text-gray-500">👤 Utilisateur</span>
-              <span className="font-medium text-gray-900">{session.user?.prenom} {session.user?.nom}</span>
+              <span className="font-medium text-gray-900">{(session?.user as any)?.prenom} {(session?.user as any)?.nom}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-50">
               <span className="text-gray-500">📧 Email</span>

@@ -1,3 +1,4 @@
+// app/api/directeur_etudes/bulletins/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -16,16 +17,15 @@ export async function GET(req: NextRequest) {
 
     if (action === "classes") {
       const res = await query(`
-        SELECT id, nom, niveau, annee_scolaire 
+        SELECT id, nom, niveau 
         FROM classes 
-        WHERE est_actif = true 
         ORDER BY niveau, nom
       `);
       return NextResponse.json(res.rows);
     } 
     
     if (action === "bulletins" && classeId) {
-      // 1. Fetch all students in the class
+      // 1. Récupérer tous les élèves de la classe
       const elevesRes = await query(`
         SELECT e.id, e.matricule, u.prenom, u.nom, u.photo_url
         FROM eleves e
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json([]);
       }
 
-      // 2. Fetch all notes for all students in the class
+      // 2. Récupérer toutes les notes des élèves de la classe
       const notesRes = await query(`
         SELECT 
           n.eleve_id,
@@ -46,32 +46,58 @@ export async function GET(req: NextRequest) {
           n.coefficient as note_coeff,
           COALESCE(m.nom, 'Général') AS matiere,
           COALESCE(m.coefficient, 1) AS coeff_matiere,
-          CONCAT(u.prenom, ' ', u.nom) AS enseignant
+          COALESCE(CONCAT(u.prenom, ' ', u.nom), 'Non assigné') AS enseignant,
+          n.note_sur
         FROM public.notes n
         JOIN public.enseignements en ON en.id = n.enseignement_id
         LEFT JOIN public.matieres m ON m.id = en.matiere_id
-        JOIN public.personnels p ON p.id = en.enseignant_id
-        JOIN public.utilisateurs u ON u.id = p.utilisateur_id
+        LEFT JOIN public.personnels p ON p.id = en.enseignant_id
+        LEFT JOIN public.utilisateurs u ON u.id = p.utilisateur_id
         WHERE en.classe_id = $1
       `, [classeId]);
 
-      // 3. Aggregate data by student
+      // 3. Calculer les statistiques de la classe
+      const statsRes = await query(`
+        WITH class_stats AS (
+          SELECT 
+            e.id as eleve_id,
+            AVG(n.valeur) as moyenne_eleve
+          FROM eleves e
+          JOIN notes n ON n.eleve_id = e.id
+          JOIN enseignements en ON en.id = n.enseignement_id
+          WHERE e.classe_id = $1
+          GROUP BY e.id
+        )
+        SELECT 
+          COUNT(DISTINCT cs.eleve_id) as effectif,
+          AVG(cs.moyenne_eleve) as moyenne_classe,
+          MAX(cs.moyenne_eleve) as meilleure_moyenne,
+          MIN(cs.moyenne_eleve) as plus_faible_moyenne
+        FROM class_stats cs
+      `, [classeId]);
+
+      const stats = statsRes.rows[0] || { effectif: 0, moyenne_classe: 0, meilleure_moyenne: 0, plus_faible_moyenne: 0 };
+
+      // 4. Agréger les données par élève
       const bulletins = elevesRes.rows.map(eleve => {
         const studentNotes = notesRes.rows.filter(n => n.eleve_id === eleve.id);
         
-        // Group by matiere
+        // Grouper par matière
         const matieres: Record<string, any> = {};
         for (const note of studentNotes) {
           if (!matieres[note.matiere]) {
             matieres[note.matiere] = {
               matiere: note.matiere,
               coefficient: note.coeff_matiere,
-              enseignant: note.enseignant,
+              enseignant: note.enseignant || 'Non assigné',
               somme_ponderee: 0,
               somme_coeff: 0,
+              note_sur: note.note_sur || 20,
             };
           }
-          matieres[note.matiere].somme_ponderee += parseFloat(note.valeur) * note.note_coeff;
+          // Calculer la moyenne pondérée en fonction du barème
+          const valeurNormalisee = (parseFloat(note.valeur) / (note.note_sur || 20)) * 20;
+          matieres[note.matiere].somme_ponderee += valeurNormalisee * note.note_coeff;
           matieres[note.matiere].somme_coeff += note.note_coeff;
         }
 
@@ -79,9 +105,15 @@ export async function GET(req: NextRequest) {
         let totalCoeff = 0;
         const matieresArray = Object.values(matieres).map((m: any) => {
           const moyenne = m.somme_coeff > 0 ? m.somme_ponderee / m.somme_coeff : 0;
-          totalPondere += moyenne * m.coefficient;
+          const moyenneArrondie = Math.round(moyenne * 100) / 100;
+          totalPondere += moyenneArrondie * m.coefficient;
           totalCoeff += parseInt(m.coefficient);
-          return { ...m, moyenne: Math.round(moyenne * 100) / 100 };
+          return { 
+            ...m, 
+            moyenne: moyenneArrondie,
+            moyenneCoeff: Math.round(moyenneArrondie * m.coefficient * 100) / 100,
+            mention: getMention(moyenneArrondie)
+          };
         });
 
         const moyenneGenerale = totalCoeff > 0 ? Math.round((totalPondere / totalCoeff) * 100) / 100 : 0;
@@ -89,20 +121,23 @@ export async function GET(req: NextRequest) {
         return {
           eleve,
           matieres: matieresArray,
-          moyenneGenerale
+          moyenneGenerale,
+          totalPoints: Math.round(totalPondere * 100) / 100,
+          stats
         };
       });
 
-      // Sort by average (rank calculation)
+      // 5. Trier par moyenne pour le classement
       bulletins.sort((a, b) => b.moyenneGenerale - a.moyenneGenerale);
 
-      // Add ranking
+      // 6. Ajouter le classement et les statistiques
       bulletins.forEach((bulletin, index) => {
         (bulletin as any).rang = index + 1;
         (bulletin as any).totalEleves = bulletins.length;
+        (bulletin as any).stats = stats;
       });
 
-      // Restore original alphabetical order or keep rank order? Keep alphabetical for the list
+      // 7. Restaurer l'ordre alphabétique
       bulletins.sort((a, b) => a.eleve.nom.localeCompare(b.eleve.nom));
 
       return NextResponse.json(bulletins);
@@ -114,4 +149,13 @@ export async function GET(req: NextRequest) {
     console.error("API /directeur_etudes/bulletins GET error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+
+// Fonction pour obtenir la mention
+function getMention(moyenne: number): string {
+  if (moyenne >= 8) return "TRES BIEN";
+  if (moyenne >= 7) return "BIEN";
+  if (moyenne >= 6) return "ASSEZ BIEN";
+  if (moyenne >= 5) return "PASSABLE";
+  return "INSUFFISANT";
 }

@@ -140,8 +140,8 @@ export default function AdminTransportBibliothequeDashboard() {
             <div className="flex justify-between border-b border-gray-100 pb-2">
               <span className="text-gray-500">Taux d'occupation</span>
               <span className="font-medium">
-                {stats.totalLivres > 0 
-                  ? Math.round(((stats.totalLivres - stats.livresDispos) / stats.totalLivres) * 100) 
+                {stats.totalLivres > 0
+                  ? Math.round(((stats.totalLivres - stats.livresDispos) / stats.totalLivres) * 100)
                   : 0}%
               </span>
             </div>
@@ -162,14 +162,13 @@ export default function AdminTransportBibliothequeDashboard() {
               <div key={e.id} className="flex justify-between items-center border-b border-gray-100 pb-2 text-sm">
                 <span className="text-gray-600 truncate max-w-[120px]">{e.livre_titre}</span>
                 <span className="text-gray-500 text-xs">{e.eleve_nom}</span>
-                <span className={`text-xs ${
-                  e.statut === 'retourne' ? 'text-green-600' :
-                  e.statut === 'en_retard' ? 'text-red-600' :
-                  'text-orange-600'
-                }`}>
+                <span className={`text-xs ${e.statut === 'retourne' ? 'text-green-600' :
+                    e.statut === 'en_retard' ? 'text-red-600' :
+                      'text-orange-600'
+                  }`}>
                   {e.statut === 'retourne' ? '✅' :
-                   e.statut === 'en_retard' ? '⚠️' :
-                   '📖'}
+                    e.statut === 'en_retard' ? '⚠️' :
+                      ''}
                 </span>
               </div>
             ))}

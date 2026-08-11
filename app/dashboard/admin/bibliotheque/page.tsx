@@ -32,7 +32,7 @@ interface Emprunt {
 // Catégories prédéfinies
 const CATEGORIES = [
   { id: "scolaire", nom: "📚 Scolaire & Sciences", color: "bg-blue-100 text-blue-700" },
-  { id: "litterature", nom: "📖 Littérature & Romans", color: "bg-purple-100 text-purple-700" },
+  { id: "litterature", nom: " Littérature & Romans", color: "bg-purple-100 text-purple-700" },
   { id: "histoire", nom: "🏛️ Histoire & Géographie", color: "bg-amber-100 text-amber-700" },
   { id: "art", nom: "🎨 Art & Musique", color: "bg-pink-100 text-pink-700" },
   { id: "langues", nom: "🌍 Langues Étrangères", color: "bg-green-100 text-green-700" },
@@ -142,7 +142,7 @@ export default function BibliothequeAdminPage() {
     setUploading(true);
     try {
       let imageUrl = livreData.image_url;
-      
+
       if (selectedFile) {
         const uploadedUrl = await uploadImage(selectedFile);
         if (uploadedUrl) {
@@ -151,8 +151,8 @@ export default function BibliothequeAdminPage() {
       }
 
       const method = editingLivre ? 'PUT' : 'POST';
-      const body = { 
-        ...livreData, 
+      const body = {
+        ...livreData,
         id: editingLivre?.id,
         image_url: imageUrl
       };
@@ -169,7 +169,7 @@ export default function BibliothequeAdminPage() {
         const error = await res.json();
         alert(error.error || "Erreur lors de l'enregistrement");
       }
-    } catch (e) { 
+    } catch (e) {
       console.error(e);
       alert("Erreur lors de l'enregistrement");
     } finally {
@@ -221,12 +221,12 @@ export default function BibliothequeAdminPage() {
     return EMPLACEMENTS.find(e => e.id === emplacementId);
   };
 
-  const filteredLivres = livres.filter(l => 
-    l.titre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredLivres = livres.filter(l =>
+    l.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.auteur.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const filteredEmprunts = emprunts.filter(e => 
-    e.livre_titre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredEmprunts = emprunts.filter(e =>
+    e.livre_titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.eleve_nom.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -348,13 +348,13 @@ export default function BibliothequeAdminPage() {
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{emplacement?.nom || l.emplacement || "-"}</div>
                         {emplacement && <div className="text-xs text-gray-500">{emplacement.zone}</div>}
-                       </td>
+                      </td>
                       <td className="px-6 py-4 text-center font-medium">{l.quantite}</td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${l.disponible > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                           {l.disponible}
                         </span>
-                       </td>
+                      </td>
                       <td className="px-6 py-4 flex gap-2">
                         <button onClick={() => { setEditingLivre(l); setLivreData(l); setSelectedFile(null); setPreviewUrl(""); setShowLivreForm(true); }} className="text-blue-600 p-1 hover:bg-blue-50 rounded">
                           <Edit className="w-4 h-4" />
@@ -362,8 +362,8 @@ export default function BibliothequeAdminPage() {
                         <button onClick={() => handleDeleteLivre(l.id)} className="text-red-600 p-1 hover:bg-red-50 rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
-                       </td>
-                     </tr>
+                      </td>
+                    </tr>
                   );
                 })}
                 {filteredLivres.length === 0 && (
@@ -442,9 +442,9 @@ export default function BibliothequeAdminPage() {
                   />
                   {previewUrl || livreData.image_url ? (
                     <div className="relative inline-block">
-                      <img 
-                        src={previewUrl || livreData.image_url || ""} 
-                        alt="Aperçu" 
+                      <img
+                        src={previewUrl || livreData.image_url || ""}
+                        alt="Aperçu"
                         className="w-32 h-32 object-cover rounded-lg mx-auto"
                       />
                       <button
@@ -483,14 +483,14 @@ export default function BibliothequeAdminPage() {
                   <input required type="number" min="1" value={livreData.quantite} onChange={e => setLivreData({ ...livreData, quantite: parseInt(e.target.value) })} className="w-full border p-2 rounded-lg" />
                 </div>
               </div>
-              
+
               {/* Sélection de la catégorie */}
               <div>
                 <label className="block text-sm font-medium mb-1">Catégorie *</label>
-                <select 
-                  required 
-                  value={livreData.categorie} 
-                  onChange={e => setLivreData({ ...livreData, categorie: e.target.value })} 
+                <select
+                  required
+                  value={livreData.categorie}
+                  onChange={e => setLivreData({ ...livreData, categorie: e.target.value })}
                   className="w-full border p-2 rounded-lg"
                 >
                   <option value="">Sélectionner une catégorie</option>
@@ -503,10 +503,10 @@ export default function BibliothequeAdminPage() {
               {/* Sélection de l'emplacement */}
               <div>
                 <label className="block text-sm font-medium mb-1">Emplacement *</label>
-                <select 
-                  required 
-                  value={livreData.emplacement} 
-                  onChange={e => setLivreData({ ...livreData, emplacement: e.target.value })} 
+                <select
+                  required
+                  value={livreData.emplacement}
+                  onChange={e => setLivreData({ ...livreData, emplacement: e.target.value })}
                   className="w-full border p-2 rounded-lg"
                 >
                   <option value="">Sélectionner un emplacement</option>
@@ -552,7 +552,7 @@ export default function BibliothequeAdminPage() {
               </div>
               <div className="relative">
                 <label className="block text-sm mb-1">Élève</label>
-                <div 
+                <div
                   className="w-full border p-2 rounded-lg cursor-pointer flex justify-between items-center bg-white"
                   onClick={() => setEleveSearchOpen(!eleveSearchOpen)}
                 >
@@ -566,7 +566,7 @@ export default function BibliothequeAdminPage() {
                     <span className="text-gray-500">Sélectionner un élève</span>
                   )}
                 </div>
-                
+
                 {eleveSearchOpen && (
                   <>
                     <div className="fixed inset-0 z-[5]" onClick={() => setEleveSearchOpen(false)}></div>

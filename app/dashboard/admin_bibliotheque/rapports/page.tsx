@@ -162,7 +162,7 @@ export default function BibliothequeRapportsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `rapport_bibliotheque_${new Date().toISOString().slice(0,10)}.xlsx`;
+      a.download = `rapport_bibliotheque_${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -266,33 +266,30 @@ export default function BibliothequeRapportsPage() {
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 print:hidden">
         <button
           onClick={() => setViewType('global')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-            viewType === 'global'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${viewType === 'global'
               ? 'bg-purple-100 text-purple-700'
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+            }`}
         >
           <PieChart className="w-4 h-4 inline mr-2" />
           Vue globale
         </button>
         <button
           onClick={() => setViewType('livres')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-            viewType === 'livres'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${viewType === 'livres'
               ? 'bg-purple-100 text-purple-700'
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+            }`}
         >
           <BookOpen className="w-4 h-4 inline mr-2" />
           Livres ({livres.length})
         </button>
         <button
           onClick={() => setViewType('emprunts')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-            viewType === 'emprunts'
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${viewType === 'emprunts'
               ? 'bg-purple-100 text-purple-700'
               : 'text-gray-600 hover:bg-gray-100'
-          }`}
+            }`}
         >
           <BookMarked className="w-4 h-4 inline mr-2" />
           Emprunts ({emprunts.length})
@@ -342,14 +339,13 @@ export default function BibliothequeRapportsPage() {
                 <div key={e.id} className="flex justify-between items-center border-b border-gray-100 pb-2 text-sm">
                   <span className="text-gray-600">{e.livre_titre}</span>
                   <span className="text-gray-500 text-xs">{e.eleve_nom}</span>
-                  <span className={`text-xs ${
-                    e.statut === 'retourne' ? 'text-green-600' :
-                    e.statut === 'en_retard' ? 'text-red-600' :
-                    'text-orange-600'
-                  }`}>
+                  <span className={`text-xs ${e.statut === 'retourne' ? 'text-green-600' :
+                      e.statut === 'en_retard' ? 'text-red-600' :
+                        'text-orange-600'
+                    }`}>
                     {e.statut === 'retourne' ? '✅' :
-                     e.statut === 'en_retard' ? '⚠️' :
-                     '📖'}
+                      e.statut === 'en_retard' ? '⚠️' :
+                        ''}
                   </span>
                 </div>
               ))}
@@ -387,9 +383,8 @@ export default function BibliothequeRapportsPage() {
                     <td className="px-4 py-3 text-center">{l.quantite}</td>
                     <td className="px-4 py-3 text-center font-medium text-green-600">{l.disponible}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-medium ${
-                        l.quantite > 0 ? (l.disponible / l.quantite) * 100 < 30 ? 'text-red-600' : 'text-green-600' : 'text-gray-400'
-                      }`}>
+                      <span className={`font-medium ${l.quantite > 0 ? (l.disponible / l.quantite) * 100 < 30 ? 'text-red-600' : 'text-green-600' : 'text-gray-400'
+                        }`}>
                         {l.quantite > 0 ? Math.round(((l.quantite - l.disponible) / l.quantite) * 100) : 0}%
                       </span>
                     </td>
@@ -435,7 +430,7 @@ export default function BibliothequeRapportsPage() {
                     <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(e.date_retour_prevue)}</td>
                     <td className="px-4 py-3 text-center">
                       {e.statut === 'en_cours' && (
-                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">📖 En cours</span>
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium"> En cours</span>
                       )}
                       {e.statut === 'retourne' && (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">✅ Retourné</span>

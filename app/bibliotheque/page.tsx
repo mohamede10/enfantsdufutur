@@ -132,7 +132,7 @@ export default function BibliothequePage() {
             >
               <option value="all">Toutes les catégories</option>
               <option value="scolaire">📚 Scolaire & Sciences</option>
-              <option value="litterature">📖 Littérature & Romans</option>
+              <option value="litterature"> Littérature & Romans</option>
               <option value="histoire">🏛️ Histoire & Géo</option>
               <option value="art">🎨 Art & Musique</option>
               <option value="langues">🌍 Langues</option>
@@ -203,9 +203,9 @@ export default function BibliothequePage() {
                           <div className="flex items-center gap-3">
                             {imageUrl ? (
                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                <img 
-                                  src={imageUrl} 
-                                  alt={livre.titre} 
+                                <img
+                                  src={imageUrl}
+                                  alt={livre.titre}
                                   className="w-full h-full object-cover"
                                   onError={() => handleImageError(livre.id)}
                                 />
@@ -225,7 +225,7 @@ export default function BibliothequePage() {
                         <td className="px-6 py-4">
                           <span className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
                             {livre.categorie === "scolaire" && "📚 Scolaire"}
-                            {livre.categorie === "litterature" && "📖 Littérature"}
+                            {livre.categorie === "litterature" && " Littérature"}
                             {livre.categorie === "histoire" && "🏛️ Histoire"}
                             {livre.categorie === "art" && "🎨 Art"}
                             {livre.categorie === "langues" && "🌍 Langues"}

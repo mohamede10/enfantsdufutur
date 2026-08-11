@@ -1,4 +1,5 @@
-// app/dashboard/enseignant/lecons/page.tsx
+// app/dashboard/enseignant/lecons/page.tsx - Version avec champ matière
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -34,6 +35,7 @@ export default function EnseignantLeconsPage() {
   const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
   const [enseignementId, setEnseignementId] = useState("");
+  const [matiere, setMatiere] = useState(""); // ⭐ NOUVEAU CHAMP
   const [fichier, setFichier] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +85,7 @@ export default function EnseignantLeconsPage() {
       formData.append("description", description);
       if (videoUrl) formData.append("video_url", videoUrl);
       if (fichier) formData.append("fichier", fichier);
+      if (matiere) formData.append("matiere", matiere); // ⭐ AJOUT DU CHAMP MATIERE
 
       const response = await fetch("/api/enseignant/lecons", {
         method: "POST",
@@ -98,6 +101,7 @@ export default function EnseignantLeconsPage() {
       setTitre("");
       setDescription("");
       setEnseignementId("");
+      setMatiere(""); // ⭐ RESET DU CHAMP MATIERE
       setFichier(null);
       setVideoUrl("");
       setShowForm(false);
@@ -162,7 +166,7 @@ export default function EnseignantLeconsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">Classe / Matière *</label>
+              <label className="block text-sm font-medium mb-1 text-gray-700">Classe *</label>
               <select 
                 value={enseignementId}
                 onChange={(e) => setEnseignementId(e.target.value)}
@@ -171,9 +175,23 @@ export default function EnseignantLeconsPage() {
               >
                 <option value="">Sélectionnez une classe</option>
                 {enseignements.map(e => (
-                  <option key={e.id} value={e.id}>{e.classe} - {e.matiere}</option>
+                  <option key={e.id} value={e.id}>{e.classe}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Matière 
+                <span className="text-xs text-gray-400 ml-1">(optionnel)</span>
+              </label>
+              <input 
+                type="text" 
+                value={matiere}
+                onChange={(e) => setMatiere(e.target.value)}
+                placeholder="Ex: Mathématiques, Français..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" 
+              />
+              <p className="text-xs text-gray-400 mt-1">Laisse vide pour utiliser la matière par défaut de la classe</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-700">Fichier (PDF, Image, etc.)</label>
@@ -220,12 +238,16 @@ export default function EnseignantLeconsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" placeholder="Rechercher une leçon..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span>{lecons.length} leçon(s)</span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           {lecons.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
               <p>Aucune leçon publiée pour le moment.</p>
+              <p className="text-sm text-gray-400 mt-1">Cliquez sur "Nouvelle leçon" pour commencer</p>
             </div>
           ) : (
             <table className="w-full">
@@ -233,9 +255,9 @@ export default function EnseignantLeconsPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Leçon</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classe</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Matière</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Fichier</th>
-                  {/*<th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>*/}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -246,10 +268,14 @@ export default function EnseignantLeconsPage() {
                       {l.description && <div className="text-sm text-gray-500 truncate max-w-xs">{l.description}</div>}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {l.classe}
                       </span>
-                      <div className="text-sm text-gray-600">{l.matiere}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {l.matiere}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {l.date || "-"}
@@ -268,18 +294,6 @@ export default function EnseignantLeconsPage() {
                         ) : <div className="w-5" />}
                       </div>
                     </td>
-                    {/*
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex justify-end gap-2">
-                        <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Modifier">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Supprimer">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                    */}
                   </tr>
                 ))}
               </tbody>

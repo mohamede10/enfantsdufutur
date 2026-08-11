@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Clock, CheckCircle, AlertCircle, Play, 
   Brain, ChevronRight, Check, X, FileText, Download,
-  Image, File, Award, Zap, Sparkles
+  Image, File, Award, Zap, Sparkles, BookOpen
 } from "lucide-react";
 
 interface Option {

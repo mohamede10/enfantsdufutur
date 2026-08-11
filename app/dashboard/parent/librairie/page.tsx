@@ -23,7 +23,10 @@ import {
   XCircle,
   CreditCard,
   ShoppingBag,
-  FileText
+  FileText,
+  BookOpen,
+  ArrowRight,
+  AlertTriangle
 } from "lucide-react";
 import Image from "next/image";
 

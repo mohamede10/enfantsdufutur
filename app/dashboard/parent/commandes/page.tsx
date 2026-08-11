@@ -18,6 +18,8 @@ import {
   Calendar,
   FileText,
   CreditCard,
+  AlertTriangle,
+  BookOpen,
   X
 } from "lucide-react";
 

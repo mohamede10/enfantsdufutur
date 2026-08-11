@@ -34,7 +34,7 @@ interface Emprunt {
 
 const CATEGORIES = [
   { id: "scolaire", nom: "📚 Scolaire & Sciences", color: "bg-blue-100 text-blue-700" },
-  { id: "litterature", nom: "📖 Littérature & Romans", color: "bg-purple-100 text-purple-700" },
+  { id: "litterature", nom: " Littérature & Romans", color: "bg-purple-100 text-purple-700" },
   { id: "histoire", nom: "🏛️ Histoire & Géographie", color: "bg-amber-100 text-amber-700" },
   { id: "art", nom: "🎨 Art & Musique", color: "bg-pink-100 text-pink-700" },
   { id: "langues", nom: "🌍 Langues Étrangères", color: "bg-green-100 text-green-700" },
@@ -144,7 +144,7 @@ export default function BibliothequePage() {
     setUploading(true);
     try {
       let imageUrl = livreData.image_url;
-      
+
       if (selectedFile) {
         const uploadedUrl = await uploadImage(selectedFile);
         if (uploadedUrl) {
@@ -153,14 +153,14 @@ export default function BibliothequePage() {
       }
 
       const method = editingLivre ? 'PUT' : 'POST';
-      const body = { 
-        ...livreData, 
+      const body = {
+        ...livreData,
         id: editingLivre?.id,
         image_url: imageUrl
       };
       const res = await fetch('/api/admin/bibliotheque/livres', {
-        method, 
-        headers: { 'Content-Type': 'application/json' }, 
+        method,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       if (res.ok) {
@@ -173,7 +173,7 @@ export default function BibliothequePage() {
         const error = await res.json();
         alert(error.error || "Erreur lors de l'enregistrement");
       }
-    } catch (e) { 
+    } catch (e) {
       console.error(e);
       alert("Erreur lors de l'enregistrement");
     } finally {
@@ -230,13 +230,13 @@ export default function BibliothequePage() {
     return EMPLACEMENTS.find(e => e.id === emplacementId);
   };
 
-  const filteredLivres = livres.filter(l => 
-    l.titre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredLivres = livres.filter(l =>
+    l.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.auteur.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredEmprunts = emprunts.filter(e => 
-    e.livre_titre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredEmprunts = emprunts.filter(e =>
+    e.livre_titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.eleve_nom.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -309,22 +309,20 @@ export default function BibliothequePage() {
         <div className="flex border-b flex-wrap">
           <button
             onClick={() => setActiveTab("livres")}
-            className={`px-6 py-4 font-medium transition-colors ${
-              activeTab === "livres"
+            className={`px-6 py-4 font-medium transition-colors ${activeTab === "livres"
                 ? "border-b-2 border-purple-600 text-purple-600 bg-purple-50/50"
                 : "text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <BookOpen className="w-4 h-4 inline mr-2" />
             Inventaire ({livres.length})
           </button>
           <button
             onClick={() => setActiveTab("emprunts")}
-            className={`px-6 py-4 font-medium transition-colors ${
-              activeTab === "emprunts"
+            className={`px-6 py-4 font-medium transition-colors ${activeTab === "emprunts"
                 ? "border-b-2 border-purple-600 text-purple-600 bg-purple-50/50"
                 : "text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <BookMarked className="w-4 h-4 inline mr-2" />
             Emprunts ({emprunts.length})
@@ -414,9 +412,8 @@ export default function BibliothequePage() {
                       </td>
                       <td className="px-4 py-3 text-center font-medium">{l.quantite}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                          l.disponible > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${l.disponible > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          }`}>
                           {l.disponible}
                         </span>
                       </td>
@@ -488,7 +485,7 @@ export default function BibliothequePage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {e.statut === 'en_cours' && (
-                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">📖 En cours</span>
+                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium"> En cours</span>
                       )}
                       {e.statut === 'retourne' && (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">✅ Retourné</span>

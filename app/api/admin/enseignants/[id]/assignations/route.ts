@@ -1,4 +1,5 @@
 // app/api/admin/enseignants/[id]/assignations/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { getServerSession } from "next-auth";
@@ -41,7 +42,7 @@ export async function GET(
   }
 }
 
-// ⭐ POST - METTRE À JOUR les classes (supprime les décochées, ajoute les nouvelles)
+// ⭐ POST - AJOUTER UNIQUEMENT les nouvelles classes (SANS SUPPRIMER)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -91,49 +92,64 @@ export async function POST(
       return NextResponse.json({ error: "Enseignant non trouvé" }, { status: 404 });
     }
 
-    await query('BEGIN');
+    // ⭐⭐⭐ SOLUTION : NE PAS SUPPRIMER, AJOUTER UNIQUEMENT ⭐⭐⭐
+    let addedCount = 0;
+    let alreadyExistsCount = 0;
+    const results = [];
 
-    try {
-      // ⭐ 1. Supprimer TOUTES les assignations existantes pour cet enseignant
-      await query(`
-        DELETE FROM enseignements 
-        WHERE enseignant_id = $1 AND annee_scolaire_id = $2
-      `, [enseignantId, anneeScolaireId]);
+    for (const classeId of classeIds) {
+      // Vérifier si l'assignation existe déjà
+      const existing = await query(`
+        SELECT id FROM enseignements 
+        WHERE enseignant_id = $1 AND classe_id = $2 AND annee_scolaire_id = $3
+      `, [enseignantId, classeId, anneeScolaireId]);
 
-      // ⭐ 2. Ajouter SEULEMENT les classes sélectionnées (qui sont encore cochées)
-      let addedCount = 0;
-      for (const classeId of classeIds) {
-        await query(`
-          INSERT INTO enseignements (enseignant_id, classe_id, annee_scolaire_id)
-          VALUES ($1, $2, $3)
-        `, [enseignantId, classeId, anneeScolaireId]);
-        addedCount++;
+      if (existing.rows.length > 0) {
+        alreadyExistsCount++;
+        results.push({
+          classeId,
+          status: 'already_exists',
+          message: 'Déjà assignée'
+        });
+        continue;
       }
 
-      await query('COMMIT');
-
-      const message = addedCount > 0 
-        ? `${addedCount} classe(s) assignée(s) avec succès`
-        : "Aucune classe sélectionnée";
-
-      return NextResponse.json({ 
-        success: true, 
-        message,
-        addedCount,
-        total: classeIds.length
+      // Ajouter la nouvelle assignation
+      await query(`
+        INSERT INTO enseignements (enseignant_id, classe_id, annee_scolaire_id)
+        VALUES ($1, $2, $3)
+      `, [enseignantId, classeId, anneeScolaireId]);
+      
+      addedCount++;
+      results.push({
+        classeId,
+        status: 'added',
+        message: 'Assignée avec succès'
       });
-    } catch (error) {
-      await query('ROLLBACK');
-      console.error("Erreur transaction:", error);
-      return NextResponse.json({ error: "Erreur lors de l'assignation" }, { status: 500 });
     }
+
+    await query('COMMIT');
+
+    const message = addedCount > 0 
+      ? `${addedCount} classe(s) assignée(s) avec succès${alreadyExistsCount > 0 ? `, ${alreadyExistsCount} déjà assignée(s)` : ''}`
+      : "Aucune nouvelle classe à assigner";
+
+    return NextResponse.json({ 
+      success: true, 
+      message,
+      addedCount,
+      alreadyExistsCount,
+      total: classeIds.length,
+      results
+    });
   } catch (error) {
+    await query('ROLLBACK');
     console.error("Erreur POST assignations:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur serveur: " + (error as Error).message }, { status: 500 });
   }
 }
 
-// ⭐ DELETE - Supprimer une assignation spécifique
+// ⭐ DELETE - Supprimer une assignation spécifique (avec gestion des dépendances)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -168,6 +184,20 @@ export async function DELETE(
       SELECT id FROM annees_scolaires WHERE est_active = true LIMIT 1
     `);
     const anneeScolaireId = anneeResult.rows[0]?.id;
+
+    // ⭐ Vérifier si l'assignation a des leçons avant de supprimer
+    const leconsCheck = await query(`
+      SELECT COUNT(*) as count 
+      FROM lecons l
+      JOIN enseignements e ON l.enseignement_id = e.id
+      WHERE e.enseignant_id = $1 AND e.classe_id = $2 AND e.annee_scolaire_id = $3
+    `, [enseignantId, parseInt(classeId), anneeScolaireId]);
+
+    if (parseInt(leconsCheck.rows[0]?.count) > 0) {
+      return NextResponse.json({ 
+        error: "Impossible de supprimer cette assignation car elle contient des leçons" 
+      }, { status: 400 });
+    }
 
     await query(`
       DELETE FROM enseignements 
