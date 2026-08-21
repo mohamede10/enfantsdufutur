@@ -471,7 +471,7 @@ export default function InscriptionParentPage() {
         </div>
       </div>
 
-      {/* Liste des pré-inscriptions existantes */}
+      {/* Liste des pré-inscriptions existantes 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold text-black flex items-center gap-2">
@@ -540,6 +540,7 @@ export default function InscriptionParentPage() {
           </div>
         )}
       </div>
+      fermer*/}
 
       {/* Modal Annulation */}
       {showConfirmModal && preinscriptionToCancel && (

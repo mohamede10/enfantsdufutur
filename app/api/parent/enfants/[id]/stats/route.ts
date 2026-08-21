@@ -1,4 +1,4 @@
-// app/api/parent/enfants/[id]/stats/route.ts - Version corrigée
+// app/api/parent/enfants/[id]/stats/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
@@ -106,47 +106,85 @@ export async function GET(
     // 5. TOTAL DES FRAIS
     const totalFraisGeneral = fraisBase + transportTotal + cantineTotal + fournituresTotal;
 
-    // 6. PAIEMENTS EFFECTUÉS - ⭐ MODIFICATION IMPORTANTE
-    // Inclure les paiements liés à l'élève OU à sa pré-inscription
-    const paiementsDirects = await query(`
-      SELECT COALESCE(SUM(montant), 0) as total_paye_direct
-      FROM paiements
-      WHERE (
-        eleve_id = $1 
-        OR preinscription_id IN (
-          SELECT preinscription_id 
-          FROM inscriptions 
-          WHERE eleve_id = $1
-        )
-        OR reinscription_id IN (
-          SELECT id 
-          FROM reinscriptions 
-          WHERE eleve_id = $1
-        )
+    // ⭐⭐⭐ 6. PAIEMENTS EFFECTUÉS - CORRECTION MAJEURE ⭐⭐⭐
+    let totalPayeDirect = 0;
+    let totalPayeEcheances = 0;
+
+    // 6a. Récupérer d'abord toutes les pré-inscriptions de l'élève
+    const preinscriptionsEleve = await query(`
+      SELECT DISTINCT p.id as preinscription_id
+      FROM preinscriptions p
+      WHERE p.parent_id IN (
+        SELECT parent_id FROM lien_parent_eleve WHERE eleve_id = $1
       )
+      AND p.enfant_nom = (SELECT u.nom FROM eleves e JOIN utilisateurs u ON e.utilisateur_id = u.id WHERE e.id = $1)
+      AND p.enfant_prenom = (SELECT u.prenom FROM eleves e JOIN utilisateurs u ON e.utilisateur_id = u.id WHERE e.id = $1)
+    `, [eleveId]);
+
+    const preinscriptionIds = preinscriptionsEleve.rows.map(row => row.preinscription_id);
+
+    // 6b. Récupérer toutes les réinscriptions de l'élève
+    const reinscriptionsEleve = await query(`
+      SELECT id as reinscription_id
+      FROM reinscriptions
+      WHERE eleve_id = $1
+    `, [eleveId]);
+
+    const reinscriptionIds = reinscriptionsEleve.rows.map(row => row.reinscription_id);
+
+    // 6c. Paiements liés directement à l'élève
+    const paiementsEleve = await query(`
+      SELECT COALESCE(SUM(montant), 0) as total
+      FROM paiements
+      WHERE eleve_id = $1
       AND statut = 'valide'
     `, [eleveId]);
+    totalPayeDirect += Number(paiementsEleve.rows[0]?.total) || 0;
 
-    const echeancesPayees = await query(`
-      SELECT COALESCE(SUM(e.montant), 0) as total_paye_echeances
-      FROM echeances_paiement e
-      WHERE (
-        e.preinscription_id IN (
-          SELECT preinscription_id 
-          FROM inscriptions 
-          WHERE eleve_id = $1
-        )
-        OR e.reinscription_id IN (
-          SELECT id 
-          FROM reinscriptions 
-          WHERE eleve_id = $1
-        )
-      )
-      AND e.statut = 'paye'
-    `, [eleveId]);
+    // 6d. Paiements liés aux pré-inscriptions (une par une)
+    for (const preId of preinscriptionIds) {
+      const paiementsPre = await query(`
+        SELECT COALESCE(SUM(montant), 0) as total
+        FROM paiements
+        WHERE preinscription_id = $1
+        AND statut = 'valide'
+      `, [preId]);
+      totalPayeDirect += Number(paiementsPre.rows[0]?.total) || 0;
+    }
 
-    const totalPayeDirect = Number(paiementsDirects.rows[0]?.total_paye_direct) || 0;
-    const totalPayeEcheances = Number(echeancesPayees.rows[0]?.total_paye_echeances) || 0;
+    // 6e. Paiements liés aux réinscriptions (une par une)
+    for (const reinscId of reinscriptionIds) {
+      const paiementsReinsc = await query(`
+        SELECT COALESCE(SUM(montant), 0) as total
+        FROM paiements
+        WHERE reinscription_id = $1
+        AND statut = 'valide'
+      `, [reinscId]);
+      totalPayeDirect += Number(paiementsReinsc.rows[0]?.total) || 0;
+    }
+
+    // 6f. Échéances liées aux pré-inscriptions (une par une)
+    for (const preId of preinscriptionIds) {
+      const echeancesPre = await query(`
+        SELECT COALESCE(SUM(montant), 0) as total
+        FROM echeances_paiement
+        WHERE preinscription_id = $1
+        AND statut = 'paye'
+      `, [preId]);
+      totalPayeEcheances += Number(echeancesPre.rows[0]?.total) || 0;
+    }
+
+    // 6g. Échéances liées aux réinscriptions (une par une)
+    for (const reinscId of reinscriptionIds) {
+      const echeancesReinsc = await query(`
+        SELECT COALESCE(SUM(montant), 0) as total
+        FROM echeances_paiement
+        WHERE reinscription_id = $1
+        AND statut = 'paye'
+      `, [reinscId]);
+      totalPayeEcheances += Number(echeancesReinsc.rows[0]?.total) || 0;
+    }
+
     const totalPaye = totalPayeDirect + totalPayeEcheances;
 
     // 7. MONTANT À PAYER ET SOLDE
@@ -159,6 +197,8 @@ export async function GET(
       cantineTotal,
       fournituresTotal,
       totalFraisGeneral,
+      preinscriptionIds,
+      reinscriptionIds,
       totalPayeDirect,
       totalPayeEcheances,
       totalPaye,

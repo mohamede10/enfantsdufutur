@@ -397,7 +397,7 @@ export async function GET(
       },
       notes: notes.rows.map((row: any) => ({
         matiere: row.matiere,
-        moyenne: parseFloat(row.moyenne.toFixed(2)),
+        moyenne: parseFloat(Number(row.moyenne || 0).toFixed(2)),
         coefficient: row.coefficient,
         nombre_notes: row.nombre_notes,
         details_notes: row.details_notes || []

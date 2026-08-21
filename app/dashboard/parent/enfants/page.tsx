@@ -27,7 +27,9 @@ import {
   ExternalLink,
   Camera,
   Plus,
-  FileText
+  FileText,
+  TrendingUp,
+  Download
 } from "lucide-react";
 
 interface DetailsFrais {
@@ -373,13 +375,6 @@ export default function MesEnfantsPage() {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <Link
-                              href={`/dashboard/parent/enfants/${e.eleve_id}`}
-                              className="bg-purple-50 text-purple-600 hover:bg-purple-100 p-2 rounded-lg transition"
-                              title="Suivi de scolarité"
-                            >
-                              <GraduationCap className="w-4 h-4" />
-                            </Link>
                           </div>
                         </td>
                       </tr>
@@ -508,17 +503,17 @@ export default function MesEnfantsPage() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 </div>
-              ) : enfantDetail ? (
+              ) : (enfantDetail || selectedEnfant) ? (
                 <>
                   {/* Informations des parents */}
-                  {enfantDetail.eleve?.parent_email && (
+                  {enfantDetail?.eleve?.parent_email && (
                     <div>
                       <h3 className="font-semibold text-black mb-3 flex items-center gap-2">
                         <User className="w-5 h-5 text-blue-900" /> Informations des parents
                       </h3>
                       <div className="bg-gray-50 p-3 rounded-lg mb-4 border">
                         <p className="text-sm text-gray-500">Email de contact</p>
-                        <p className="font-medium text-gray-900">{enfantDetail.eleve.parent_email}</p>
+                        <p className="font-medium text-gray-900">{enfantDetail?.eleve?.parent_email}</p>
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
@@ -526,15 +521,15 @@ export default function MesEnfantsPage() {
                           <div className="space-y-2">
                             <div>
                               <p className="text-xs text-gray-500">Nom complet</p>
-                              <p className="font-medium text-gray-900">{enfantDetail.eleve.parent_prenom} {enfantDetail.eleve.parent_nom}</p>
+                              <p className="font-medium text-gray-900">{enfantDetail?.eleve?.parent_prenom} {enfantDetail?.eleve?.parent_nom}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Téléphone</p>
-                              <p className="font-medium text-gray-900">{enfantDetail.eleve.parent_telephone || "Non renseigné"}</p>
+                              <p className="font-medium text-gray-900">{enfantDetail?.eleve?.parent_telephone || "Non renseigné"}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Profession</p>
-                              <p className="font-medium text-gray-900">{enfantDetail.eleve.parent_profession || "Non renseigné"}</p>
+                              <p className="font-medium text-gray-900">{enfantDetail?.eleve?.parent_profession || "Non renseigné"}</p>
                             </div>
                           </div>
                         </div>
@@ -543,7 +538,7 @@ export default function MesEnfantsPage() {
                           {(() => {
                             let mereData: any = null;
                             try {
-                              if (enfantDetail.eleve.mere_info) {
+                              if (enfantDetail?.eleve?.mere_info) {
                                 mereData = typeof enfantDetail.eleve.mere_info === 'string' 
                                   ? JSON.parse(enfantDetail.eleve.mere_info) 
                                   : enfantDetail.eleve.mere_info;
@@ -581,29 +576,29 @@ export default function MesEnfantsPage() {
                     <div className="grid md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border">
                       <div>
                         <p className="text-sm text-gray-500">Nom complet</p>
-                        <p className="font-medium text-gray-900">{enfantDetail.eleve?.prenom} {enfantDetail.eleve?.nom}</p>
+                        <p className="font-medium text-gray-900">{enfantDetail?.eleve?.prenom ?? selectedEnfant?.prenom} {enfantDetail?.eleve?.nom ?? selectedEnfant?.nom}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Date de naissance</p>
                         <p className="font-medium text-gray-900">
-                          {enfantDetail.eleve?.date_naissance ? new Date(enfantDetail.eleve.date_naissance).toLocaleDateString() : "Non renseigné"}
+                          {(enfantDetail?.eleve?.date_naissance ?? selectedEnfant?.date_naissance) ? new Date(enfantDetail?.eleve?.date_naissance ?? selectedEnfant?.date_naissance ?? '').toLocaleDateString() : "Non renseigné"}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Lieu de naissance</p>
-                        <p className="font-medium text-gray-900">{enfantDetail.eleve?.lieu_naissance || "Non renseigné"}</p>
+                        <p className="font-medium text-gray-900">{enfantDetail?.eleve?.lieu_naissance ?? selectedEnfant?.lieu_naissance ?? "Non renseigné"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Sexe</p>
-                        <p className="font-medium text-gray-900">{enfantDetail.eleve?.sexe === "M" ? "Masculin" : "Féminin"}</p>
+                        <p className="font-medium text-gray-900">{(enfantDetail?.eleve?.sexe ?? selectedEnfant?.sexe) === "M" ? "Masculin" : "Féminin"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Niveau</p>
-                        <p className="font-medium text-gray-900">{enfantDetail.eleve?.niveau}</p>
+                        <p className="font-medium text-gray-900">{enfantDetail?.eleve?.niveau ?? selectedEnfant?.niveau}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Classe</p>
-                        <p className="font-medium text-gray-900">{enfantDetail.eleve?.classe_nom}</p>
+                        <p className="font-medium text-gray-900">{enfantDetail?.eleve?.classe_nom ?? selectedEnfant?.classe_nom}</p>
                       </div>
                     </div>
                   </div>
@@ -620,7 +615,7 @@ export default function MesEnfantsPage() {
                           <File className="w-5 h-5 text-blue-600" />
                           <span className="font-medium text-black">Acte de naissance</span>
                         </div>
-                        {enfantDetail.eleve?.acte_naissance_url ? (
+                        {enfantDetail?.eleve?.acte_naissance_url ? (
                           <a 
                             href={enfantDetail.eleve.acte_naissance_url} 
                             target="_blank" 
@@ -640,9 +635,9 @@ export default function MesEnfantsPage() {
                           <Image className="w-5 h-5 text-green-600" />
                           <span className="font-medium text-black">Photo d'identité</span>
                         </div>
-                        {enfantDetail.eleve?.photo_url ? (
+                        {(enfantDetail?.eleve?.photo_url ?? selectedEnfant?.photo_url) ? (
                           <a 
-                            href={enfantDetail.eleve.photo_url} 
+                            href={(enfantDetail?.eleve?.photo_url ?? selectedEnfant?.photo_url) as string} 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="text-blue-600 text-sm hover:underline flex items-center gap-1"
@@ -660,7 +655,7 @@ export default function MesEnfantsPage() {
                           <FileText className="w-5 h-5 text-orange-600" />
                           <span className="font-medium text-black">Bulletin scolaire</span>
                         </div>
-                        {enfantDetail.eleve?.bulletin_url ? (
+                        {enfantDetail?.eleve?.bulletin_url ? (
                           <a 
                             href={enfantDetail.eleve.bulletin_url} 
                             target="_blank" 
@@ -683,77 +678,106 @@ export default function MesEnfantsPage() {
                       Détail des paiements
                     </h3>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <p className="text-xs text-gray-600">Inscription</p>
-                        <p className="font-bold text-blue-600">{enfantDetail.frais.inscription.toLocaleString()} GNF</p>
-                      </div>
-                      <div className="bg-pink-50 p-3 rounded-lg border border-pink-200">
-                        <p className="text-xs text-gray-600">Cantine</p>
-                        <p className="font-bold text-pink-600">{enfantDetail.frais.cantine.toLocaleString()} GNF</p>
-                      </div>
-                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                        <p className="text-xs text-gray-600">Transport</p>
-                        <p className="font-bold text-green-600">{enfantDetail.frais.transport.toLocaleString()} GNF</p>
-                      </div>
-                      <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                        <p className="text-xs text-gray-600">Frais de fourniture</p>
-                        <p className="font-bold text-purple-600">{enfantDetail.frais.fournitures.toLocaleString()} GNF</p>
-                      </div>
-                      <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                        <p className="text-xs text-gray-600">Scolarité</p>
-                        <p className="font-bold text-orange-600">{enfantDetail.frais.scolarite.toLocaleString()} GNF</p>
-                      </div>
-                      <div className="bg-gray-100 p-3 rounded-lg border border-gray-300">
-                        <p className="text-xs text-gray-600 font-semibold">Total à payer</p>
-                        <p className="font-bold text-gray-800 text-lg">{enfantDetail.frais.total_a_payer.toLocaleString()} GNF</p>
-                      </div>
-                    </div>
+                    {(() => {
+                      const inscription = enfantDetail?.frais?.inscription ?? selectedEnfant?.details_frais?.inscription ?? 0;
+                      const cantine = enfantDetail?.frais?.cantine ?? selectedEnfant?.details_frais?.cantine ?? 0;
+                      const transport = enfantDetail?.frais?.transport ?? selectedEnfant?.details_frais?.transport ?? 0;
+                      const fournitures = enfantDetail?.frais?.fournitures ?? selectedEnfant?.details_frais?.librairie ?? 0;
+                      const scolarite = enfantDetail?.frais?.scolarite ?? selectedEnfant?.details_frais?.scolarite ?? 0;
+                      const totalAPayer = selectedEnfant?.details_frais?.total ?? enfantDetail?.frais?.total_a_payer ?? 0;
+                      const dejaPaye = selectedEnfant?.details_frais?.paye ?? enfantDetail?.frais?.total_paye ?? 0;
+                      const resteAPayer = selectedEnfant?.details_frais?.reste ?? enfantDetail?.frais?.solde_restant ?? 0;
+                      
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div>
+                              <p className="text-xs text-gray-600 font-semibold">Total à payer</p>
+                              <p className="font-bold text-gray-800 text-lg">{totalAPayer.toLocaleString()} GNF</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600">Déjà payé</p>
+                              <p className="font-bold text-green-600">{dejaPaye.toLocaleString()} GNF</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600">Reste à payer</p>
+                              <p className={`font-bold ${resteAPayer > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {resteAPayer.toLocaleString()} GNF
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-600">Statut</p>
+                              {resteAPayer === 0 ? (
+                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-max">
+                                  <CheckCircle className="w-3 h-3" /> Tout payé
+                                </span>
+                              ) : dejaPaye > 0 ? (
+                                <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-max">
+                                  <Clock className="w-3 h-3" /> Partiel
+                                </span>
+                              ) : (
+                                <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-max">
+                                  <XCircle className="w-3 h-3" /> Non payé
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div>
-                        <p className="text-xs text-gray-600">Déjà payé</p>
-                        <p className="font-bold text-green-600">{enfantDetail.frais.total_paye.toLocaleString()} GNF</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Reste à payer</p>
-                        <p className={`font-bold ${enfantDetail.frais.solde_restant > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {enfantDetail.frais.solde_restant.toLocaleString()} GNF
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Statut</p>
-                        {enfantDetail.frais.solde_restant === 0 ? (
-                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-max">
-                            <CheckCircle className="w-3 h-3" /> Tout payé
-                          </span>
-                        ) : enfantDetail.frais.total_paye > 0 ? (
-                          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-max">
-                            <Clock className="w-3 h-3" /> Partiel
-                          </span>
-                        ) : (
-                          <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-max">
-                            <XCircle className="w-3 h-3" /> Non payé
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {enfantDetail.frais.total_a_payer > 0 && (
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
-                          <span>Progression des paiements</span>
-                          <span>{Math.round((enfantDetail.frais.total_paye / enfantDetail.frais.total_a_payer) * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
-                            className="bg-green-500 h-2.5 rounded-full transition-all duration-500" 
-                            style={{ width: `${Math.min(100, (enfantDetail.frais.total_paye / enfantDetail.frais.total_a_payer) * 100)}%` }} 
-                          />
-                        </div>
-                      </div>
-                    )}
+                          {totalAPayer > 0 && (
+                            <div className="mt-3">
+                              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Progression des paiements</span>
+                                <span>{Math.round((dejaPaye / totalAPayer) * 100)}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-green-500 h-2.5 rounded-full transition-all duration-500" 
+                                  style={{ width: `${Math.min(100, (dejaPaye / totalAPayer) * 100)}%` }} 
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
+
+                  {/* Bulletins scolaires */}
+                  {enfantDetail?.bulletins && enfantDetail.bulletins.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-black mb-3 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        Bulletins scolaires
+                      </h3>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        {enfantDetail.bulletins.map((bulletin: any, idx: number) => (
+                          <div key={idx} className="border rounded-lg p-4 hover:shadow-md transition">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-medium text-gray-900">{bulletin.titre || "Bulletin"}</h4>
+                                {bulletin.trimestre && (
+                                  <p className="text-xs text-gray-500">Trimestre {bulletin.trimestre}</p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {bulletin.date_publication ? new Date(bulletin.date_publication).toLocaleDateString() : "Date inconnue"}
+                                </p>
+                              </div>
+                              {bulletin.fichier_url && (
+                                <a
+                                  href={bulletin.fichier_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                                >
+                                  <Download className="w-5 h-5 text-blue-600" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-center py-12 text-gray-500">Une erreur est survenue lors du chargement des détails.</div>
