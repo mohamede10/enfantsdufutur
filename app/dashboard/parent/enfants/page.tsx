@@ -272,7 +272,7 @@ export default function MesEnfantsPage() {
               <p className={`text-2xl font-bold ${statsGlobales.soldeRestant > 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {statsGlobales.soldeRestant.toLocaleString()} GNF
               </p>
-              <p className="text-xs text-gray-400">Déjà payé: {statsGlobales.totalPaye.toLocaleString()} GNF</p>
+              <p className="text-xs text-gray-400">Déjà payé : {statsGlobales.totalPaye.toLocaleString()} GNF</p>
             </div>
             <Wallet className={`w-8 h-8 ${statsGlobales.soldeRestant > 0 ? 'text-red-600' : 'text-green-600'}`} />
           </div>
