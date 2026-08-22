@@ -44,12 +44,24 @@ export default function HomePage() {
     success: 0
   });
 
-  const targetStats = {
+  const [targetStats, setTargetStats] = useState({
     students: 1250,
     teachers: 85,
     classes: 32,
     success: 100
-  };
+  });
+
+  // Charger les statistiques réelles depuis l'API publique
+  useEffect(() => {
+    fetch("/api/public-stats")
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.students === "number") {
+          setTargetStats(data);
+        }
+      })
+      .catch(err => console.error("Erreur chargement public stats:", err));
+  }, []);
 
   // Capture événement beforeinstallprompt (Android/Chrome)
   useEffect(() => {
@@ -126,7 +138,7 @@ export default function HomePage() {
     }, step);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [targetStats]);
 
   // Slides du carrousel
   const slides = [
@@ -276,7 +288,7 @@ export default function HomePage() {
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold mb-2 text-gray-200">{stats.teachers}+</div>
-              <div className="text-blue-100">Enseignants</div>
+              <div className="text-blue-100">Enseignants & Personnels</div>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold mb-2 text-gray-200">{stats.classes}</div>
