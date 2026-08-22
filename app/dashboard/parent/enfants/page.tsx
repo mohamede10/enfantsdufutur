@@ -200,7 +200,7 @@ export default function MesEnfantsPage() {
         </div>
         <div className="flex gap-3">
           <Link href="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Inscrire un enfant
+            <Plus className="w-4 h-4" />Inscrire un enfant
           </Link>
         </div>
       </div>
