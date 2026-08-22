@@ -1,4 +1,4 @@
-// app/api/parent/enfants/route.ts - Version corrigée avec total = 6 250 000 GNF
+// app/api/parent/enfants/route.ts - Version corrigée
 
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
@@ -123,22 +123,10 @@ export async function GET() {
          JOIN inscriptions i ON i.preinscription_id = p.id
          WHERE i.eleve_id = e.id
          LIMIT 1) as montant_total_plan,
-        -- ⭐ Récupérer les frais de la pré-inscription (pour savoir si services déjà inclus)
-        (SELECT p.frais_cantine 
-         FROM preinscriptions p
-         JOIN inscriptions i ON i.preinscription_id = p.id
-         WHERE i.eleve_id = e.id
-         LIMIT 1) as preinscription_frais_cantine,
-        (SELECT p.frais_transport 
-         FROM preinscriptions p
-         JOIN inscriptions i ON i.preinscription_id = p.id
-         WHERE i.eleve_id = e.id
-         LIMIT 1) as preinscription_frais_transport,
-        (SELECT p.frais_fournitures 
-         FROM preinscriptions p
-         JOIN inscriptions i ON i.preinscription_id = p.id
-         WHERE i.eleve_id = e.id
-         LIMIT 1) as preinscription_frais_fournitures,
+        -- ⭐⭐⭐ CORRECTION : Utiliser 0 car les colonnes n'existent pas dans preinscriptions ⭐⭐⭐
+        0 as preinscription_frais_cantine,
+        0 as preinscription_frais_transport,
+        0 as preinscription_frais_fournitures,
         TRUE as est_eleve,
         FALSE as est_preinscription,
         'eleve' as type
@@ -168,8 +156,8 @@ export async function GET() {
         0 as frais_reinscription_classe,
         p.photo_url,
         -- ⭐ Frais optionnels pour pré-inscriptions
-        COALESCE(p.frais_cantine, 0) as frais_cantine_reel,
-        COALESCE(p.frais_transport, 0) as frais_transport_reel,
+        0 as frais_cantine_reel,
+        0 as frais_transport_reel,
         -- ⭐ FOURNITURES pour les pré-inscriptions
         COALESCE(
           (SELECT SUM(cf.quantite * cf.prix_unitaire)
@@ -280,7 +268,7 @@ export async function GET() {
       } else if (enfant.type === 'eleve') {
         // Pour les élèves : vérifier si les services sont déjà inclus
         if (montantTotalPlan > 0) {
-          // Récupérer les frais de la pré-inscription
+          // Récupérer les frais de la pré-inscription (maintenant toujours 0)
           const preFraisCantine = Number(enfant.preinscription_frais_cantine) || 0;
           const preFraisTransport = Number(enfant.preinscription_frais_transport) || 0;
           const preFraisFournitures = Number(enfant.preinscription_frais_fournitures) || 0;
@@ -390,7 +378,9 @@ export async function GET() {
     console.log(`📊 Total payé: ${totalPaye.toLocaleString()} GNF`);
     console.log(`📊 Solde restant: ${totalReste.toLocaleString()} GNF`);
 
-    return NextResponse.json(enfantsAvecFrais);
+    // ⭐⭐⭐ GARANTIR QUE LA RÉPONSE EST UN TABLEAU ⭐⭐⭐
+    const result = Array.isArray(enfantsAvecFrais) ? enfantsAvecFrais : [];
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error("Erreur GET enfants:", error);

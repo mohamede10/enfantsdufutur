@@ -33,6 +33,17 @@ import {
   User
 } from "lucide-react";
 
+interface DetailsFrais {
+  inscription: number;
+  cantine: number;
+  transport: number;
+  librairie: number;
+  scolarite: number;
+  total: number;
+  paye: number;
+  reste: number;
+}
+
 interface Enfant {
   id: number;
   matricule: string;
@@ -43,6 +54,7 @@ interface Enfant {
   niveau: string;
   frais_inscription_classe: number;
   photo_url: string | null;
+  details_frais?: DetailsFrais;
 }
 
 interface Preinscription {
@@ -337,10 +349,9 @@ export default function ParentDashboard() {
   };
 
   // CALCUL DES STATISTIQUES GLOBALES
-  const totalPreinscriptionFrais = preinscriptions.reduce((acc, p) => acc + (Number(p.montant_total) || 0), 0);
-  const totalPaye = Object.values(statsEnfant).reduce((acc, s) => acc + (Number(s.paiements?.total_paye) || 0), 0);
-  const totalAPayer = totalPreinscriptionFrais;
-  const soldeRestant = Math.max(0, totalAPayer - totalPaye);
+  const totalAPayer = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.total) || 0), 0);
+  const totalPaye = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.paye) || 0), 0);
+  const soldeRestant = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.reste) || 0), 0);
 
   const statsGlobales = {
     totalEnfants: enfants.length,
@@ -350,11 +361,11 @@ export default function ParentDashboard() {
     totalRetards: Object.values(statsEnfant).reduce((acc, s) => acc + (Number(s.presences?.retards) || 0), 0),
     totalAPayer: totalAPayer,
     totalPaye: totalPaye,
-    totalFraisInscription: totalPreinscriptionFrais,
+    totalFraisInscription: totalAPayer,
     totalTransport: 0,
     totalCantine: 0,
     totalFournitures: 0,
-    totalFraisGeneral: totalPreinscriptionFrais,
+    totalFraisGeneral: totalAPayer,
     soldeRestant: soldeRestant,
   };
 

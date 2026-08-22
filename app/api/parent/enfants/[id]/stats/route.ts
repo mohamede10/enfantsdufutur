@@ -107,10 +107,9 @@ export async function GET(
     const totalFraisGeneral = fraisBase + transportTotal + cantineTotal + fournituresTotal;
 
     // ⭐⭐⭐ 6. PAIEMENTS EFFECTUÉS - CORRECTION MAJEURE ⭐⭐⭐
-    let totalPayeDirect = 0;
-    let totalPayeEcheances = 0;
-
-    // 6a. Récupérer d'abord toutes les pré-inscriptions de l'élève
+    // La requête doit récupérer tous les paiements liés à l'élève de manière plus large
+    
+    // 6a. Récupérer d'abord toutes les pré-inscriptions de l'élève (même via l'historique)
     const preinscriptionsEleve = await query(`
       SELECT DISTINCT p.id as preinscription_id
       FROM preinscriptions p
@@ -132,7 +131,10 @@ export async function GET(
 
     const reinscriptionIds = reinscriptionsEleve.rows.map(row => row.reinscription_id);
 
-    // 6c. Paiements liés directement à l'élève
+    // 6c. Calculer le total des paiements directs
+    let totalPayeDirect = 0;
+
+    // Paiements liés directement à l'élève
     const paiementsEleve = await query(`
       SELECT COALESCE(SUM(montant), 0) as total
       FROM paiements
@@ -141,48 +143,55 @@ export async function GET(
     `, [eleveId]);
     totalPayeDirect += Number(paiementsEleve.rows[0]?.total) || 0;
 
-    // 6d. Paiements liés aux pré-inscriptions (une par une)
-    for (const preId of preinscriptionIds) {
-      const paiementsPre = await query(`
+    // Paiements liés aux pré-inscriptions de l'élève
+    if (preinscriptionIds.length > 0) {
+      const placeholders = preinscriptionIds.map((_, i) => `$${i + 2}`).join(', ');
+      const paiementsPreinscription = await query(`
         SELECT COALESCE(SUM(montant), 0) as total
         FROM paiements
-        WHERE preinscription_id = $1
+        WHERE preinscription_id IN (${placeholders})
         AND statut = 'valide'
-      `, [preId]);
-      totalPayeDirect += Number(paiementsPre.rows[0]?.total) || 0;
+      `, [eleveId, ...preinscriptionIds]);
+      totalPayeDirect += Number(paiementsPreinscription.rows[0]?.total) || 0;
     }
 
-    // 6e. Paiements liés aux réinscriptions (une par une)
-    for (const reinscId of reinscriptionIds) {
-      const paiementsReinsc = await query(`
+    // Paiements liés aux réinscriptions de l'élève
+    if (reinscriptionIds.length > 0) {
+      const placeholders = reinscriptionIds.map((_, i) => `$${i + 2}`).join(', ');
+      const paiementsReinscription = await query(`
         SELECT COALESCE(SUM(montant), 0) as total
         FROM paiements
-        WHERE reinscription_id = $1
+        WHERE reinscription_id IN (${placeholders})
         AND statut = 'valide'
-      `, [reinscId]);
-      totalPayeDirect += Number(paiementsReinsc.rows[0]?.total) || 0;
+      `, [eleveId, ...reinscriptionIds]);
+      totalPayeDirect += Number(paiementsReinscription.rows[0]?.total) || 0;
     }
 
-    // 6f. Échéances liées aux pré-inscriptions (une par une)
-    for (const preId of preinscriptionIds) {
-      const echeancesPre = await query(`
+    // 6d. Paiements via les échéances
+    let totalPayeEcheances = 0;
+
+    // Échéances liées aux pré-inscriptions de l'élève
+    if (preinscriptionIds.length > 0) {
+      const placeholders = preinscriptionIds.map((_, i) => `$${i + 2}`).join(', ');
+      const echeancesPreinscription = await query(`
         SELECT COALESCE(SUM(montant), 0) as total
         FROM echeances_paiement
-        WHERE preinscription_id = $1
+        WHERE preinscription_id IN (${placeholders})
         AND statut = 'paye'
-      `, [preId]);
-      totalPayeEcheances += Number(echeancesPre.rows[0]?.total) || 0;
+      `, [eleveId, ...preinscriptionIds]);
+      totalPayeEcheances += Number(echeancesPreinscription.rows[0]?.total) || 0;
     }
 
-    // 6g. Échéances liées aux réinscriptions (une par une)
-    for (const reinscId of reinscriptionIds) {
-      const echeancesReinsc = await query(`
+    // Échéances liées aux réinscriptions de l'élève
+    if (reinscriptionIds.length > 0) {
+      const placeholders = reinscriptionIds.map((_, i) => `$${i + 2}`).join(', ');
+      const echeancesReinscription = await query(`
         SELECT COALESCE(SUM(montant), 0) as total
         FROM echeances_paiement
-        WHERE reinscription_id = $1
+        WHERE reinscription_id IN (${placeholders})
         AND statut = 'paye'
-      `, [reinscId]);
-      totalPayeEcheances += Number(echeancesReinsc.rows[0]?.total) || 0;
+      `, [eleveId, ...reinscriptionIds]);
+      totalPayeEcheances += Number(echeancesReinscription.rows[0]?.total) || 0;
     }
 
     const totalPaye = totalPayeDirect + totalPayeEcheances;

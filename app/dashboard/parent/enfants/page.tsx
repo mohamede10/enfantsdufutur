@@ -142,28 +142,6 @@ export default function MesEnfantsPage() {
     loadEnfantDetail(enfant.eleve_id);
   };
 
-  // ⭐ STATISTIQUES CORRIGÉES AVEC DONNÉES RÉELLES
-  const statsGlobales = {
-    totalEnfants: enfants.length,
-    
-    // Absences et retards réels
-    totalAbsences: Object.values(statsEnfant).reduce((acc, s) => acc + (s.presences?.absents || 0), 0),
-    totalRetards: Object.values(statsEnfant).reduce((acc, s) => acc + (s.presences?.retards || 0), 0),
-    
-    // ⭐ Montant total à payer = Scolarité + Transport + Cantine + Fournitures
-    totalAPayer: enfants.reduce((acc, e) => {
-      const frais = e.details_frais;
-      // Le total est la somme de tous les frais (scolarité, transport, cantine, fournitures)
-      return acc + (frais?.total || 0);
-    }, 0),
-    
-    // ⭐ Frais déjà payés (basé sur les paiements réels)
-    totalPaye: enfants.reduce((acc, e) => acc + (e.details_frais?.paye || 0), 0),
-    
-    // ⭐ Solde restant
-    soldeRestant: enfants.reduce((acc, e) => acc + (e.details_frais?.reste || 0), 0),
-  };
-
   const filteredEnfants = enfants.filter(e => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -224,58 +202,6 @@ export default function MesEnfantsPage() {
           <Link href="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
             <Plus className="w-4 h-4" /> Inscrire un enfant
           </Link>
-        </div>
-      </div>
-
-      {/* ⭐ STATISTIQUES GLOBALES AVEC DONNÉES RÉELLES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Enfants inscrits */}
-        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Enfants inscrits</p>
-              <p className="text-2xl font-bold text-blue-600">{statsGlobales.totalEnfants}</p>
-            </div>
-            <Users className="w-8 h-8 text-blue-600" />
-          </div>
-        </div>
-
-        {/* Absences totales */}
-        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Absences totales</p>
-              <p className="text-2xl font-bold text-orange-600">{statsGlobales.totalAbsences}</p>
-              <p className="text-xs text-gray-400">Retards: {statsGlobales.totalRetards}</p>
-            </div>
-            <Calendar className="w-8 h-8 text-orange-600" />
-          </div>
-        </div>
-
-        {/* ⭐ Montant total à payer (Scolarité + Transport + Cantine + Fournitures) */}
-        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total à payer</p>
-              <p className="text-2xl font-bold text-red-600">{statsGlobales.totalAPayer.toLocaleString()} GNF</p>
-              <p className="text-xs text-gray-400">Scolarité + Transport + Cantine + Fournitures</p>
-            </div>
-            <CreditCard className="w-8 h-8 text-red-600" />
-          </div>
-        </div>
-
-        {/* Solde restant */}
-        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Solde restant</p>
-              <p className={`text-2xl font-bold ${statsGlobales.soldeRestant > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {statsGlobales.soldeRestant.toLocaleString()} GNF
-              </p>
-              <p className="text-xs text-gray-400">Déjà payé : {statsGlobales.totalPaye.toLocaleString()} GNF</p>
-            </div>
-            <Wallet className={`w-8 h-8 ${statsGlobales.soldeRestant > 0 ? 'text-red-600' : 'text-green-600'}`} />
-          </div>
         </div>
       </div>
 
@@ -441,7 +367,7 @@ export default function MesEnfantsPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* En-tête avec photo - ⭐ Utiliser enfantDetail pour la photo */}
+              {/* En-tête avec photo */}
               <div className="flex items-start gap-6 pb-6 border-b">
                 <div className="flex-shrink-0">
                   {enfantDetail?.eleve?.photo_url ? (
@@ -603,7 +529,7 @@ export default function MesEnfantsPage() {
                     </div>
                   </div>
 
-                  {/* ⭐ Documents téléchargés - UTILISER enfantDetail ⭐ */}
+                  {/* Documents téléchargés */}
                   <div>
                     <h3 className="font-semibold text-black mb-3 flex items-center gap-2">
                       <FileText className="w-5 h-5 text-purple-600" /> Documents joints
