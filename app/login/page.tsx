@@ -51,8 +51,8 @@ export default function LoginPage() {
         <div className="max-w-6xl w-full mx-auto">
           <div className="flex flex-col lg:flex-row rounded-2xl overflow-hidden shadow-2xl">
 
-            {/* Partie gauche - Texte de pub avec transparence */}
-            <div className="lg:w-1/2 bg-black/50 backdrop-blur-sm p-8 lg:p-12 flex flex-col justify-center text-white">
+            {/* ⭐ Partie gauche - Texte de pub (caché sur mobile) ⭐ */}
+            <div className="hidden lg:flex lg:w-1/2 bg-black/50 backdrop-blur-sm p-8 lg:p-12 flex-col justify-center text-white">
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -114,8 +114,8 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Partie droite - Formulaire */}
-            <div className="lg:w-1/2 bg-white/95 backdrop-blur-sm p-8 lg:p-12">
+            {/* ⭐ Partie droite - Formulaire (pleine largeur sur mobile) ⭐ */}
+            <div className="lg:w-1/2 w-full bg-white/95 backdrop-blur-sm p-8 lg:p-12">
               {/* Logo mobile */}
               <div className="lg:hidden flex justify-center mb-6">
                 <Image
