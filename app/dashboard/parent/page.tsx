@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PaiementPlanModal from "@/components/PaiementPlanModal";
+import PaiementGlobalModal from "@/components/PaiementGlobalModal";
 
 import {
   Users,
@@ -150,6 +151,7 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [statsEnfant, setStatsEnfant] = useState<{ [key: number]: Stats }>({});
   const [showPaiementModal, setShowPaiementModal] = useState(false);
+  const [showGlobalPaiementModal, setShowGlobalPaiementModal] = useState(false);
   const [selectedPreinscription, setSelectedPreinscription] = useState<Preinscription | null>(null);
   const [modePaiement, setModePaiement] = useState("");
   const [reference, setReference] = useState("");
@@ -463,13 +465,24 @@ export default function ParentDashboard() {
               <FileText className="w-5 h-5 text-purple-600" />
               Mes enfants inscrits
             </h2>
-            <Link
-              href="/register"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Nouvelle inscription
-            </Link>
+            <div className="flex gap-2">
+              {statsGlobales.soldeRestant > 0 && (
+                <button
+                  onClick={() => setShowGlobalPaiementModal(true)}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Paiement Global
+                </button>
+              )}
+              <Link
+                href="/register"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nouvelle inscription
+              </Link>
+            </div>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {preinscriptions.map((p) => (
@@ -919,21 +932,20 @@ export default function ParentDashboard() {
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6 text-red-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Annuler la pré-inscription</h2>
+                <h2 className="text-xl font-bold text-gray-900">Confirmer l'annulation</h2>
               </div>
             </div>
 
             <div className="p-6">
               <p className="text-gray-900 mb-2">
-                Êtes-vous sûr de vouloir annuler cette pré-inscription ?
+                Êtes-vous sûr de vouloir annuler la pré-inscription de <strong>{preinscriptionToCancel.enfant_prenom} {preinscriptionToCancel.enfant_nom}</strong> ?
               </p>
-              <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-lg mb-4">
-                {preinscriptionToCancel.enfant_prenom} {preinscriptionToCancel.enfant_nom} - {preinscriptionToCancel.classe}
-              </p>
-              <p className="text-sm text-red-600 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
-                Cette action est irréversible et supprimera définitivement la pré-inscription.
-              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                <p className="text-sm text-yellow-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  Cette action est irréversible et supprimera le dossier.
+                </p>
+              </div>
             </div>
 
             <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
@@ -942,8 +954,8 @@ export default function ParentDashboard() {
                   setShowConfirmModal(false);
                   setPreinscriptionToCancel(null);
                 }}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-100 transition text-black"
                 disabled={cancelling}
+                className="px-4 py-2 text-gray-700 border rounded-lg hover:bg-gray-100 transition"
               >
                 Annuler
               </button>
@@ -987,6 +999,17 @@ export default function ParentDashboard() {
           niveau={selectedPreinscription.niveau}
         />
       )}
+
+      {/* MODAL PAIEMENT GLOBAL */}
+      <PaiementGlobalModal
+        isOpen={showGlobalPaiementModal}
+        onClose={() => setShowGlobalPaiementModal(false)}
+        onSuccess={() => {
+          addNotification("success", "Paiement global effectué avec succès !");
+          triggerRefresh();
+        }}
+        soldeRestant={statsGlobales.soldeRestant}
+      />
     </div>
   );
 }

@@ -26,10 +26,10 @@ export async function GET(
 
     // ⭐ CORRECTION : Déballer params avec await
     const { id } = await params;
-    
+
     // ⭐ Vérifier que l'ID est valide
     const parentId = parseInt(id);
-    
+
     // ⭐ Si l'ID n'est pas un nombre valide, retourner une erreur
     if (isNaN(parentId) || parentId <= 0) {
       return NextResponse.json(
@@ -107,21 +107,74 @@ export async function GET(
         p.frais_montant,
         p.date_preinscription,
         p.montant_total_plan,
-        p.montant_restant_plan
+        p.montant_restant_plan,
+        'preinscription' as type_dossier
       FROM preinscriptions p
       WHERE p.parent_id = $1
       ORDER BY p.date_preinscription DESC
     `, [parentId]);
 
+    // Récupérer les réinscriptions du parent
+    const reinscriptionsResult = await query(`
+      SELECT 
+        r.id,
+        r.numero_dossier,
+        r.enfant_nom,
+        r.enfant_prenom,
+        NULL as date_naissance,
+        r.niveau,
+        r.classe_id as classe,
+        r.statut,
+        r.frais_statut,
+        r.montant_frais as frais_montant,
+        r.date_reinscription as date_preinscription,
+        r.montant_total_plan,
+        r.montant_restant_plan,
+        'reinscription' as type_dossier
+      FROM reinscriptions r
+      WHERE r.parent_id = $1
+      ORDER BY r.date_reinscription DESC
+    `, [parentId]);
+
+    // ⭐ Calculer le solde restant exact pour les élèves du parent (identique à /api/parent/enfants)
+    const elevesFraisResult = await query(`
+      SELECT 
+        e.id as eleve_id,
+        COALESCE(c.total_versement, c.frais_inscription, 0) as frais_inscription_classe,
+        COALESCE(c.reinscription_total_versement, c.total_versement, 0) as frais_reinscription_classe,
+        COALESCE((SELECT SUM(pai.montant) FROM paiements pai WHERE pai.eleve_id = e.id AND pai.statut = 'valide'), 0) as frais_paye_eleve,
+        COALESCE((SELECT SUM(pai.montant) FROM paiements pai WHERE pai.preinscription_id IN (SELECT i.preinscription_id FROM inscriptions i WHERE i.eleve_id = e.id) AND pai.statut = 'valide'), 0) as frais_paye_preinscription,
+        COALESCE((SELECT SUM(pai.montant) FROM paiements pai WHERE pai.reinscription_id IN (SELECT id FROM reinscriptions WHERE eleve_id = e.id) AND pai.statut = 'valide'), 0) as frais_paye_reinscription,
+        (SELECT p.montant_total_plan FROM preinscriptions p JOIN inscriptions i ON i.preinscription_id = p.id WHERE i.eleve_id = e.id LIMIT 1) as montant_total_plan
+      FROM eleves e
+      LEFT JOIN classes c ON e.classe_id = c.id
+      JOIN lien_parent_eleve lpe ON e.id = lpe.eleve_id
+      WHERE lpe.parent_id = $1 AND e.deleted_at IS NULL
+    `, [parentId]);
+
+    let soldeElevesTotal = 0;
+    for (const row of elevesFraisResult.rows) {
+      const fraisClasse = Number(row.frais_reinscription_classe) > 0 ? Number(row.frais_reinscription_classe) : Number(row.frais_inscription_classe);
+      const montantTotal = Number(row.montant_total_plan) > 0 ? Number(row.montant_total_plan) : fraisClasse;
+      const totalPaye = Number(row.frais_paye_eleve) + Number(row.frais_paye_preinscription) + Number(row.frais_paye_reinscription);
+      soldeElevesTotal += Math.max(0, montantTotal - totalPaye);
+    }
+
+    const allDossiers = [...(preinscriptionsResult.rows || []), ...(reinscriptionsResult.rows || [])];
+    const soldeDossiersTotal = allDossiers.reduce((acc, p) => acc + (Number(p.montant_restant_plan) || 0), 0);
+
+    const soldeRestantTotal = soldeElevesTotal > 0 ? soldeElevesTotal : soldeDossiersTotal;
+
     return NextResponse.json({
       ...parent,
       situation_matrimoniale: parent.situation_matrimoniale
         ? (typeof parent.situation_matrimoniale === 'string'
-            ? JSON.parse(parent.situation_matrimoniale)
-            : parent.situation_matrimoniale)
+          ? JSON.parse(parent.situation_matrimoniale)
+          : parent.situation_matrimoniale)
         : null,
       enfants: enfantsResult.rows || [],
-      preinscriptions: preinscriptionsResult.rows || [],
+      preinscriptions: allDossiers,
+      solde_restant_total: soldeRestantTotal,
     });
   } catch (error) {
     console.error("Erreur récupération parent:", error);
@@ -186,7 +239,7 @@ export async function DELETE(
       const enfantsResult = await query(`
         SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1
       `, [parentId]);
-      
+
       const enfantIds = enfantsResult.rows.map(row => row.eleve_id);
 
       // 2. Supprimer les données liées aux pré-inscriptions
@@ -239,59 +292,26 @@ export async function DELETE(
         DELETE FROM inscriptions WHERE parent_id = $1
       `, [parentId]);
 
-      // ⭐ 5. Supprimer les données des enfants - VERSION CORRIGÉE AVEC BOUCLE
+      // 5. Supprimer les présences et notes des enfants
       if (enfantIds.length > 0) {
-        for (const enfantId of enfantIds) {
-          // Supprimer les présences
-          await query(`
-            DELETE FROM presences WHERE eleve_id = $1
-          `, [enfantId]);
+        const placeholders = enfantIds.map((_, i) => `$${i + 2}`).join(', ');
 
-          // Supprimer les notes
-          await query(`
-            DELETE FROM notes WHERE eleve_id = $1
-          `, [enfantId]);
+        await query(`
+          DELETE FROM presences WHERE eleve_id IN (${placeholders})
+        `, [parentId, ...enfantIds]);
 
-          // Supprimer les inscriptions transport
-          await query(`
-            DELETE FROM inscriptions_transport WHERE eleve_id = $1
-          `, [enfantId]);
+        await query(`
+          DELETE FROM notes WHERE eleve_id IN (${placeholders})
+        `, [parentId, ...enfantIds]);
 
-          // Supprimer les inscriptions cantine
-          await query(`
-            DELETE FROM inscriptions_cantine WHERE eleve_id = $1
-          `, [enfantId]);
+        // Supprimer les inscriptions transport/cantine
+        await query(`
+          DELETE FROM inscriptions_transport WHERE eleve_id IN (${placeholders})
+        `, [parentId, ...enfantIds]);
 
-          // Supprimer les réservations cantine
-          await query(`
-            DELETE FROM reservations_cantine WHERE eleve_id = $1
-          `, [enfantId]);
-
-          // Supprimer les transactions cantine
-          await query(`
-            DELETE FROM transactions_cantine WHERE eleve_id = $1
-          `, [enfantId]);
-
-          // Supprimer les participations quiz
-          await query(`
-            DELETE FROM participations_quiz WHERE eleve_id = $1
-          `, [enfantId]);
-
-          // Supprimer les soumissions de devoirs
-          await query(`
-            DELETE FROM soumissions_devoirs WHERE eleve_id = $1
-          `, [enfantId]);
-
-          // Supprimer les emprunts bibliothèque
-          await query(`
-            DELETE FROM emprunts_bibliotheque WHERE eleve_id = $1
-          `, [enfantId]);
-
-          // Supprimer les ventes librairie
-          await query(`
-            DELETE FROM ventes_librairie WHERE eleve_id = $1
-          `, [enfantId]);
-        }
+        await query(`
+          DELETE FROM inscriptions_cantine WHERE eleve_id IN (${placeholders})
+        `, [parentId, ...enfantIds]);
       }
 
       // 6. Supprimer les liens parent-enfant
@@ -308,7 +328,7 @@ export async function DELETE(
 
         if (enfantResult.rows.length > 0) {
           const utilisateurId = enfantResult.rows[0].utilisateur_id;
-          
+
           // Supprimer l'élève
           await query(`
             DELETE FROM eleves WHERE id = $1

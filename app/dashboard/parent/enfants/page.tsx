@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import PaiementGlobalModal from "@/components/PaiementGlobalModal";
 import {
   Users,
   CreditCard,
@@ -79,6 +80,7 @@ export default function MesEnfantsPage() {
   // États pour le modal détail
   const [selectedEnfant, setSelectedEnfant] = useState<Enfant | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showGlobalPaiementModal, setShowGlobalPaiementModal] = useState(false);
   const [enfantDetail, setEnfantDetail] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -208,6 +210,15 @@ export default function MesEnfantsPage() {
           <p className="text-gray-900">Gérez le suivi scolaire et les paiements de vos enfants</p>
         </div>
         <div className="flex gap-3">
+          {statsGlobales.soldeRestant > 0 && (
+            <button
+              onClick={() => setShowGlobalPaiementModal(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
+            >
+              <Wallet className="w-4 h-4" />
+              Paiement Global
+            </button>
+          )}
           <Link href="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
             <Plus className="w-4 h-4" />Inscrire un enfant
           </Link>
@@ -752,6 +763,16 @@ export default function MesEnfantsPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL PAIEMENT GLOBAL */}
+      <PaiementGlobalModal
+        isOpen={showGlobalPaiementModal}
+        onClose={() => setShowGlobalPaiementModal(false)}
+        onSuccess={() => {
+          fetchEnfants();
+        }}
+        soldeRestant={statsGlobales.soldeRestant}
+      />
     </div>
   );
 }
