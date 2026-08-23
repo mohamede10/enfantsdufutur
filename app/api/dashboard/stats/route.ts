@@ -25,10 +25,11 @@ export async function GET() {
     const classes = await query("SELECT COUNT(*) as total FROM classes");
     const parents = await query("SELECT COUNT(*) as total FROM utilisateurs WHERE role = 'PARENT'");
     const preinscriptions = await query("SELECT COUNT(*) as total FROM preinscriptions WHERE statut = 'en_attente'");
+    const reinscriptionsEnAttente = await query("SELECT COUNT(*) as total FROM reinscriptions WHERE statut = 'en_attente'");
 
     // ========== STATISTIQUES FINANCIÈRES ==========
 
-    // ⭐⭐⭐ 1. TOTAL RECETTES (Paiements validés) ⭐⭐⭐
+    // ⭐⭐⭐ 1. TOTAL RECETTES (Paiements validés) - INSCRIPTIONS + RÉINSCRIPTIONS ⭐⭐⭐
     const recettesResult = await query(`
       SELECT COALESCE(SUM(montant), 0) as total_recettes
       FROM paiements
@@ -36,8 +37,7 @@ export async function GET() {
     `);
     const totalRecettes = Number(recettesResult.rows[0]?.total_recettes) || 0;
 
-    // ⭐⭐⭐ 2. TOTAL DÉPENSES (SALAIRES + AUTRES DÉPENSES) ⭐⭐⭐
-    // ✅ Correction : On additionne les salaires (paiements_salaires) et les autres dépenses (depenses)
+    // ⭐⭐⭐ 2. TOTAL DÉPENSES ⭐⭐⭐
     const depensesResult = await query(`
       SELECT
         COALESCE(
@@ -51,7 +51,46 @@ export async function GET() {
     `);
     const totalDepenses = Number(depensesResult.rows[0]?.total_depenses) || 0;
 
-    // ⭐⭐⭐ SERVICES OPTIONNELS ⭐⭐⭐
+    // ⭐⭐⭐ 3. TOTAL À PAYER - INSCRIPTIONS (préinscriptions) ⭐⭐⭐
+    const totalAPayerInscriptionResult = await query(`
+      SELECT COALESCE(SUM(montant_total_plan), 0) as total_a_payer
+      FROM preinscriptions
+      WHERE statut IN ('en_attente', 'valide')
+    `);
+    const totalAPayerInscription = Number(totalAPayerInscriptionResult.rows[0]?.total_a_payer) || 0;
+
+    // ⭐⭐⭐ 4. TOTAL À PAYER - RÉINSCRIPTIONS ⭐⭐⭐
+    const totalAPayerReinscriptionResult = await query(`
+      SELECT COALESCE(SUM(montant_total_plan), 0) as total_a_payer
+      FROM reinscriptions
+      WHERE statut IN ('en_attente', 'valide')
+    `);
+    const totalAPayerReinscription = Number(totalAPayerReinscriptionResult.rows[0]?.total_a_payer) || 0;
+
+    // ⭐⭐⭐ 5. TOTAL PAYÉ - INSCRIPTIONS ⭐⭐⭐
+    const totalPayeInscriptionResult = await query(`
+      SELECT COALESCE(SUM(montant), 0) as total_paye
+      FROM paiements
+      WHERE statut IN ('valide', 'paye')
+        AND preinscription_id IS NOT NULL
+    `);
+    const totalPayeInscription = Number(totalPayeInscriptionResult.rows[0]?.total_paye) || 0;
+
+    // ⭐⭐⭐ 6. TOTAL PAYÉ - RÉINSCRIPTIONS ⭐⭐⭐
+    const totalPayeReinscriptionResult = await query(`
+      SELECT COALESCE(SUM(montant), 0) as total_paye
+      FROM paiements
+      WHERE statut IN ('valide', 'paye')
+        AND reinscription_id IS NOT NULL
+    `);
+    const totalPayeReinscription = Number(totalPayeReinscriptionResult.rows[0]?.total_paye) || 0;
+
+    // ⭐⭐⭐ 7. TOTAL GÉNÉRAL À PAYER ⭐⭐⭐
+    const totalAPayer = totalAPayerInscription + totalAPayerReinscription;
+    const totalPaye = totalPayeInscription + totalPayeReinscription;
+    const soldeRestant = Math.max(0, totalAPayer - totalPaye);
+
+    // ⭐⭐⭐ 8. SERVICES OPTIONNELS (Préinscriptions) ⭐⭐⭐
     const transportResult = await query(`
       SELECT COALESCE(SUM(pt.prix), 0) as total_transport
       FROM preinscriptions p
@@ -76,37 +115,31 @@ export async function GET() {
     `);
     const totalFournitures = Number(fournituresResult.rows[0]?.total_fournitures) || 0;
 
-    // ⭐⭐⭐ 3. TOTAL À PAYER (TOUTES LES PRÉ-INSCRIPTIONS + SERVICES) ⭐⭐⭐
-    const totalAPayerResult = await query(`
-      SELECT COALESCE(SUM(montant_total_plan), 0) as total_a_payer
-      FROM preinscriptions
-      WHERE statut IN ('en_attente', 'valide')
-    `);
-    const totalAPayerBase = Number(totalAPayerResult.rows[0]?.total_a_payer) || 0;
-    const totalAPayer = totalAPayerBase + totalTransport + totalCantine + totalFournitures;
-
-    // ⭐⭐⭐ 4. TOTAL PAYÉ (par pré-inscription) ⭐⭐⭐
-    const totalPayeResult = await query(`
-      SELECT COALESCE(SUM(montant), 0) as total_paye
-      FROM paiements
-      WHERE statut IN ('valide', 'paye')
-        AND preinscription_id IS NOT NULL
-    `);
-    const totalPaye = Number(totalPayeResult.rows[0]?.total_paye) || 0;
-
-    // ⭐⭐⭐ 5. SOLDE RESTANT = TOTAL À PAYER - TOTAL PAYÉ ⭐⭐⭐
-    const soldeRestant = Math.max(0, totalAPayer - totalPaye);
-
-    // ⭐⭐⭐ 6. TAUX DE RECOUVREMENT ⭐⭐⭐
+    // ⭐⭐⭐ 9. TAUX DE RECOUVREMENT ⭐⭐⭐
     const tauxRecouvrement = totalAPayer > 0 ? Math.round((totalPaye / totalAPayer) * 100) : 0;
 
-    // ⭐⭐⭐ 7. DÉTAIL PAR CATÉGORIE ⭐⭐⭐
+    // ⭐⭐⭐ 10. DÉTAIL PAR CATÉGORIE ⭐⭐⭐
     const inscriptionResult = await query(`
       SELECT COALESCE(SUM(montant_total_plan), 0) as total
       FROM preinscriptions
       WHERE statut IN ('en_attente', 'valide')
     `);
     const totalInscription = Number(inscriptionResult.rows[0]?.total) || 0;
+
+    const reinscriptionTotalResult = await query(`
+      SELECT COALESCE(SUM(montant_total_plan), 0) as total
+      FROM reinscriptions
+      WHERE statut IN ('en_attente', 'valide')
+    `);
+    const totalReinscription = Number(reinscriptionTotalResult.rows[0]?.total) || 0;
+
+    // ⭐⭐⭐ 11. TOTAL DES FRAIS DE RÉINSCRIPTION (montant_frais) ⭐⭐⭐
+    const fraisReinscriptionResult = await query(`
+      SELECT COALESCE(SUM(montant_frais), 0) as total
+      FROM reinscriptions
+      WHERE statut IN ('en_attente', 'valide')
+    `);
+    const totalFraisReinscription = Number(fraisReinscriptionResult.rows[0]?.total) || 0;
 
     const scolariteResult = await query(`
       SELECT COALESCE(SUM(f.montant), 0) as total_scolarite
@@ -118,7 +151,7 @@ export async function GET() {
     `);
     const totalScolarite = Number(scolariteResult.rows[0]?.total_scolarite) || 0;
 
-    // ⭐⭐⭐ 8. SOLDE RESTANT DÉTAILLÉ PAR PRÉ-INSCRIPTION ⭐⭐⭐
+    // ⭐⭐⭐ 12. SOLDE RESTANT DÉTAILLÉ PAR PRÉ-INSCRIPTION ⭐⭐⭐
     const soldeParPreinscription = await query(`
       SELECT
         p.id,
@@ -133,38 +166,65 @@ export async function GET() {
       HAVING GREATEST(0, p.montant_total_plan - COALESCE(SUM(pa.montant), 0)) > 0
     `);
 
-    console.log(" DASHBOARD FINANCIER:", {
+    // ⭐⭐⭐ 13. SOLDE RESTANT DÉTAILLÉ PAR RÉINSCRIPTION ⭐⭐⭐
+    const soldeParReinscription = await query(`
+      SELECT
+        r.id,
+        r.enfant_prenom || ' ' || r.enfant_nom as enfant,
+        r.montant_total_plan,
+        COALESCE(SUM(pa.montant), 0) as total_paye,
+        GREATEST(0, r.montant_total_plan - COALESCE(SUM(pa.montant), 0)) as solde_restant
+      FROM reinscriptions r
+      LEFT JOIN paiements pa ON pa.reinscription_id = r.id AND pa.statut IN ('valide', 'paye')
+      WHERE r.statut IN ('en_attente', 'valide')
+      GROUP BY r.id, r.enfant_prenom, r.enfant_nom, r.montant_total_plan
+      HAVING GREATEST(0, r.montant_total_plan - COALESCE(SUM(pa.montant), 0)) > 0
+    `);
+
+    console.log("📊 DASHBOARD FINANCIER:", {
+      totalAPayerInscription,
+      totalAPayerReinscription,
       totalAPayer,
+      totalPayeInscription,
+      totalPayeReinscription,
       totalPaye,
       soldeRestant,
       tauxRecouvrement,
       totalDepenses,
-      soldeParPreinscription: soldeParPreinscription.rows
+      totalFraisReinscription,
+      totalReinscription
     });
 
-    // Derniers paiements
+    // Derniers paiements (incluant les réinscriptions)
     const derniersPaiements = await query(`
       SELECT
         pa.id,
-        p.enfant_prenom || ' ' || p.enfant_nom as eleve,
-        p.classe as classe,
+        COALESCE(p.enfant_prenom, r.enfant_prenom) || ' ' || COALESCE(p.enfant_nom, r.enfant_nom) as eleve,
+        COALESCE(p.classe, r.classe_nom) as classe,
         pa.montant,
         pa.type_frais as type,
         pa.date_paiement as date,
         pa.mode_paiement as mode,
-        pa.statut
+        pa.statut,
+        CASE 
+          WHEN pa.preinscription_id IS NOT NULL THEN 'inscription'
+          WHEN pa.reinscription_id IS NOT NULL THEN 'reinscription'
+          ELSE 'autre'
+        END as type_demande
       FROM paiements pa
-      JOIN preinscriptions p ON pa.preinscription_id = p.id
+      LEFT JOIN preinscriptions p ON pa.preinscription_id = p.id
+      LEFT JOIN reinscriptions r ON pa.reinscription_id = r.id
       WHERE pa.statut IN ('valide', 'paye')
       ORDER BY pa.date_paiement DESC
       LIMIT 10
     `);
 
-    // Paiements par type
+    // Paiements par type (incluant les réinscriptions)
     const paiementsParType = await query(`
       SELECT
         CASE
           WHEN type_frais = 'inscription' THEN 'Inscription'
+          WHEN type_frais = 'reinscription' THEN 'Réinscription'
           WHEN type_frais = 'mensualite' THEN 'Mensualité'
           WHEN type_frais = 'cantine' THEN 'Cantine'
           WHEN type_frais = 'transport' THEN 'Transport'
@@ -174,7 +234,7 @@ export async function GET() {
         COALESCE(SUM(montant), 0) as montant
       FROM paiements
       WHERE statut IN ('valide', 'paye')
-        AND preinscription_id IS NOT NULL
+        AND (preinscription_id IS NOT NULL OR reinscription_id IS NOT NULL)
       GROUP BY type_frais
     `);
 
@@ -193,14 +253,12 @@ export async function GET() {
         0 as depenses
       FROM paiements
       WHERE statut IN ('valide', 'paye')
-        AND preinscription_id IS NOT NULL
         AND date_paiement >= NOW() - INTERVAL '6 months'
       GROUP BY EXTRACT(MONTH FROM date_paiement), TO_CHAR(date_paiement, 'Mon')
       ORDER BY EXTRACT(MONTH FROM date_paiement) DESC
       LIMIT 6
     `);
 
-    // ⭐ Correction du solde : recettes - dépenses (incluant les salaires)
     const solde = totalRecettes - totalDepenses;
 
     return NextResponse.json({
@@ -210,14 +268,15 @@ export async function GET() {
         totalClasses: parseInt(classes.rows[0]?.total || 0),
         totalParents: parseInt(parents.rows[0]?.total || 0),
         preinscriptionsEnAttente: parseInt(preinscriptions.rows[0]?.total || 0),
+        reinscriptionsEnAttente: parseInt(reinscriptionsEnAttente.rows[0]?.total || 0),
         hommes: parseInt(eleves.rows[0]?.hommes || 0),
         femmes: parseInt(eleves.rows[0]?.femmes || 0),
         totalPaiementsAnnee: totalRecettes
       },
       financieres: {
         totalRecettes: totalRecettes,
-        totalDepenses: totalDepenses, // ✅ Correction : inclut les salaires
-        solde: solde, // ✅ Correction : solde = recettes - (salaires + autres dépenses)
+        totalDepenses: totalDepenses,
+        solde: solde,
         tauxRecouvrement: tauxRecouvrement,
         totalAPayer: totalAPayer,
         totalPaye: totalPaye,
@@ -227,7 +286,14 @@ export async function GET() {
         totalCantine: totalCantine,
         totalFournitures: totalFournitures,
         totalInscription: totalInscription,
+        totalReinscription: totalReinscription,
+        totalFraisReinscription: totalFraisReinscription,
+        totalAPayerInscription: totalAPayerInscription,
+        totalAPayerReinscription: totalAPayerReinscription,
+        totalPayeInscription: totalPayeInscription,
+        totalPayeReinscription: totalPayeReinscription,
         soldeParPreinscription: soldeParPreinscription.rows,
+        soldeParReinscription: soldeParReinscription.rows,
         evolutionRecettes: evolution.rows.reverse(),
         derniersPaiements: derniersPaiements.rows,
         categoriesRecettes: categoriesRecettes

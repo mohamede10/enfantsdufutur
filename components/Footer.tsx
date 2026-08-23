@@ -123,7 +123,7 @@ export default function Footer() {
         {/* Réseaux sociaux - Facebook, LinkedIn, YouTube */}
         <div className="flex justify-center space-x-6 mb-8">
           <a
-            href="https://www.facebook.com/enfantsdufutur"
+            href="https://www.facebook.com/share/1A7ZmsUYwv/?mibextid=wwXIfr"
             className="hover:text-blue-400 transition"
             target="_blank"
             rel="noopener noreferrer"

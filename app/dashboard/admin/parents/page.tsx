@@ -106,6 +106,11 @@ export default function AdminParentsPage() {
   const [parentDetail, setParentDetail] = useState<ParentDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // ⭐ États pour la suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [parentToDelete, setParentToDelete] = useState<Parent | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   // États pour les notifications
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -215,6 +220,41 @@ export default function AdminParentsPage() {
     setSelectedParentId(null);
   };
 
+  // ⭐ FONCTION DE SUPPRESSION
+  const handleDeleteParent = async () => {
+    if (!parentToDelete) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/parents/${parentToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        addNotification("success", `Parent ${parentToDelete.prenom} ${parentToDelete.nom} supprimé avec succès`);
+        setShowDeleteModal(false);
+        setParentToDelete(null);
+        // Rafraîchir la liste
+        await fetchParents();
+      } else {
+        addNotification("error", data.error || "Erreur lors de la suppression");
+      }
+    } catch (error) {
+      console.error("Erreur suppression:", error);
+      addNotification("error", "Erreur lors de la suppression du parent");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ⭐ FONCTION POUR OUVRIR LE MODAL DE SUPPRESSION
+  const openDeleteModal = (parent: Parent) => {
+    setParentToDelete(parent);
+    setShowDeleteModal(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -304,7 +344,7 @@ export default function AdminParentsPage() {
     <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
         <div className="flex items-center justify-between">
         <div>
-            <p className="text-sm text-gray-500">Total pré-inscriptions</p>
+            <p className="text-sm text-gray-500">Total inscriptions</p>
             <p className="text-2xl font-bold text-purple-600">
             {parents.reduce((acc, p) => acc + (p.totalPreinscriptions || 0), 0)}
             </p>
@@ -315,7 +355,7 @@ export default function AdminParentsPage() {
     <div className="bg-white rounded-xl shadow-sm p-4">
         <div className="flex items-center justify-between">
         <div>
-            <p className="text-sm text-gray-500">Pré-inscriptions en attente</p>
+            <p className="text-sm text-gray-500">Inscriptions en attente</p>
             <p className="text-2xl font-bold text-yellow-600">
             {parents.reduce((acc, p) => acc + (p.preinscriptionsEnAttente || 0), 0)}
             </p>
@@ -348,7 +388,7 @@ export default function AdminParentsPage() {
         />
       </div>
 
-      {/* Liste des parents - Sans bouton déroulant */}
+      {/* Liste des parents - AVEC BOUTON SUPPRIMER */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -391,7 +431,7 @@ export default function AdminParentsPage() {
                         <p className="font-medium text-black">
                           {parent.prenom} {parent.nom}
                         </p>
-                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -412,16 +452,25 @@ export default function AdminParentsPage() {
                     <p className="text-gray-900">{parent.profession || "Non renseigné"}</p>
                   </td>
                   <td className="px-6 py-4">
-                      {parent.totalEnfants} {parent.totalEnfants > 1 ? "s" : ""}
+                    {parent.totalEnfants} {parent.totalEnfants > 1 ? "s" : ""}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => openDetailModal(parent)}
-                      className="text-blue-600 hover:text-blue-800 transition flex items-center gap-1 ml-auto"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Détails
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => openDetailModal(parent)}
+                        className="text-blue-600 hover:text-blue-800 transition p-1"
+                        title="Voir les détails"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openDeleteModal(parent)}
+                        className="text-red-600 hover:text-red-800 transition p-1"
+                        title="Supprimer le parent et ses enfants"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -707,6 +756,90 @@ export default function AdminParentsPage() {
                 className="px-4 py-2 text-black border rounded-lg hover:bg-gray-100 transition"
               >
                 Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ MODAL DE CONFIRMATION DE SUPPRESSION */}
+      {showDeleteModal && parentToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Confirmer la suppression</h2>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-900 mb-2">
+                Êtes-vous sûr de vouloir supprimer ce parent et <strong>tous ses enfants</strong> ?
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="font-medium text-red-800">
+                  {parentToDelete.prenom} {parentToDelete.nom}
+                </p>
+                <p className="text-sm text-red-600 mt-1">
+                  {parentToDelete.totalEnfants} enfant(s) associé(s)
+                </p>
+                <p className="text-xs text-red-500 mt-2">
+                  Email: {parentToDelete.email}
+                </p>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Cette action est <strong>irréversible</strong> et supprimera définitivement :
+                  </span>
+                </p>
+                <ul className="text-sm text-yellow-700 list-disc list-inside mt-1 ml-4 space-y-1">
+                  <li>Le parent et son compte utilisateur</li>
+                  <li>Tous les enfants associés à ce parent</li>
+                  <li>Les liens parent-enfant</li>
+                  <li>Toutes les pré-inscriptions associées</li>
+                  <li>Toutes les réinscriptions associées</li>
+                  <li>Toutes les inscriptions</li>
+                  <li>Les présences et notes des enfants</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setParentToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition text-black"
+                disabled={deleting}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteParent}
+                disabled={deleting}
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                  deleting
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-red-600 text-white hover:bg-red-700"
+                }`}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Supprimer définitivement
+                  </>
+                )}
               </button>
             </div>
           </div>

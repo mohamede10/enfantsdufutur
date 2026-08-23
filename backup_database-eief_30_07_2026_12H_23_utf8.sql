@@ -1,0 +1,12908 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.6
+-- Dumped by pg_dump version 17.5
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: auth; Type: SCHEMA; Schema: -; Owner: supabase_admin
+--
+
+CREATE SCHEMA auth;
+
+
+ALTER SCHEMA auth OWNER TO supabase_admin;
+
+--
+-- Name: extensions; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA extensions;
+
+
+ALTER SCHEMA extensions OWNER TO postgres;
+
+--
+-- Name: graphql; Type: SCHEMA; Schema: -; Owner: supabase_admin
+--
+
+CREATE SCHEMA graphql;
+
+
+ALTER SCHEMA graphql OWNER TO supabase_admin;
+
+--
+-- Name: graphql_public; Type: SCHEMA; Schema: -; Owner: supabase_admin
+--
+
+CREATE SCHEMA graphql_public;
+
+
+ALTER SCHEMA graphql_public OWNER TO supabase_admin;
+
+--
+-- Name: pgbouncer; Type: SCHEMA; Schema: -; Owner: pgbouncer
+--
+
+CREATE SCHEMA pgbouncer;
+
+
+ALTER SCHEMA pgbouncer OWNER TO pgbouncer;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
+-- Name: realtime; Type: SCHEMA; Schema: -; Owner: supabase_admin
+--
+
+CREATE SCHEMA realtime;
+
+
+ALTER SCHEMA realtime OWNER TO supabase_admin;
+
+--
+-- Name: storage; Type: SCHEMA; Schema: -; Owner: supabase_admin
+--
+
+CREATE SCHEMA storage;
+
+
+ALTER SCHEMA storage OWNER TO supabase_admin;
+
+--
+-- Name: vault; Type: SCHEMA; Schema: -; Owner: supabase_admin
+--
+
+CREATE SCHEMA vault;
+
+
+ALTER SCHEMA vault OWNER TO supabase_admin;
+
+--
+-- Name: pg_stat_statements; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;
+
+
+--
+-- Name: EXTENSION pg_stat_statements; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pg_stat_statements IS 'track planning and execution statistics of all SQL statements executed';
+
+
+--
+-- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
+
+--
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
+
+
+--
+-- Name: supabase_vault; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
+
+
+--
+-- Name: EXTENSION supabase_vault; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION supabase_vault IS 'Supabase Vault Extension';
+
+
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
+-- Name: aal_level; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.aal_level AS ENUM (
+    'aal1',
+    'aal2',
+    'aal3'
+);
+
+
+ALTER TYPE auth.aal_level OWNER TO supabase_auth_admin;
+
+--
+-- Name: code_challenge_method; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.code_challenge_method AS ENUM (
+    's256',
+    'plain'
+);
+
+
+ALTER TYPE auth.code_challenge_method OWNER TO supabase_auth_admin;
+
+--
+-- Name: factor_status; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.factor_status AS ENUM (
+    'unverified',
+    'verified'
+);
+
+
+ALTER TYPE auth.factor_status OWNER TO supabase_auth_admin;
+
+--
+-- Name: factor_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.factor_type AS ENUM (
+    'totp',
+    'webauthn',
+    'phone'
+);
+
+
+ALTER TYPE auth.factor_type OWNER TO supabase_auth_admin;
+
+--
+-- Name: oauth_authorization_status; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.oauth_authorization_status AS ENUM (
+    'pending',
+    'approved',
+    'denied',
+    'expired'
+);
+
+
+ALTER TYPE auth.oauth_authorization_status OWNER TO supabase_auth_admin;
+
+--
+-- Name: oauth_client_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.oauth_client_type AS ENUM (
+    'public',
+    'confidential'
+);
+
+
+ALTER TYPE auth.oauth_client_type OWNER TO supabase_auth_admin;
+
+--
+-- Name: oauth_registration_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.oauth_registration_type AS ENUM (
+    'dynamic',
+    'manual'
+);
+
+
+ALTER TYPE auth.oauth_registration_type OWNER TO supabase_auth_admin;
+
+--
+-- Name: oauth_response_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.oauth_response_type AS ENUM (
+    'code'
+);
+
+
+ALTER TYPE auth.oauth_response_type OWNER TO supabase_auth_admin;
+
+--
+-- Name: one_time_token_type; Type: TYPE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TYPE auth.one_time_token_type AS ENUM (
+    'confirmation_token',
+    'reauthentication_token',
+    'recovery_token',
+    'email_change_token_new',
+    'email_change_token_current',
+    'phone_change_token'
+);
+
+
+ALTER TYPE auth.one_time_token_type OWNER TO supabase_auth_admin;
+
+--
+-- Name: Role; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."Role" AS ENUM (
+    'SUPER_ADMIN',
+    'DIRECTEUR_GENERAL',
+    'DIRECTEUR_ETUDES',
+    'COMPTABLE',
+    'SECRETARIAT',
+    'SURVEILLANT',
+    'ENSEIGNANT',
+    'PARENT',
+    'ELEVE',
+    'CHAUFFEUR',
+    'CANTINE'
+);
+
+
+ALTER TYPE public."Role" OWNER TO postgres;
+
+--
+-- Name: action; Type: TYPE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TYPE realtime.action AS ENUM (
+    'INSERT',
+    'UPDATE',
+    'DELETE',
+    'TRUNCATE',
+    'ERROR'
+);
+
+
+ALTER TYPE realtime.action OWNER TO supabase_admin;
+
+--
+-- Name: equality_op; Type: TYPE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TYPE realtime.equality_op AS ENUM (
+    'eq',
+    'neq',
+    'lt',
+    'lte',
+    'gt',
+    'gte',
+    'in',
+    'like',
+    'ilike',
+    'is',
+    'match',
+    'imatch',
+    'isdistinct'
+);
+
+
+ALTER TYPE realtime.equality_op OWNER TO supabase_admin;
+
+--
+-- Name: user_defined_filter; Type: TYPE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TYPE realtime.user_defined_filter AS (
+	column_name text,
+	op realtime.equality_op,
+	value text,
+	negate boolean
+);
+
+
+ALTER TYPE realtime.user_defined_filter OWNER TO supabase_admin;
+
+--
+-- Name: wal_column; Type: TYPE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TYPE realtime.wal_column AS (
+	name text,
+	type_name text,
+	type_oid oid,
+	value jsonb,
+	is_pkey boolean,
+	is_selectable boolean
+);
+
+
+ALTER TYPE realtime.wal_column OWNER TO supabase_admin;
+
+--
+-- Name: wal_rls; Type: TYPE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TYPE realtime.wal_rls AS (
+	wal jsonb,
+	is_rls_enabled boolean,
+	subscription_ids uuid[],
+	errors text[]
+);
+
+
+ALTER TYPE realtime.wal_rls OWNER TO supabase_admin;
+
+--
+-- Name: buckettype; Type: TYPE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TYPE storage.buckettype AS ENUM (
+    'STANDARD',
+    'ANALYTICS',
+    'VECTOR'
+);
+
+
+ALTER TYPE storage.buckettype OWNER TO supabase_storage_admin;
+
+--
+-- Name: email(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE FUNCTION auth.email() RETURNS text
+    LANGUAGE sql STABLE
+    AS $$
+  select 
+  coalesce(
+    nullif(current_setting('request.jwt.claim.email', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'email')
+  )::text
+$$;
+
+
+ALTER FUNCTION auth.email() OWNER TO supabase_auth_admin;
+
+--
+-- Name: FUNCTION email(); Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON FUNCTION auth.email() IS 'Deprecated. Use auth.jwt() -> ''email'' instead.';
+
+
+--
+-- Name: jwt(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE FUNCTION auth.jwt() RETURNS jsonb
+    LANGUAGE sql STABLE
+    AS $$
+  select 
+    coalesce(
+        nullif(current_setting('request.jwt.claim', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')
+    )::jsonb
+$$;
+
+
+ALTER FUNCTION auth.jwt() OWNER TO supabase_auth_admin;
+
+--
+-- Name: role(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE FUNCTION auth.role() RETURNS text
+    LANGUAGE sql STABLE
+    AS $$
+  select 
+  coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )::text
+$$;
+
+
+ALTER FUNCTION auth.role() OWNER TO supabase_auth_admin;
+
+--
+-- Name: FUNCTION role(); Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON FUNCTION auth.role() IS 'Deprecated. Use auth.jwt() -> ''role'' instead.';
+
+
+--
+-- Name: uid(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE FUNCTION auth.uid() RETURNS uuid
+    LANGUAGE sql STABLE
+    AS $$
+  select 
+  coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
+$$;
+
+
+ALTER FUNCTION auth.uid() OWNER TO supabase_auth_admin;
+
+--
+-- Name: FUNCTION uid(); Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON FUNCTION auth.uid() IS 'Deprecated. Use auth.jwt() -> ''sub'' instead.';
+
+
+--
+-- Name: grant_pg_cron_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
+--
+
+CREATE FUNCTION extensions.grant_pg_cron_access() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF EXISTS (
+    SELECT
+    FROM pg_event_trigger_ddl_commands() AS ev
+    JOIN pg_extension AS ext
+    ON ev.objid = ext.oid
+    WHERE ext.extname = 'pg_cron'
+  )
+  THEN
+    grant usage on schema cron to postgres with grant option;
+
+    alter default privileges in schema cron grant all on tables to postgres with grant option;
+    alter default privileges in schema cron grant all on functions to postgres with grant option;
+    alter default privileges in schema cron grant all on sequences to postgres with grant option;
+
+    alter default privileges for user supabase_admin in schema cron grant all
+        on sequences to postgres with grant option;
+    alter default privileges for user supabase_admin in schema cron grant all
+        on tables to postgres with grant option;
+    alter default privileges for user supabase_admin in schema cron grant all
+        on functions to postgres with grant option;
+
+    grant all privileges on all tables in schema cron to postgres with grant option;
+    revoke all on table cron.job from postgres;
+    grant select on table cron.job to postgres with grant option;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION extensions.grant_pg_cron_access() OWNER TO supabase_admin;
+
+--
+-- Name: FUNCTION grant_pg_cron_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
+--
+
+COMMENT ON FUNCTION extensions.grant_pg_cron_access() IS 'Grants access to pg_cron';
+
+
+--
+-- Name: grant_pg_graphql_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
+--
+
+CREATE FUNCTION extensions.grant_pg_graphql_access() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $_$
+begin
+    if not exists (
+        select 1
+        from pg_event_trigger_ddl_commands() ev
+        join pg_catalog.pg_extension e on ev.objid = e.oid
+        where e.extname = 'pg_graphql'
+    ) then
+        return;
+    end if;
+
+    drop function if exists graphql_public.graphql;
+    create or replace function graphql_public.graphql(
+        "operationName" text default null,
+        query text default null,
+        variables jsonb default null,
+        extensions jsonb default null
+    )
+        returns jsonb
+        language sql
+    as $$
+        select graphql.resolve(
+            query := query,
+            variables := coalesce(variables, '{}'),
+            "operationName" := "operationName",
+            extensions := extensions
+        );
+    $$;
+
+    -- Attach the wrapper to the extension so DROP EXTENSION cascades to it,
+    -- which in turn triggers set_graphql_placeholder to reinstall the "not enabled" stub.
+    alter extension pg_graphql add function graphql_public.graphql(text, text, jsonb, jsonb);
+
+    grant usage on schema graphql to postgres, anon, authenticated, service_role;
+    grant execute on function graphql.resolve to postgres, anon, authenticated, service_role;
+    grant usage on schema graphql to postgres with grant option;
+    grant usage on schema graphql_public to postgres with grant option;
+end;
+$_$;
+
+
+ALTER FUNCTION extensions.grant_pg_graphql_access() OWNER TO supabase_admin;
+
+--
+-- Name: FUNCTION grant_pg_graphql_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
+--
+
+COMMENT ON FUNCTION extensions.grant_pg_graphql_access() IS 'Grants access to pg_graphql';
+
+
+--
+-- Name: grant_pg_net_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
+--
+
+CREATE FUNCTION extensions.grant_pg_net_access() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_event_trigger_ddl_commands() AS ev
+    JOIN pg_extension AS ext
+    ON ev.objid = ext.oid
+    WHERE ext.extname = 'pg_net'
+  )
+  THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_roles
+      WHERE rolname = 'supabase_functions_admin'
+    )
+    THEN
+      CREATE USER supabase_functions_admin NOINHERIT CREATEROLE LOGIN NOREPLICATION;
+    END IF;
+
+    GRANT USAGE ON SCHEMA net TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+
+    IF EXISTS (
+      SELECT FROM pg_extension
+      WHERE extname = 'pg_net'
+      -- all versions in use on existing projects as of 2025-02-20
+      -- version 0.12.0 onwards don't need these applied
+      AND extversion IN ('0.2', '0.6', '0.7', '0.7.1', '0.8', '0.10.0', '0.11.0')
+    ) THEN
+      ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+      ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
+
+      ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+      ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
+
+      REVOKE ALL ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+      REVOKE ALL ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
+
+      GRANT EXECUTE ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+      GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
+    END IF;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION extensions.grant_pg_net_access() OWNER TO supabase_admin;
+
+--
+-- Name: FUNCTION grant_pg_net_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
+--
+
+COMMENT ON FUNCTION extensions.grant_pg_net_access() IS 'Grants access to pg_net';
+
+
+--
+-- Name: pgrst_ddl_watch(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
+--
+
+CREATE FUNCTION extensions.pgrst_ddl_watch() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  cmd record;
+BEGIN
+  FOR cmd IN SELECT * FROM pg_event_trigger_ddl_commands()
+  LOOP
+    IF cmd.command_tag IN (
+      'CREATE SCHEMA', 'ALTER SCHEMA'
+    , 'CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO', 'ALTER TABLE'
+    , 'CREATE FOREIGN TABLE', 'ALTER FOREIGN TABLE'
+    , 'CREATE VIEW', 'ALTER VIEW'
+    , 'CREATE MATERIALIZED VIEW', 'ALTER MATERIALIZED VIEW'
+    , 'CREATE FUNCTION', 'ALTER FUNCTION'
+    , 'CREATE TRIGGER'
+    , 'CREATE TYPE', 'ALTER TYPE'
+    , 'CREATE RULE'
+    , 'COMMENT'
+    )
+    -- don't notify in case of CREATE TEMP table or other objects created on pg_temp
+    AND cmd.schema_name is distinct from 'pg_temp'
+    THEN
+      NOTIFY pgrst, 'reload schema';
+    END IF;
+  END LOOP;
+END; $$;
+
+
+ALTER FUNCTION extensions.pgrst_ddl_watch() OWNER TO supabase_admin;
+
+--
+-- Name: pgrst_drop_watch(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
+--
+
+CREATE FUNCTION extensions.pgrst_drop_watch() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  obj record;
+BEGIN
+  FOR obj IN SELECT * FROM pg_event_trigger_dropped_objects()
+  LOOP
+    IF obj.object_type IN (
+      'schema'
+    , 'table'
+    , 'foreign table'
+    , 'view'
+    , 'materialized view'
+    , 'function'
+    , 'trigger'
+    , 'type'
+    , 'rule'
+    )
+    AND obj.is_temporary IS false -- no pg_temp objects
+    THEN
+      NOTIFY pgrst, 'reload schema';
+    END IF;
+  END LOOP;
+END; $$;
+
+
+ALTER FUNCTION extensions.pgrst_drop_watch() OWNER TO supabase_admin;
+
+--
+-- Name: set_graphql_placeholder(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
+--
+
+CREATE FUNCTION extensions.set_graphql_placeholder() RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $_$
+    DECLARE
+    graphql_is_dropped bool;
+    BEGIN
+    graphql_is_dropped = (
+        SELECT ev.schema_name = 'graphql_public'
+        FROM pg_event_trigger_dropped_objects() AS ev
+        WHERE ev.schema_name = 'graphql_public'
+    );
+
+    IF graphql_is_dropped
+    THEN
+        create or replace function graphql_public.graphql(
+            "operationName" text default null,
+            query text default null,
+            variables jsonb default null,
+            extensions jsonb default null
+        )
+            returns jsonb
+            language plpgsql
+        as $$
+            DECLARE
+                server_version float;
+            BEGIN
+                server_version = (SELECT (SPLIT_PART((select version()), ' ', 2))::float);
+
+                IF server_version >= 14 THEN
+                    RETURN jsonb_build_object(
+                        'errors', jsonb_build_array(
+                            jsonb_build_object(
+                                'message', 'pg_graphql extension is not enabled.'
+                            )
+                        )
+                    );
+                ELSE
+                    RETURN jsonb_build_object(
+                        'errors', jsonb_build_array(
+                            jsonb_build_object(
+                                'message', 'pg_graphql is only available on projects running Postgres 14 onwards.'
+                            )
+                        )
+                    );
+                END IF;
+            END;
+        $$;
+    END IF;
+
+    END;
+$_$;
+
+
+ALTER FUNCTION extensions.set_graphql_placeholder() OWNER TO supabase_admin;
+
+--
+-- Name: FUNCTION set_graphql_placeholder(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
+--
+
+COMMENT ON FUNCTION extensions.set_graphql_placeholder() IS 'Reintroduces placeholder function for graphql_public.graphql';
+
+
+--
+-- Name: graphql(text, text, jsonb, jsonb); Type: FUNCTION; Schema: graphql_public; Owner: supabase_admin
+--
+
+CREATE FUNCTION graphql_public.graphql("operationName" text DEFAULT NULL::text, query text DEFAULT NULL::text, variables jsonb DEFAULT NULL::jsonb, extensions jsonb DEFAULT NULL::jsonb) RETURNS jsonb
+    LANGUAGE plpgsql
+    AS $$
+            DECLARE
+                server_version float;
+            BEGIN
+                server_version = (SELECT (SPLIT_PART((select version()), ' ', 2))::float);
+
+                IF server_version >= 14 THEN
+                    RETURN jsonb_build_object(
+                        'errors', jsonb_build_array(
+                            jsonb_build_object(
+                                'message', 'pg_graphql extension is not enabled.'
+                            )
+                        )
+                    );
+                ELSE
+                    RETURN jsonb_build_object(
+                        'errors', jsonb_build_array(
+                            jsonb_build_object(
+                                'message', 'pg_graphql is only available on projects running Postgres 14 onwards.'
+                            )
+                        )
+                    );
+                END IF;
+            END;
+        $$;
+
+
+ALTER FUNCTION graphql_public.graphql("operationName" text, query text, variables jsonb, extensions jsonb) OWNER TO supabase_admin;
+
+--
+-- Name: get_auth(text); Type: FUNCTION; Schema: pgbouncer; Owner: supabase_admin
+--
+
+CREATE FUNCTION pgbouncer.get_auth(p_usename text) RETURNS TABLE(username text, password text)
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $_$
+  BEGIN
+      RAISE DEBUG 'PgBouncer auth request: %', p_usename;
+
+      RETURN QUERY
+      SELECT
+          rolname::text,
+          CASE WHEN rolvaliduntil < now()
+              THEN null
+              ELSE rolpassword::text
+          END
+      FROM pg_authid
+      WHERE rolname=$1 and rolcanlogin;
+  END;
+  $_$;
+
+
+ALTER FUNCTION pgbouncer.get_auth(p_usename text) OWNER TO supabase_admin;
+
+--
+-- Name: apply_rls(jsonb, integer); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer DEFAULT (1024 * 1024)) RETURNS SETOF realtime.wal_rls
+    LANGUAGE plpgsql
+    AS $$
+declare
+    -- Regclass of the table e.g. public.notes
+    entity_ regclass = (quote_ident(wal ->> 'schema') || '.' || quote_ident(wal ->> 'table'))::regclass;
+
+    -- I, U, D, T: insert, update ...
+    action realtime.action = (
+        case wal ->> 'action'
+            when 'I' then 'INSERT'
+            when 'U' then 'UPDATE'
+            when 'D' then 'DELETE'
+            else 'ERROR'
+        end
+    );
+
+    -- Is row level security enabled for the table
+    is_rls_enabled bool = relrowsecurity from pg_class where oid = entity_;
+
+    subscriptions realtime.subscription[] = array_agg(subs)
+        from
+            realtime.subscription subs
+        where
+            subs.entity = entity_
+            -- Filter by action early - only get subscriptions interested in this action
+            -- action_filter column can be: '*' (all), 'INSERT', 'UPDATE', or 'DELETE'
+            and (subs.action_filter = '*' or subs.action_filter = action::text);
+
+    -- Subscription vars
+    working_role regrole;
+    working_selected_columns text[];
+    claimed_role regrole;
+    claims jsonb;
+
+    subscription_id uuid;
+    subscription_has_access bool;
+    visible_to_subscription_ids uuid[] = '{}';
+
+    -- structured info for wal's columns
+    columns realtime.wal_column[];
+    -- previous identity values for update/delete
+    old_columns realtime.wal_column[];
+
+    error_record_exceeds_max_size boolean = octet_length(wal::text) > max_record_bytes;
+
+    -- Primary jsonb output for record
+    output jsonb;
+
+    -- Loop record for iterating unique roles (outer loop)
+    role_record record;
+    -- Loop record for iterating unique selected_columns within a role (inner loop)
+    cols_record record;
+    -- Subscription ids visible at the role level (before fanning out by selected_columns)
+    visible_role_sub_ids uuid[] = '{}';
+
+begin
+    perform set_config('role', null, true);
+
+    columns =
+        array_agg(
+            (
+                x->>'name',
+                x->>'type',
+                x->>'typeoid',
+                realtime.cast(
+                    (x->'value') #>> '{}',
+                    coalesce(
+                        (x->>'typeoid')::regtype, -- null when wal2json version <= 2.4
+                        (x->>'type')::regtype
+                    )
+                ),
+                (pks ->> 'name') is not null,
+                true
+            )::realtime.wal_column
+        )
+        from
+            jsonb_array_elements(wal -> 'columns') x
+            left join jsonb_array_elements(wal -> 'pk') pks
+                on (x ->> 'name') = (pks ->> 'name');
+
+    old_columns =
+        array_agg(
+            (
+                x->>'name',
+                x->>'type',
+                x->>'typeoid',
+                realtime.cast(
+                    (x->'value') #>> '{}',
+                    coalesce(
+                        (x->>'typeoid')::regtype, -- null when wal2json version <= 2.4
+                        (x->>'type')::regtype
+                    )
+                ),
+                (pks ->> 'name') is not null,
+                true
+            )::realtime.wal_column
+        )
+        from
+            jsonb_array_elements(wal -> 'identity') x
+            left join jsonb_array_elements(wal -> 'pk') pks
+                on (x ->> 'name') = (pks ->> 'name');
+
+    for role_record in
+        select claims_role
+        from (select distinct claims_role from unnest(subscriptions)) t
+        order by claims_role::text
+    loop
+        working_role := role_record.claims_role;
+
+        -- Update `is_selectable` for columns and old_columns (once per role)
+        columns =
+            array_agg(
+                (
+                    c.name,
+                    c.type_name,
+                    c.type_oid,
+                    c.value,
+                    c.is_pkey,
+                    pg_catalog.has_column_privilege(working_role, entity_, c.name, 'SELECT')
+                )::realtime.wal_column
+            )
+            from
+                unnest(columns) c;
+
+        old_columns =
+                array_agg(
+                    (
+                        c.name,
+                        c.type_name,
+                        c.type_oid,
+                        c.value,
+                        c.is_pkey,
+                        pg_catalog.has_column_privilege(working_role, entity_, c.name, 'SELECT')
+                    )::realtime.wal_column
+                )
+                from
+                    unnest(old_columns) c;
+
+        if action <> 'DELETE' and count(1) = 0 from unnest(columns) c where c.is_pkey then
+            -- Fan out 400 error per distinct selected_columns for this role
+            for cols_record in
+                select selected_columns
+                from (select distinct selected_columns from unnest(subscriptions) s where s.claims_role = working_role) t
+                order by coalesce(array_to_string(selected_columns, ','), '')
+            loop
+                working_selected_columns := cols_record.selected_columns;
+                return next (
+                    jsonb_build_object(
+                        'schema', wal ->> 'schema',
+                        'table', wal ->> 'table',
+                        'type', action
+                    ),
+                    is_rls_enabled,
+                    (select array_agg(s.subscription_id) from unnest(subscriptions) as s where s.claims_role = working_role and (s.selected_columns is not distinct from working_selected_columns)),
+                    array['Error 400: Bad Request, no primary key']
+                )::realtime.wal_rls;
+            end loop;
+
+        -- The claims role does not have SELECT permission to the primary key of entity
+        elsif action <> 'DELETE' and sum(c.is_selectable::int) <> count(1) from unnest(columns) c where c.is_pkey then
+            -- Fan out 401 error per distinct selected_columns for this role
+            for cols_record in
+                select selected_columns
+                from (select distinct selected_columns from unnest(subscriptions) s where s.claims_role = working_role) t
+                order by coalesce(array_to_string(selected_columns, ','), '')
+            loop
+                working_selected_columns := cols_record.selected_columns;
+                return next (
+                    jsonb_build_object(
+                        'schema', wal ->> 'schema',
+                        'table', wal ->> 'table',
+                        'type', action
+                    ),
+                    is_rls_enabled,
+                    (select array_agg(s.subscription_id) from unnest(subscriptions) as s where s.claims_role = working_role and (s.selected_columns is not distinct from working_selected_columns)),
+                    array['Error 401: Unauthorized']
+                )::realtime.wal_rls;
+            end loop;
+
+        else
+            -- Create the prepared statement (once per role)
+            if is_rls_enabled and action <> 'DELETE' then
+                if (select 1 from pg_prepared_statements where name = 'walrus_rls_stmt' limit 1) > 0 then
+                    deallocate walrus_rls_stmt;
+                end if;
+                execute realtime.build_prepared_statement_sql('walrus_rls_stmt', entity_, columns);
+            end if;
+
+            -- Collect all visible subscription IDs for this role (filter check + RLS check)
+            visible_role_sub_ids = '{}';
+
+            for subscription_id, claims in (
+                    select
+                        subs.subscription_id,
+                        subs.claims
+                    from
+                        unnest(subscriptions) subs
+                    where
+                        subs.entity = entity_
+                        and subs.claims_role = working_role
+                        and (
+                            realtime.is_visible_through_filters(columns, subs.filters)
+                            or (
+                              action = 'DELETE'
+                              and realtime.is_visible_through_filters(old_columns, subs.filters)
+                            )
+                        )
+            ) loop
+
+                if not is_rls_enabled or action = 'DELETE' then
+                    visible_role_sub_ids = visible_role_sub_ids || subscription_id;
+                else
+                    -- Check if RLS allows the role to see the record
+                    perform
+                        -- Trim leading and trailing quotes from working_role because set_config
+                        -- doesn't recognize the role as valid if they are included
+                        set_config('role', trim(both '"' from working_role::text), true),
+                        set_config('request.jwt.claims', claims::text, true);
+
+                    execute 'execute walrus_rls_stmt' into subscription_has_access;
+
+                    if subscription_has_access then
+                        visible_role_sub_ids = visible_role_sub_ids || subscription_id;
+                    end if;
+                end if;
+            end loop;
+
+            perform set_config('role', null, true);
+
+            -- Inner loop: per distinct selected_columns for this role
+            for cols_record in
+                select selected_columns
+                from (select distinct selected_columns from unnest(subscriptions) s where s.claims_role = working_role) t
+                order by coalesce(array_to_string(selected_columns, ','), '')
+            loop
+                working_selected_columns := cols_record.selected_columns;
+
+                output = jsonb_build_object(
+                    'schema', wal ->> 'schema',
+                    'table', wal ->> 'table',
+                    'type', action,
+                    'commit_timestamp', to_char(
+                        ((wal ->> 'timestamp')::timestamptz at time zone 'utc'),
+                        'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+                    ),
+                    'columns', (
+                        select
+                            jsonb_agg(
+                                jsonb_build_object(
+                                    'name', pa.attname,
+                                    'type', pt.typname
+                                )
+                                order by pa.attnum asc
+                            )
+                        from
+                            pg_attribute pa
+                            join pg_type pt
+                                on pa.atttypid = pt.oid
+                            left join (
+                                select unnest(conkey) as pkey_attnum
+                                from pg_constraint
+                                where conrelid = entity_ and contype = 'p'
+                            ) pk on pk.pkey_attnum = pa.attnum
+                        where
+                            attrelid = entity_
+                            and attnum > 0
+                            and pg_catalog.has_column_privilege(working_role, entity_, pa.attname, 'SELECT')
+                            and (working_selected_columns is null or pa.attname = any(working_selected_columns) or pk.pkey_attnum is not null)
+                    )
+                )
+                -- Add "record" key for insert and update
+                || case
+                    when action in ('INSERT', 'UPDATE') then
+                        jsonb_build_object(
+                            'record',
+                            (
+                                select
+                                    jsonb_object_agg(
+                                        -- if unchanged toast, get column name and value from old record
+                                        coalesce((c).name, (oc).name),
+                                        case
+                                            when (c).name is null then (oc).value
+                                            else (c).value
+                                        end
+                                    )
+                                from
+                                    unnest(columns) c
+                                    full outer join unnest(old_columns) oc
+                                        on (c).name = (oc).name
+                                where
+                                    coalesce((c).is_selectable, (oc).is_selectable)
+                                    and (working_selected_columns is null or coalesce((c).name, (oc).name) = any(working_selected_columns) or coalesce((c).is_pkey, (oc).is_pkey))
+                                    and ( not error_record_exceeds_max_size or (octet_length((c).value::text) <= 64))
+                            )
+                        )
+                    else '{}'::jsonb
+                end
+                -- Add "old_record" key for update and delete
+                || case
+                    when action = 'UPDATE' then
+                        jsonb_build_object(
+                                'old_record',
+                                (
+                                    select jsonb_object_agg((c).name, (c).value)
+                                    from unnest(old_columns) c
+                                    where
+                                        (c).is_selectable
+                                        and (working_selected_columns is null or (c).name = any(working_selected_columns) or (c).is_pkey)
+                                        and ( not error_record_exceeds_max_size or (octet_length((c).value::text) <= 64))
+                                )
+                            )
+                    when action = 'DELETE' then
+                        jsonb_build_object(
+                            'old_record',
+                            (
+                                select jsonb_object_agg((c).name, (c).value)
+                                from unnest(old_columns) c
+                                where
+                                    (c).is_selectable
+                                    and (working_selected_columns is null or (c).name = any(working_selected_columns) or (c).is_pkey)
+                                    and ( not error_record_exceeds_max_size or (octet_length((c).value::text) <= 64))
+                                    and ( not is_rls_enabled or (c).is_pkey ) -- if RLS enabled, we can't secure deletes so filter to pkey
+                            )
+                        )
+                    else '{}'::jsonb
+                end;
+
+                -- Filter visible_role_sub_ids to those matching the current selected_columns group
+                visible_to_subscription_ids = coalesce(
+                    (
+                        select array_agg(s.subscription_id)
+                        from unnest(subscriptions) s
+                        where s.claims_role = working_role
+                          and (s.selected_columns is not distinct from working_selected_columns)
+                          and s.subscription_id = any(visible_role_sub_ids)
+                    ),
+                    '{}'::uuid[]
+                );
+
+                return next (
+                    output,
+                    is_rls_enabled,
+                    visible_to_subscription_ids,
+                    case
+                        when error_record_exceeds_max_size then array['Error 413: Payload Too Large']
+                        else '{}'
+                    end
+                )::realtime.wal_rls;
+            end loop;
+
+        end if;
+    end loop;
+
+    perform set_config('role', null, true);
+end;
+$$;
+
+
+ALTER FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) OWNER TO supabase_admin;
+
+--
+-- Name: broadcast_changes(text, text, text, text, text, record, record, text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text DEFAULT 'ROW'::text) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    -- Declare a variable to hold the JSONB representation of the row
+    row_data jsonb := '{}'::jsonb;
+BEGIN
+    IF level = 'STATEMENT' THEN
+        RAISE EXCEPTION 'function can only be triggered for each row, not for each statement';
+    END IF;
+    -- Check the operation type and handle accordingly
+    IF operation = 'INSERT' OR operation = 'UPDATE' OR operation = 'DELETE' THEN
+        row_data := jsonb_build_object('old_record', OLD, 'record', NEW, 'operation', operation, 'table', table_name, 'schema', table_schema);
+        PERFORM realtime.send (row_data, event_name, topic_name);
+    ELSE
+        RAISE EXCEPTION 'Unexpected operation type: %', operation;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Failed to process the row: %', SQLERRM;
+END;
+
+$$;
+
+
+ALTER FUNCTION realtime.broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text) OWNER TO supabase_admin;
+
+--
+-- Name: build_prepared_statement_sql(text, regclass, realtime.wal_column[]); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) RETURNS text
+    LANGUAGE sql
+    AS $$
+      /*
+      Builds a sql string that, if executed, creates a prepared statement to
+      tests retrive a row from *entity* by its primary key columns.
+      Example
+          select realtime.build_prepared_statement_sql('public.notes', '{"id"}'::text[], '{"bigint"}'::text[])
+      */
+          select
+      'prepare ' || prepared_statement_name || ' as
+          select
+              exists(
+                  select
+                      1
+                  from
+                      ' || entity || '
+                  where
+                      ' || string_agg(quote_ident(pkc.name) || '=' || quote_nullable(pkc.value #>> '{}') , ' and ') || '
+              )'
+          from
+              unnest(columns) pkc
+          where
+              pkc.is_pkey
+          group by
+              entity
+      $$;
+
+
+ALTER FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) OWNER TO supabase_admin;
+
+--
+-- Name: cast(text, regtype); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime."cast"(val text, type_ regtype) RETURNS jsonb
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+declare
+  res jsonb;
+begin
+  if type_::text = 'bytea' then
+    return to_jsonb(val);
+  end if;
+  execute format('select to_jsonb(%L::'|| type_::text || ')', val) into res;
+  return res;
+end
+$$;
+
+
+ALTER FUNCTION realtime."cast"(val text, type_ regtype) OWNER TO supabase_admin;
+
+--
+-- Name: check_equality_op(realtime.equality_op, regtype, text, text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+/*
+Casts *val_1* and *val_2* as type *type_* and check the *op* condition for truthiness
+*/
+declare
+    op_symbol text = (
+        case
+            when op = 'eq' then '='
+            when op = 'neq' then '!='
+            when op = 'lt' then '<'
+            when op = 'lte' then '<='
+            when op = 'gt' then '>'
+            when op = 'gte' then '>='
+            when op = 'in' then '= any'
+            else 'UNKNOWN OP'
+        end
+    );
+    res boolean;
+begin
+    execute format(
+        'select %L::'|| type_::text || ' ' || op_symbol
+        || ' ( %L::'
+        || (
+            case
+                when op = 'in' then type_::text || '[]'
+                else type_::text end
+        )
+        || ')', val_1, val_2) into res;
+    return res;
+end;
+$$;
+
+
+ALTER FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) OWNER TO supabase_admin;
+
+--
+-- Name: check_equality_op(realtime.equality_op, regtype, text, text, boolean); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) RETURNS boolean
+    LANGUAGE plpgsql STABLE
+    AS $$
+declare
+    op_symbol text;
+    res boolean;
+begin
+    -- IS DISTINCT FROM / IS NOT DISTINCT FROM: infix, both sides typed literals
+    if op = 'isdistinct' then
+        execute format(
+            'select %L::%s %s %L::%s',
+            val_1,
+            type_::text,
+            case when negate then 'IS NOT DISTINCT FROM' else 'IS DISTINCT FROM' end,
+            val_2,
+            type_::text
+        ) into res;
+        return res;
+    end if;
+
+    -- IS requires a keyword RHS (NULL, TRUE, FALSE, UNKNOWN), not a typed literal
+    if op = 'is' then
+        if val_2 not in ('null', 'true', 'false', 'unknown') then
+            raise exception 'invalid value for is filter: must be null, true, false, or unknown';
+        end if;
+        execute format(
+            'select %L::%s %s %s',
+            val_1,
+            type_::text,
+            case when negate then 'IS NOT' else 'IS' end,
+            upper(val_2)
+        ) into res;
+        return res;
+    end if;
+
+    op_symbol = case
+        when op = 'eq'    then '='
+        when op = 'neq'   then '!='
+        when op = 'lt'    then '<'
+        when op = 'lte'   then '<='
+        when op = 'gt'    then '>'
+        when op = 'gte'   then '>='
+        when op = 'in'    then '= any'
+        when op = 'like'   then 'LIKE'
+        when op = 'ilike'  then 'ILIKE'
+        when op = 'match'  then '~'
+        when op = 'imatch' then '~*'
+        else null
+    end;
+
+    if op_symbol is null then
+        raise exception 'unsupported equality operator: %', op::text;
+    end if;
+
+    execute format(
+        'select %L::%s %s (%L::%s)',
+        val_1,
+        type_::text,
+        op_symbol,
+        val_2,
+        case when op = 'in' then type_::text || '[]' else type_::text end
+    ) into res;
+
+    return case when negate then not res else res end;
+end;
+$$;
+
+
+ALTER FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) OWNER TO supabase_admin;
+
+--
+-- Name: is_visible_through_filters(realtime.wal_column[], realtime.user_defined_filter[]); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) RETURNS boolean
+    LANGUAGE sql STABLE
+    AS $$
+    select
+        filters is null
+        or array_length(filters, 1) is null
+        or coalesce(
+            count(col.name) = count(1)
+            and sum(
+                realtime.check_equality_op(
+                    op:=f.op,
+                    type_:=coalesce(col.type_oid::regtype, col.type_name::regtype),
+                    val_1:=col.value #>> '{}',
+                    val_2:=f.value,
+                    negate:=coalesce(f.negate, false)
+                )::int
+            ) filter (where col.name is not null) = count(col.name),
+            false
+        )
+    from
+        unnest(filters) f
+        left join unnest(columns) col
+            on f.column_name = col.name;
+$$;
+
+
+ALTER FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) OWNER TO supabase_admin;
+
+--
+-- Name: list_changes(name, name, integer, integer); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer) RETURNS TABLE(wal jsonb, is_rls_enabled boolean, subscription_ids uuid[], errors text[], slot_changes_count bigint)
+    LANGUAGE sql
+    SET log_min_messages TO 'fatal'
+    AS $$
+  WITH pub AS (
+    SELECT
+      concat_ws(
+        ',',
+        CASE WHEN bool_or(pubinsert) THEN 'insert' ELSE NULL END,
+        CASE WHEN bool_or(pubupdate) THEN 'update' ELSE NULL END,
+        CASE WHEN bool_or(pubdelete) THEN 'delete' ELSE NULL END
+      ) AS w2j_actions,
+      coalesce(
+        string_agg(
+          realtime.quote_wal2json(format('%I.%I', schemaname, tablename)::regclass),
+          ','
+        ) filter (WHERE ppt.tablename IS NOT NULL),
+        ''
+      ) AS w2j_add_tables
+    FROM pg_publication pp
+    LEFT JOIN pg_publication_tables ppt ON pp.pubname = ppt.pubname
+    WHERE pp.pubname = publication
+    GROUP BY pp.pubname
+    LIMIT 1
+  ),
+  -- MATERIALIZED ensures pg_logical_slot_get_changes is called exactly once
+  w2j AS MATERIALIZED (
+    SELECT x.*, pub.w2j_add_tables
+    FROM pub,
+         pg_logical_slot_get_changes(
+           slot_name, null, max_changes,
+           'include-pk', 'true',
+           'include-transaction', 'false',
+           'include-timestamp', 'true',
+           'include-type-oids', 'true',
+           'format-version', '2',
+           'actions', pub.w2j_actions,
+           'add-tables', pub.w2j_add_tables
+         ) x
+  ),
+  slot_count AS (
+    SELECT count(*)::bigint AS cnt
+    FROM w2j
+    WHERE w2j.w2j_add_tables <> ''
+  ),
+  rls_filtered AS (
+    SELECT xyz.wal, xyz.is_rls_enabled, xyz.subscription_ids, xyz.errors
+    FROM w2j,
+         realtime.apply_rls(
+           wal := w2j.data::jsonb,
+           max_record_bytes := max_record_bytes
+         ) xyz(wal, is_rls_enabled, subscription_ids, errors)
+    WHERE w2j.w2j_add_tables <> ''
+      AND xyz.subscription_ids[1] IS NOT NULL
+  )
+  SELECT rf.wal, rf.is_rls_enabled, rf.subscription_ids, rf.errors, sc.cnt
+  FROM rls_filtered rf, slot_count sc
+
+  UNION ALL
+
+  SELECT null, null, null, null, sc.cnt
+  FROM slot_count sc
+  WHERE NOT EXISTS (SELECT 1 FROM rls_filtered)
+$$;
+
+
+ALTER FUNCTION realtime.list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer) OWNER TO supabase_admin;
+
+--
+-- Name: quote_wal2json(regclass); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.quote_wal2json(entity regclass) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $$
+  SELECT
+    realtime.wal2json_escape_identifier(nsp.nspname::text)
+    || '.'
+    || realtime.wal2json_escape_identifier(pc.relname::text)
+  FROM pg_class pc
+  JOIN pg_namespace nsp ON pc.relnamespace = nsp.oid
+  WHERE pc.oid = entity
+$$;
+
+
+ALTER FUNCTION realtime.quote_wal2json(entity regclass) OWNER TO supabase_admin;
+
+--
+-- Name: send(jsonb, text, text, boolean); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.send(payload jsonb, event text, topic text, private boolean DEFAULT true) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  generated_id uuid;
+  final_payload jsonb;
+BEGIN
+  BEGIN
+    generated_id := gen_random_uuid();
+
+    -- Check if payload has an 'id' key, if not, add the generated UUID
+    IF payload ? 'id' THEN
+      final_payload := payload;
+    ELSE
+      final_payload := jsonb_set(payload, '{id}', to_jsonb(generated_id));
+    END IF;
+
+    -- Set the topic configuration
+    EXECUTE format('SET LOCAL realtime.topic TO %L', topic);
+
+    INSERT INTO realtime.messages (id, payload, event, topic, private, extension)
+    VALUES (generated_id, final_payload, event, topic, private, 'broadcast');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'WarnSendingBroadcastMessage: %', SQLERRM;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION realtime.send(payload jsonb, event text, topic text, private boolean) OWNER TO supabase_admin;
+
+--
+-- Name: send_binary(bytea, text, text, boolean); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.send_binary(payload bytea, event text, topic text, private boolean DEFAULT true) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  generated_id uuid;
+BEGIN
+  BEGIN
+    generated_id := gen_random_uuid();
+
+    EXECUTE format('SET LOCAL realtime.topic TO %L', topic);
+
+    INSERT INTO realtime.messages (id, binary_payload, event, topic, private, extension)
+    VALUES (generated_id, payload, event, topic, private, 'broadcast');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'WarnSendingBroadcastMessage: %', SQLERRM;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION realtime.send_binary(payload bytea, event text, topic text, private boolean) OWNER TO supabase_admin;
+
+--
+-- Name: subscription_check_filters(); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.subscription_check_filters() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+declare
+    col_names text[] = coalesce(
+            array_agg(a.attname order by a.attnum),
+            '{}'::text[]
+        )
+        from
+            pg_catalog.pg_attribute a
+        where
+            a.attrelid = new.entity
+            and a.attnum > 0
+            and not a.attisdropped
+            and pg_catalog.has_column_privilege(
+                (new.claims ->> 'role'),
+                a.attrelid,
+                a.attnum,
+                'SELECT'
+            );
+    filter realtime.user_defined_filter;
+    col_type regtype;
+    in_val jsonb;
+    selected_col text;
+begin
+    for filter in select * from unnest(new.filters) loop
+        if not filter.column_name = any(col_names) then
+            raise exception 'invalid column for filter %', filter.column_name;
+        end if;
+
+        col_type = (
+            select atttypid::regtype
+            from pg_catalog.pg_attribute
+            where attrelid = new.entity
+                  and attname = filter.column_name
+        );
+        if col_type is null then
+            raise exception 'failed to lookup type for column %', filter.column_name;
+        end if;
+
+        if filter.op = 'in'::realtime.equality_op then
+            in_val = realtime.cast(filter.value, (col_type::text || '[]')::regtype);
+            if coalesce(jsonb_array_length(in_val), 0) > 100 then
+                raise exception 'too many values for `in` filter. Maximum 100';
+            end if;
+        elsif filter.op = 'is'::realtime.equality_op then
+            -- `is` requires a keyword RHS rather than a typed literal
+            if filter.value not in ('null', 'true', 'false', 'unknown') then
+                raise exception 'invalid value for is filter: must be null, true, false, or unknown';
+            end if;
+            -- IS NULL works for any type, but IS TRUE/FALSE/UNKNOWN require a boolean
+            -- operand. Reject the non-null keywords on non-boolean columns here so they
+            -- don't abort apply_rls at WAL time.
+            if filter.value <> 'null' and col_type <> 'boolean'::regtype then
+                raise exception 'is % filter requires a boolean column, got %', filter.value, col_type::text;
+            end if;
+        elsif filter.op in ('like'::realtime.equality_op, 'ilike'::realtime.equality_op) then
+            -- like/ilike apply the text pattern operator (~~); reject column types that
+            -- have no such operator instead of failing at WAL time
+            if not exists (
+                select 1 from pg_catalog.pg_operator
+                where oprname = '~~' and oprleft = col_type
+            ) then
+                raise exception 'operator % requires a text-compatible column type, got %', filter.op::text, col_type::text;
+            end if;
+        elsif filter.op in ('match'::realtime.equality_op, 'imatch'::realtime.equality_op) then
+            -- match/imatch apply the regex operators ~ / ~*; reject column types that have
+            -- no such operator (e.g. integer) instead of failing at WAL time, mirroring the
+            -- like/ilike guard above.
+            if not exists (
+                select 1 from pg_catalog.pg_operator
+                where oprname = case when filter.op = 'imatch'::realtime.equality_op then '~*' else '~' end
+                  and oprleft = col_type
+                  and oprright = col_type
+                  and oprresult = 'boolean'::regtype
+            ) then
+                raise exception 'operator % requires a text-compatible column type, got %', filter.op::text, col_type::text;
+            end if;
+            -- validate the regex eagerly so a bad pattern is rejected here, not inside
+            -- apply_rls where it would abort the WAL stream for the entity
+            begin
+                perform '' ~ filter.value;
+            exception when others then
+                raise exception 'invalid regular expression for % filter: %', filter.op::text, sqlerrm;
+            end;
+        else
+            -- eq/neq/lt/lte/gt/gte: value must be coercable to the type
+            perform realtime.cast(filter.value, col_type);
+        end if;
+    end loop;
+
+    if new.selected_columns is not null then
+        for selected_col in select * from unnest(new.selected_columns) loop
+            if not selected_col = any(col_names) then
+                raise exception 'invalid column for select %', selected_col;
+            end if;
+        end loop;
+    end if;
+
+    -- Apply consistent order to filters so the unique constraint can't be tricked by a
+    -- different filter order. negate is part of the sort key.
+    new.filters = coalesce(
+        array_agg(f order by f.column_name, f.op, f.value, f.negate),
+        '{}'
+    ) from unnest(new.filters) f;
+
+    new.selected_columns = (
+        select array_agg(c order by c)
+        from unnest(new.selected_columns) c
+    );
+
+    return new;
+end;
+$$;
+
+
+ALTER FUNCTION realtime.subscription_check_filters() OWNER TO supabase_admin;
+
+--
+-- Name: to_regrole(text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.to_regrole(role_name text) RETURNS regrole
+    LANGUAGE sql IMMUTABLE
+    AS $$ select role_name::regrole $$;
+
+
+ALTER FUNCTION realtime.to_regrole(role_name text) OWNER TO supabase_admin;
+
+--
+-- Name: topic(); Type: FUNCTION; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+CREATE FUNCTION realtime.topic() RETURNS text
+    LANGUAGE sql STABLE
+    AS $$
+select nullif(current_setting('realtime.topic', true), '')::text;
+$$;
+
+
+ALTER FUNCTION realtime.topic() OWNER TO supabase_realtime_admin;
+
+--
+-- Name: wal2json_escape_identifier(text); Type: FUNCTION; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE FUNCTION realtime.wal2json_escape_identifier(name text) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    AS $$
+  -- Prefix `\`, `,`, `.`, and any whitespace with `\`
+  SELECT regexp_replace(name, '([\\,.[:space:]])', '\\\1', 'g')
+$$;
+
+
+ALTER FUNCTION realtime.wal2json_escape_identifier(name text) OWNER TO supabase_admin;
+
+--
+-- Name: allow_any_operation(text[]); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.allow_any_operation(expected_operations text[]) RETURNS boolean
+    LANGUAGE sql STABLE
+    AS $$
+  WITH current_operation AS (
+    SELECT storage.operation() AS raw_operation
+  ),
+  normalized AS (
+    SELECT CASE
+      WHEN raw_operation LIKE 'storage.%' THEN substr(raw_operation, 9)
+      ELSE raw_operation
+    END AS current_operation
+    FROM current_operation
+  )
+  SELECT EXISTS (
+    SELECT 1
+    FROM normalized n
+    CROSS JOIN LATERAL unnest(expected_operations) AS expected_operation
+    WHERE expected_operation IS NOT NULL
+      AND expected_operation <> ''
+      AND n.current_operation = CASE
+        WHEN expected_operation LIKE 'storage.%' THEN substr(expected_operation, 9)
+        ELSE expected_operation
+      END
+  );
+$$;
+
+
+ALTER FUNCTION storage.allow_any_operation(expected_operations text[]) OWNER TO supabase_storage_admin;
+
+--
+-- Name: allow_only_operation(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.allow_only_operation(expected_operation text) RETURNS boolean
+    LANGUAGE sql STABLE
+    AS $$
+  WITH current_operation AS (
+    SELECT storage.operation() AS raw_operation
+  ),
+  normalized AS (
+    SELECT
+      CASE
+        WHEN raw_operation LIKE 'storage.%' THEN substr(raw_operation, 9)
+        ELSE raw_operation
+      END AS current_operation,
+      CASE
+        WHEN expected_operation LIKE 'storage.%' THEN substr(expected_operation, 9)
+        ELSE expected_operation
+      END AS requested_operation
+    FROM current_operation
+  )
+  SELECT CASE
+    WHEN requested_operation IS NULL OR requested_operation = '' THEN FALSE
+    ELSE COALESCE(current_operation = requested_operation, FALSE)
+  END
+  FROM normalized;
+$$;
+
+
+ALTER FUNCTION storage.allow_only_operation(expected_operation text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: can_insert_object(text, text, uuid, jsonb); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.can_insert_object(bucketid text, name text, owner uuid, metadata jsonb) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  INSERT INTO "storage"."objects" ("bucket_id", "name", "owner", "metadata") VALUES (bucketid, name, owner, metadata);
+  -- hack to rollback the successful insert
+  RAISE sqlstate 'PT200' using
+  message = 'ROLLBACK',
+  detail = 'rollback successful insert';
+END
+$$;
+
+
+ALTER FUNCTION storage.can_insert_object(bucketid text, name text, owner uuid, metadata jsonb) OWNER TO supabase_storage_admin;
+
+--
+-- Name: enforce_bucket_name_length(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.enforce_bucket_name_length() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+begin
+    if length(new.name) > 100 then
+        raise exception 'bucket name "%" is too long (% characters). Max is 100.', new.name, length(new.name);
+    end if;
+    return new;
+end;
+$$;
+
+
+ALTER FUNCTION storage.enforce_bucket_name_length() OWNER TO supabase_storage_admin;
+
+--
+-- Name: extension(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.extension(name text) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+DECLARE
+    _parts text[];
+    _filename text;
+BEGIN
+    -- Split on "/" to get path segments
+    SELECT string_to_array(name, '/') INTO _parts;
+    -- Get the last path segment (the actual filename)
+    SELECT _parts[array_length(_parts, 1)] INTO _filename;
+    -- Extract extension: reverse, split on '.', then reverse again
+    RETURN reverse(split_part(reverse(_filename), '.', 1));
+END
+$$;
+
+
+ALTER FUNCTION storage.extension(name text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: filename(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.filename(name text) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+_parts text[];
+BEGIN
+	select string_to_array(name, '/') into _parts;
+	return _parts[array_length(_parts,1)];
+END
+$$;
+
+
+ALTER FUNCTION storage.filename(name text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: foldername(text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.foldername(name text) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+DECLARE
+    _parts text[];
+BEGIN
+    -- Split on "/" to get path segments
+    SELECT string_to_array(name, '/') INTO _parts;
+    -- Return everything except the last segment
+    RETURN _parts[1 : array_length(_parts,1) - 1];
+END
+$$;
+
+
+ALTER FUNCTION storage.foldername(name text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: get_common_prefix(text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.get_common_prefix(p_key text, p_prefix text, p_delimiter text) RETURNS text
+    LANGUAGE sql IMMUTABLE
+    AS $$
+SELECT CASE
+    WHEN position(p_delimiter IN substring(p_key FROM length(p_prefix) + 1)) > 0
+    THEN left(p_key, length(p_prefix) + position(p_delimiter IN substring(p_key FROM length(p_prefix) + 1)))
+    ELSE NULL
+END;
+$$;
+
+
+ALTER FUNCTION storage.get_common_prefix(p_key text, p_prefix text, p_delimiter text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: get_size_by_bucket(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.get_size_by_bucket() RETURNS TABLE(size bigint, bucket_id text)
+    LANGUAGE plpgsql STABLE
+    AS $$
+BEGIN
+    return query
+        select sum((metadata->>'size')::bigint)::bigint as size, obj.bucket_id
+        from "storage".objects as obj
+        group by obj.bucket_id;
+END
+$$;
+
+
+ALTER FUNCTION storage.get_size_by_bucket() OWNER TO supabase_storage_admin;
+
+--
+-- Name: list_multipart_uploads_with_delimiter(text, text, text, integer, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.list_multipart_uploads_with_delimiter(bucket_id text, prefix_param text, delimiter_param text, max_keys integer DEFAULT 100, next_key_token text DEFAULT ''::text, next_upload_token text DEFAULT ''::text) RETURNS TABLE(key text, id text, created_at timestamp with time zone)
+    LANGUAGE plpgsql
+    AS $_$
+BEGIN
+    RETURN QUERY EXECUTE
+        'SELECT DISTINCT ON(key COLLATE "C") * from (
+            SELECT
+                CASE
+                    WHEN position($2 IN substring(key from length($1) + 1)) > 0 THEN
+                        substring(key from 1 for length($1) + position($2 IN substring(key from length($1) + 1)))
+                    ELSE
+                        key
+                END AS key, id, created_at
+            FROM
+                storage.s3_multipart_uploads
+            WHERE
+                bucket_id = $5 AND
+                key ILIKE $1 || ''%'' AND
+                CASE
+                    WHEN $4 != '''' AND $6 = '''' THEN
+                        CASE
+                            WHEN position($2 IN substring(key from length($1) + 1)) > 0 THEN
+                                substring(key from 1 for length($1) + position($2 IN substring(key from length($1) + 1))) COLLATE "C" > $4
+                            ELSE
+                                key COLLATE "C" > $4
+                            END
+                    ELSE
+                        true
+                END AND
+                CASE
+                    WHEN $6 != '''' THEN
+                        id COLLATE "C" > $6
+                    ELSE
+                        true
+                    END
+            ORDER BY
+                key COLLATE "C" ASC, created_at ASC) as e order by key COLLATE "C" LIMIT $3'
+        USING prefix_param, delimiter_param, max_keys, next_key_token, bucket_id, next_upload_token;
+END;
+$_$;
+
+
+ALTER FUNCTION storage.list_multipart_uploads_with_delimiter(bucket_id text, prefix_param text, delimiter_param text, max_keys integer, next_key_token text, next_upload_token text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: list_objects_with_delimiter(text, text, text, integer, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.list_objects_with_delimiter(_bucket_id text, prefix_param text, delimiter_param text, max_keys integer DEFAULT 100, start_after text DEFAULT ''::text, next_token text DEFAULT ''::text, sort_order text DEFAULT 'asc'::text) RETURNS TABLE(name text, id uuid, metadata jsonb, updated_at timestamp with time zone, created_at timestamp with time zone, last_accessed_at timestamp with time zone)
+    LANGUAGE plpgsql STABLE
+    AS $_$
+DECLARE
+    v_peek_name TEXT;
+    v_current RECORD;
+    v_common_prefix TEXT;
+
+    -- Configuration
+    v_is_asc BOOLEAN;
+    v_prefix TEXT;
+    v_start TEXT;
+    v_upper_bound TEXT;
+    v_file_batch_size INT;
+
+    -- Seek state
+    v_next_seek TEXT;
+    v_count INT := 0;
+
+    -- Dynamic SQL for batch query only
+    v_batch_query TEXT;
+
+BEGIN
+    -- ========================================================================
+    -- INITIALIZATION
+    -- ========================================================================
+    v_is_asc := lower(coalesce(sort_order, 'asc')) = 'asc';
+    v_prefix := coalesce(prefix_param, '');
+    v_start := CASE WHEN coalesce(next_token, '') <> '' THEN next_token ELSE coalesce(start_after, '') END;
+    v_file_batch_size := LEAST(GREATEST(max_keys * 2, 100), 1000);
+
+    -- Calculate upper bound for prefix filtering (bytewise, using COLLATE "C")
+    IF v_prefix = '' THEN
+        v_upper_bound := NULL;
+    ELSIF right(v_prefix, 1) = delimiter_param THEN
+        v_upper_bound := left(v_prefix, -1) || chr(ascii(delimiter_param) + 1);
+    ELSE
+        v_upper_bound := left(v_prefix, -1) || chr(ascii(right(v_prefix, 1)) + 1);
+    END IF;
+
+    -- Build batch query (dynamic SQL - called infrequently, amortized over many rows)
+    IF v_is_asc THEN
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" >= $2 ' ||
+                'AND o.name COLLATE "C" < $3 ORDER BY o.name COLLATE "C" ASC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" >= $2 ' ||
+                'ORDER BY o.name COLLATE "C" ASC LIMIT $4';
+        END IF;
+    ELSE
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" < $2 ' ||
+                'AND o.name COLLATE "C" >= $3 ORDER BY o.name COLLATE "C" DESC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND o.name COLLATE "C" < $2 ' ||
+                'ORDER BY o.name COLLATE "C" DESC LIMIT $4';
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- SEEK INITIALIZATION: Determine starting position
+    -- ========================================================================
+    IF v_start = '' THEN
+        IF v_is_asc THEN
+            v_next_seek := v_prefix;
+        ELSE
+            -- DESC without cursor: find the last item in range
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_next_seek FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_prefix AND o.name COLLATE "C" < v_upper_bound
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSIF v_prefix <> '' THEN
+                SELECT o.name INTO v_next_seek FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_prefix
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_next_seek FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            END IF;
+
+            IF v_next_seek IS NOT NULL THEN
+                v_next_seek := v_next_seek || delimiter_param;
+            ELSE
+                RETURN;
+            END IF;
+        END IF;
+    ELSE
+        -- Cursor provided: determine if it refers to a folder or leaf
+        IF EXISTS (
+            SELECT 1 FROM storage.objects o
+            WHERE o.bucket_id = _bucket_id
+              AND o.name COLLATE "C" LIKE v_start || delimiter_param || '%'
+            LIMIT 1
+        ) THEN
+            -- Cursor refers to a folder
+            IF v_is_asc THEN
+                v_next_seek := v_start || chr(ascii(delimiter_param) + 1);
+            ELSE
+                v_next_seek := v_start || delimiter_param;
+            END IF;
+        ELSE
+            -- Cursor refers to a leaf object
+            IF v_is_asc THEN
+                v_next_seek := v_start || delimiter_param;
+            ELSE
+                v_next_seek := v_start;
+            END IF;
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- MAIN LOOP: Hybrid peek-then-batch algorithm
+    -- Uses STATIC SQL for peek (hot path) and DYNAMIC SQL for batch
+    -- ========================================================================
+    LOOP
+        EXIT WHEN v_count >= max_keys;
+
+        -- STEP 1: PEEK using STATIC SQL (plan cached, very fast)
+        IF v_is_asc THEN
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_next_seek AND o.name COLLATE "C" < v_upper_bound
+                ORDER BY o.name COLLATE "C" ASC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" >= v_next_seek
+                ORDER BY o.name COLLATE "C" ASC LIMIT 1;
+            END IF;
+        ELSE
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" < v_next_seek AND o.name COLLATE "C" >= v_prefix
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSIF v_prefix <> '' THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" < v_next_seek AND o.name COLLATE "C" >= v_prefix
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = _bucket_id AND o.name COLLATE "C" < v_next_seek
+                ORDER BY o.name COLLATE "C" DESC LIMIT 1;
+            END IF;
+        END IF;
+
+        EXIT WHEN v_peek_name IS NULL;
+
+        -- STEP 2: Check if this is a FOLDER or FILE
+        v_common_prefix := storage.get_common_prefix(v_peek_name, v_prefix, delimiter_param);
+
+        IF v_common_prefix IS NOT NULL THEN
+            -- FOLDER: Emit and skip to next folder (no heap access needed)
+            name := rtrim(v_common_prefix, delimiter_param);
+            id := NULL;
+            updated_at := NULL;
+            created_at := NULL;
+            last_accessed_at := NULL;
+            metadata := NULL;
+            RETURN NEXT;
+            v_count := v_count + 1;
+
+            -- Advance seek past the folder range
+            IF v_is_asc THEN
+                v_next_seek := left(v_common_prefix, -1) || chr(ascii(delimiter_param) + 1);
+            ELSE
+                v_next_seek := v_common_prefix;
+            END IF;
+        ELSE
+            -- FILE: Batch fetch using DYNAMIC SQL (overhead amortized over many rows)
+            -- For ASC: upper_bound is the exclusive upper limit (< condition)
+            -- For DESC: prefix is the inclusive lower limit (>= condition)
+            FOR v_current IN EXECUTE v_batch_query USING _bucket_id, v_next_seek,
+                CASE WHEN v_is_asc THEN COALESCE(v_upper_bound, v_prefix) ELSE v_prefix END, v_file_batch_size
+            LOOP
+                v_common_prefix := storage.get_common_prefix(v_current.name, v_prefix, delimiter_param);
+
+                IF v_common_prefix IS NOT NULL THEN
+                    -- Hit a folder: exit batch, let peek handle it
+                    v_next_seek := v_current.name;
+                    EXIT;
+                END IF;
+
+                -- Emit file
+                name := v_current.name;
+                id := v_current.id;
+                updated_at := v_current.updated_at;
+                created_at := v_current.created_at;
+                last_accessed_at := v_current.last_accessed_at;
+                metadata := v_current.metadata;
+                RETURN NEXT;
+                v_count := v_count + 1;
+
+                -- Advance seek past this file
+                IF v_is_asc THEN
+                    v_next_seek := v_current.name || delimiter_param;
+                ELSE
+                    v_next_seek := v_current.name;
+                END IF;
+
+                EXIT WHEN v_count >= max_keys;
+            END LOOP;
+        END IF;
+    END LOOP;
+END;
+$_$;
+
+
+ALTER FUNCTION storage.list_objects_with_delimiter(_bucket_id text, prefix_param text, delimiter_param text, max_keys integer, start_after text, next_token text, sort_order text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: operation(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.operation() RETURNS text
+    LANGUAGE plpgsql STABLE
+    AS $$
+BEGIN
+    RETURN current_setting('storage.operation', true);
+END;
+$$;
+
+
+ALTER FUNCTION storage.operation() OWNER TO supabase_storage_admin;
+
+--
+-- Name: protect_delete(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.protect_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check if storage.allow_delete_query is set to 'true'
+    IF COALESCE(current_setting('storage.allow_delete_query', true), 'false') != 'true' THEN
+        RAISE EXCEPTION 'Direct deletion from storage tables is not allowed. Use the Storage API instead.'
+            USING HINT = 'This prevents accidental data loss from orphaned objects.',
+                  ERRCODE = '42501';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION storage.protect_delete() OWNER TO supabase_storage_admin;
+
+--
+-- Name: search(text, text, integer, integer, integer, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.search(prefix text, bucketname text, limits integer DEFAULT 100, levels integer DEFAULT 1, offsets integer DEFAULT 0, search text DEFAULT ''::text, sortcolumn text DEFAULT 'name'::text, sortorder text DEFAULT 'asc'::text) RETURNS TABLE(name text, id uuid, updated_at timestamp with time zone, created_at timestamp with time zone, last_accessed_at timestamp with time zone, metadata jsonb)
+    LANGUAGE plpgsql STABLE
+    AS $_$
+DECLARE
+    v_peek_name TEXT;
+    v_current RECORD;
+    v_common_prefix TEXT;
+    v_delimiter CONSTANT TEXT := '/';
+
+    -- Configuration
+    v_limit INT;
+    v_prefix TEXT;
+    v_prefix_lower TEXT;
+    v_is_asc BOOLEAN;
+    v_order_by TEXT;
+    v_sort_order TEXT;
+    v_upper_bound TEXT;
+    v_file_batch_size INT;
+
+    -- Dynamic SQL for batch query only
+    v_batch_query TEXT;
+
+    -- Seek state
+    v_next_seek TEXT;
+    v_count INT := 0;
+    v_skipped INT := 0;
+BEGIN
+    -- ========================================================================
+    -- INITIALIZATION
+    -- ========================================================================
+    v_limit := LEAST(coalesce(limits, 100), 1500);
+    v_prefix := coalesce(prefix, '') || coalesce(search, '');
+    v_prefix_lower := lower(v_prefix);
+    v_is_asc := lower(coalesce(sortorder, 'asc')) = 'asc';
+    v_file_batch_size := LEAST(GREATEST(v_limit * 2, 100), 1000);
+
+    -- Validate sort column
+    CASE lower(coalesce(sortcolumn, 'name'))
+        WHEN 'name' THEN v_order_by := 'name';
+        WHEN 'updated_at' THEN v_order_by := 'updated_at';
+        WHEN 'created_at' THEN v_order_by := 'created_at';
+        WHEN 'last_accessed_at' THEN v_order_by := 'last_accessed_at';
+        ELSE v_order_by := 'name';
+    END CASE;
+
+    v_sort_order := CASE WHEN v_is_asc THEN 'asc' ELSE 'desc' END;
+
+    -- ========================================================================
+    -- NON-NAME SORTING: Use path_tokens approach (unchanged)
+    -- ========================================================================
+    IF v_order_by != 'name' THEN
+        RETURN QUERY EXECUTE format(
+            $sql$
+            WITH folders AS (
+                SELECT path_tokens[$1] AS folder
+                FROM storage.objects
+                WHERE objects.name ILIKE $2 || '%%'
+                  AND bucket_id = $3
+                  AND array_length(objects.path_tokens, 1) <> $1
+                GROUP BY folder
+                ORDER BY folder %s
+            )
+            (SELECT folder AS "name",
+                   NULL::uuid AS id,
+                   NULL::timestamptz AS updated_at,
+                   NULL::timestamptz AS created_at,
+                   NULL::timestamptz AS last_accessed_at,
+                   NULL::jsonb AS metadata FROM folders)
+            UNION ALL
+            (SELECT path_tokens[$1] AS "name",
+                   id, updated_at, created_at, last_accessed_at, metadata
+             FROM storage.objects
+             WHERE objects.name ILIKE $2 || '%%'
+               AND bucket_id = $3
+               AND array_length(objects.path_tokens, 1) = $1
+             ORDER BY %I %s)
+            LIMIT $4 OFFSET $5
+            $sql$, v_sort_order, v_order_by, v_sort_order
+        ) USING levels, v_prefix, bucketname, v_limit, offsets;
+        RETURN;
+    END IF;
+
+    -- ========================================================================
+    -- NAME SORTING: Hybrid skip-scan with batch optimization
+    -- ========================================================================
+
+    -- Calculate upper bound for prefix filtering
+    IF v_prefix_lower = '' THEN
+        v_upper_bound := NULL;
+    ELSIF right(v_prefix_lower, 1) = v_delimiter THEN
+        v_upper_bound := left(v_prefix_lower, -1) || chr(ascii(v_delimiter) + 1);
+    ELSE
+        v_upper_bound := left(v_prefix_lower, -1) || chr(ascii(right(v_prefix_lower, 1)) + 1);
+    END IF;
+
+    -- Build batch query (dynamic SQL - called infrequently, amortized over many rows)
+    IF v_is_asc THEN
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" >= $2 ' ||
+                'AND lower(o.name) COLLATE "C" < $3 ORDER BY lower(o.name) COLLATE "C" ASC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" >= $2 ' ||
+                'ORDER BY lower(o.name) COLLATE "C" ASC LIMIT $4';
+        END IF;
+    ELSE
+        IF v_upper_bound IS NOT NULL THEN
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" < $2 ' ||
+                'AND lower(o.name) COLLATE "C" >= $3 ORDER BY lower(o.name) COLLATE "C" DESC LIMIT $4';
+        ELSE
+            v_batch_query := 'SELECT o.name, o.id, o.updated_at, o.created_at, o.last_accessed_at, o.metadata ' ||
+                'FROM storage.objects o WHERE o.bucket_id = $1 AND lower(o.name) COLLATE "C" < $2 ' ||
+                'ORDER BY lower(o.name) COLLATE "C" DESC LIMIT $4';
+        END IF;
+    END IF;
+
+    -- Initialize seek position
+    IF v_is_asc THEN
+        v_next_seek := v_prefix_lower;
+    ELSE
+        -- DESC: find the last item in range first (static SQL)
+        IF v_upper_bound IS NOT NULL THEN
+            SELECT o.name INTO v_peek_name FROM storage.objects o
+            WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_prefix_lower AND lower(o.name) COLLATE "C" < v_upper_bound
+            ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+        ELSIF v_prefix_lower <> '' THEN
+            SELECT o.name INTO v_peek_name FROM storage.objects o
+            WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_prefix_lower
+            ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+        ELSE
+            SELECT o.name INTO v_peek_name FROM storage.objects o
+            WHERE o.bucket_id = bucketname
+            ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+        END IF;
+
+        IF v_peek_name IS NOT NULL THEN
+            v_next_seek := lower(v_peek_name) || v_delimiter;
+        ELSE
+            RETURN;
+        END IF;
+    END IF;
+
+    -- ========================================================================
+    -- MAIN LOOP: Hybrid peek-then-batch algorithm
+    -- Uses STATIC SQL for peek (hot path) and DYNAMIC SQL for batch
+    -- ========================================================================
+    LOOP
+        EXIT WHEN v_count >= v_limit;
+
+        -- STEP 1: PEEK using STATIC SQL (plan cached, very fast)
+        IF v_is_asc THEN
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_next_seek AND lower(o.name) COLLATE "C" < v_upper_bound
+                ORDER BY lower(o.name) COLLATE "C" ASC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" >= v_next_seek
+                ORDER BY lower(o.name) COLLATE "C" ASC LIMIT 1;
+            END IF;
+        ELSE
+            IF v_upper_bound IS NOT NULL THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" < v_next_seek AND lower(o.name) COLLATE "C" >= v_prefix_lower
+                ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+            ELSIF v_prefix_lower <> '' THEN
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" < v_next_seek AND lower(o.name) COLLATE "C" >= v_prefix_lower
+                ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+            ELSE
+                SELECT o.name INTO v_peek_name FROM storage.objects o
+                WHERE o.bucket_id = bucketname AND lower(o.name) COLLATE "C" < v_next_seek
+                ORDER BY lower(o.name) COLLATE "C" DESC LIMIT 1;
+            END IF;
+        END IF;
+
+        EXIT WHEN v_peek_name IS NULL;
+
+        -- STEP 2: Check if this is a FOLDER or FILE
+        v_common_prefix := storage.get_common_prefix(lower(v_peek_name), v_prefix_lower, v_delimiter);
+
+        IF v_common_prefix IS NOT NULL THEN
+            -- FOLDER: Handle offset, emit if needed, skip to next folder
+            IF v_skipped < offsets THEN
+                v_skipped := v_skipped + 1;
+            ELSE
+                name := split_part(rtrim(storage.get_common_prefix(v_peek_name, v_prefix, v_delimiter), v_delimiter), v_delimiter, levels);
+                id := NULL;
+                updated_at := NULL;
+                created_at := NULL;
+                last_accessed_at := NULL;
+                metadata := NULL;
+                RETURN NEXT;
+                v_count := v_count + 1;
+            END IF;
+
+            -- Advance seek past the folder range
+            IF v_is_asc THEN
+                v_next_seek := lower(left(v_common_prefix, -1)) || chr(ascii(v_delimiter) + 1);
+            ELSE
+                v_next_seek := lower(v_common_prefix);
+            END IF;
+        ELSE
+            -- FILE: Batch fetch using DYNAMIC SQL (overhead amortized over many rows)
+            -- For ASC: upper_bound is the exclusive upper limit (< condition)
+            -- For DESC: prefix_lower is the inclusive lower limit (>= condition)
+            FOR v_current IN EXECUTE v_batch_query
+                USING bucketname, v_next_seek,
+                    CASE WHEN v_is_asc THEN COALESCE(v_upper_bound, v_prefix_lower) ELSE v_prefix_lower END, v_file_batch_size
+            LOOP
+                v_common_prefix := storage.get_common_prefix(lower(v_current.name), v_prefix_lower, v_delimiter);
+
+                IF v_common_prefix IS NOT NULL THEN
+                    -- Hit a folder: exit batch, let peek handle it
+                    v_next_seek := lower(v_current.name);
+                    EXIT;
+                END IF;
+
+                -- Handle offset skipping
+                IF v_skipped < offsets THEN
+                    v_skipped := v_skipped + 1;
+                ELSE
+                    -- Emit file
+                    name := split_part(v_current.name, v_delimiter, levels);
+                    id := v_current.id;
+                    updated_at := v_current.updated_at;
+                    created_at := v_current.created_at;
+                    last_accessed_at := v_current.last_accessed_at;
+                    metadata := v_current.metadata;
+                    RETURN NEXT;
+                    v_count := v_count + 1;
+                END IF;
+
+                -- Advance seek past this file
+                IF v_is_asc THEN
+                    v_next_seek := lower(v_current.name) || v_delimiter;
+                ELSE
+                    v_next_seek := lower(v_current.name);
+                END IF;
+
+                EXIT WHEN v_count >= v_limit;
+            END LOOP;
+        END IF;
+    END LOOP;
+END;
+$_$;
+
+
+ALTER FUNCTION storage.search(prefix text, bucketname text, limits integer, levels integer, offsets integer, search text, sortcolumn text, sortorder text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: search_by_timestamp(text, text, integer, integer, text, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.search_by_timestamp(p_prefix text, p_bucket_id text, p_limit integer, p_level integer, p_start_after text, p_sort_order text, p_sort_column text, p_sort_column_after text) RETURNS TABLE(key text, name text, id uuid, updated_at timestamp with time zone, created_at timestamp with time zone, last_accessed_at timestamp with time zone, metadata jsonb)
+    LANGUAGE plpgsql STABLE
+    AS $_$
+DECLARE
+    v_cursor_op text;
+    v_query text;
+    v_prefix text;
+BEGIN
+    v_prefix := coalesce(p_prefix, '');
+
+    IF p_sort_order = 'asc' THEN
+        v_cursor_op := '>';
+    ELSE
+        v_cursor_op := '<';
+    END IF;
+
+    v_query := format($sql$
+        WITH raw_objects AS (
+            SELECT
+                o.name AS obj_name,
+                o.id AS obj_id,
+                o.updated_at AS obj_updated_at,
+                o.created_at AS obj_created_at,
+                o.last_accessed_at AS obj_last_accessed_at,
+                o.metadata AS obj_metadata,
+                storage.get_common_prefix(o.name, $1, '/') AS common_prefix
+            FROM storage.objects o
+            WHERE o.bucket_id = $2
+              AND o.name COLLATE "C" LIKE $1 || '%%'
+        ),
+        -- Aggregate common prefixes (folders)
+        -- Both created_at and updated_at use MIN(obj_created_at) to match the old prefixes table behavior
+        aggregated_prefixes AS (
+            SELECT
+                rtrim(common_prefix, '/') AS name,
+                NULL::uuid AS id,
+                MIN(obj_created_at) AS updated_at,
+                MIN(obj_created_at) AS created_at,
+                NULL::timestamptz AS last_accessed_at,
+                NULL::jsonb AS metadata,
+                TRUE AS is_prefix
+            FROM raw_objects
+            WHERE common_prefix IS NOT NULL
+            GROUP BY common_prefix
+        ),
+        leaf_objects AS (
+            SELECT
+                obj_name AS name,
+                obj_id AS id,
+                obj_updated_at AS updated_at,
+                obj_created_at AS created_at,
+                obj_last_accessed_at AS last_accessed_at,
+                obj_metadata AS metadata,
+                FALSE AS is_prefix
+            FROM raw_objects
+            WHERE common_prefix IS NULL
+        ),
+        combined AS (
+            SELECT * FROM aggregated_prefixes
+            UNION ALL
+            SELECT * FROM leaf_objects
+        ),
+        filtered AS (
+            SELECT *
+            FROM combined
+            WHERE (
+                $5 = ''
+                OR ROW(
+                    date_trunc('milliseconds', %I),
+                    name COLLATE "C"
+                ) %s ROW(
+                    COALESCE(NULLIF($6, '')::timestamptz, 'epoch'::timestamptz),
+                    $5
+                )
+            )
+        )
+        SELECT
+            split_part(name, '/', $3) AS key,
+            name,
+            id,
+            updated_at,
+            created_at,
+            last_accessed_at,
+            metadata
+        FROM filtered
+        ORDER BY
+            COALESCE(date_trunc('milliseconds', %I), 'epoch'::timestamptz) %s,
+            name COLLATE "C" %s
+        LIMIT $4
+    $sql$,
+        p_sort_column,
+        v_cursor_op,
+        p_sort_column,
+        p_sort_order,
+        p_sort_order
+    );
+
+    RETURN QUERY EXECUTE v_query
+    USING v_prefix, p_bucket_id, p_level, p_limit, p_start_after, p_sort_column_after;
+END;
+$_$;
+
+
+ALTER FUNCTION storage.search_by_timestamp(p_prefix text, p_bucket_id text, p_limit integer, p_level integer, p_start_after text, p_sort_order text, p_sort_column text, p_sort_column_after text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: search_v2(text, text, integer, integer, text, text, text, text); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.search_v2(prefix text, bucket_name text, limits integer DEFAULT 100, levels integer DEFAULT 1, start_after text DEFAULT ''::text, sort_order text DEFAULT 'asc'::text, sort_column text DEFAULT 'name'::text, sort_column_after text DEFAULT ''::text) RETURNS TABLE(key text, name text, id uuid, updated_at timestamp with time zone, created_at timestamp with time zone, last_accessed_at timestamp with time zone, metadata jsonb)
+    LANGUAGE plpgsql STABLE
+    AS $$
+DECLARE
+    v_sort_col text;
+    v_sort_ord text;
+    v_limit int;
+BEGIN
+    -- Cap limit to maximum of 1500 records
+    v_limit := LEAST(coalesce(limits, 100), 1500);
+
+    -- Validate and normalize sort_order
+    v_sort_ord := lower(coalesce(sort_order, 'asc'));
+    IF v_sort_ord NOT IN ('asc', 'desc') THEN
+        v_sort_ord := 'asc';
+    END IF;
+
+    -- Validate and normalize sort_column
+    v_sort_col := lower(coalesce(sort_column, 'name'));
+    IF v_sort_col NOT IN ('name', 'updated_at', 'created_at') THEN
+        v_sort_col := 'name';
+    END IF;
+
+    -- Route to appropriate implementation
+    IF v_sort_col = 'name' THEN
+        -- Use list_objects_with_delimiter for name sorting (most efficient: O(k * log n))
+        RETURN QUERY
+        SELECT
+            split_part(l.name, '/', levels) AS key,
+            l.name AS name,
+            l.id,
+            l.updated_at,
+            l.created_at,
+            l.last_accessed_at,
+            l.metadata
+        FROM storage.list_objects_with_delimiter(
+            bucket_name,
+            coalesce(prefix, ''),
+            '/',
+            v_limit,
+            start_after,
+            '',
+            v_sort_ord
+        ) l;
+    ELSE
+        -- Use aggregation approach for timestamp sorting
+        -- Not efficient for large datasets but supports correct pagination
+        RETURN QUERY SELECT * FROM storage.search_by_timestamp(
+            prefix, bucket_name, v_limit, levels, start_after,
+            v_sort_ord, v_sort_col, sort_column_after
+        );
+    END IF;
+END;
+$$;
+
+
+ALTER FUNCTION storage.search_v2(prefix text, bucket_name text, limits integer, levels integer, start_after text, sort_order text, sort_column text, sort_column_after text) OWNER TO supabase_storage_admin;
+
+--
+-- Name: update_updated_at_column(); Type: FUNCTION; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE FUNCTION storage.update_updated_at_column() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW; 
+END;
+$$;
+
+
+ALTER FUNCTION storage.update_updated_at_column() OWNER TO supabase_storage_admin;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: audit_log_entries; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.audit_log_entries (
+    instance_id uuid,
+    id uuid NOT NULL,
+    payload json,
+    created_at timestamp with time zone,
+    ip_address character varying(64) DEFAULT ''::character varying NOT NULL
+);
+
+
+ALTER TABLE auth.audit_log_entries OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE audit_log_entries; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.audit_log_entries IS 'Auth: Audit trail for user actions.';
+
+
+--
+-- Name: custom_oauth_providers; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.custom_oauth_providers (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    provider_type text NOT NULL,
+    identifier text NOT NULL,
+    name text NOT NULL,
+    client_id text NOT NULL,
+    client_secret text NOT NULL,
+    acceptable_client_ids text[] DEFAULT '{}'::text[] NOT NULL,
+    scopes text[] DEFAULT '{}'::text[] NOT NULL,
+    pkce_enabled boolean DEFAULT true NOT NULL,
+    attribute_mapping jsonb DEFAULT '{}'::jsonb NOT NULL,
+    authorization_params jsonb DEFAULT '{}'::jsonb NOT NULL,
+    enabled boolean DEFAULT true NOT NULL,
+    email_optional boolean DEFAULT false NOT NULL,
+    issuer text,
+    discovery_url text,
+    skip_nonce_check boolean DEFAULT false NOT NULL,
+    cached_discovery jsonb,
+    discovery_cached_at timestamp with time zone,
+    authorization_url text,
+    token_url text,
+    userinfo_url text,
+    jwks_uri text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    custom_claims_allowlist text[] DEFAULT '{}'::text[] NOT NULL,
+    CONSTRAINT custom_oauth_providers_authorization_url_https CHECK (((authorization_url IS NULL) OR (authorization_url ~~ 'https://%'::text))),
+    CONSTRAINT custom_oauth_providers_authorization_url_length CHECK (((authorization_url IS NULL) OR (char_length(authorization_url) <= 2048))),
+    CONSTRAINT custom_oauth_providers_client_id_length CHECK (((char_length(client_id) >= 1) AND (char_length(client_id) <= 512))),
+    CONSTRAINT custom_oauth_providers_discovery_url_length CHECK (((discovery_url IS NULL) OR (char_length(discovery_url) <= 2048))),
+    CONSTRAINT custom_oauth_providers_identifier_format CHECK ((identifier ~ '^[a-z0-9][a-z0-9:-]{0,48}[a-z0-9]$'::text)),
+    CONSTRAINT custom_oauth_providers_issuer_length CHECK (((issuer IS NULL) OR ((char_length(issuer) >= 1) AND (char_length(issuer) <= 2048)))),
+    CONSTRAINT custom_oauth_providers_jwks_uri_https CHECK (((jwks_uri IS NULL) OR (jwks_uri ~~ 'https://%'::text))),
+    CONSTRAINT custom_oauth_providers_jwks_uri_length CHECK (((jwks_uri IS NULL) OR (char_length(jwks_uri) <= 2048))),
+    CONSTRAINT custom_oauth_providers_name_length CHECK (((char_length(name) >= 1) AND (char_length(name) <= 100))),
+    CONSTRAINT custom_oauth_providers_oauth2_requires_endpoints CHECK (((provider_type <> 'oauth2'::text) OR ((authorization_url IS NOT NULL) AND (token_url IS NOT NULL) AND (userinfo_url IS NOT NULL)))),
+    CONSTRAINT custom_oauth_providers_oidc_discovery_url_https CHECK (((provider_type <> 'oidc'::text) OR (discovery_url IS NULL) OR (discovery_url ~~ 'https://%'::text))),
+    CONSTRAINT custom_oauth_providers_oidc_issuer_https CHECK (((provider_type <> 'oidc'::text) OR (issuer IS NULL) OR (issuer ~~ 'https://%'::text))),
+    CONSTRAINT custom_oauth_providers_oidc_requires_issuer CHECK (((provider_type <> 'oidc'::text) OR (issuer IS NOT NULL))),
+    CONSTRAINT custom_oauth_providers_provider_type_check CHECK ((provider_type = ANY (ARRAY['oauth2'::text, 'oidc'::text]))),
+    CONSTRAINT custom_oauth_providers_token_url_https CHECK (((token_url IS NULL) OR (token_url ~~ 'https://%'::text))),
+    CONSTRAINT custom_oauth_providers_token_url_length CHECK (((token_url IS NULL) OR (char_length(token_url) <= 2048))),
+    CONSTRAINT custom_oauth_providers_userinfo_url_https CHECK (((userinfo_url IS NULL) OR (userinfo_url ~~ 'https://%'::text))),
+    CONSTRAINT custom_oauth_providers_userinfo_url_length CHECK (((userinfo_url IS NULL) OR (char_length(userinfo_url) <= 2048)))
+);
+
+
+ALTER TABLE auth.custom_oauth_providers OWNER TO supabase_auth_admin;
+
+--
+-- Name: flow_state; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.flow_state (
+    id uuid NOT NULL,
+    user_id uuid,
+    auth_code text,
+    code_challenge_method auth.code_challenge_method,
+    code_challenge text,
+    provider_type text NOT NULL,
+    provider_access_token text,
+    provider_refresh_token text,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    authentication_method text NOT NULL,
+    auth_code_issued_at timestamp with time zone,
+    invite_token text,
+    referrer text,
+    oauth_client_state_id uuid,
+    linking_target_id uuid,
+    email_optional boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE auth.flow_state OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE flow_state; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.flow_state IS 'Stores metadata for all OAuth/SSO login flows';
+
+
+--
+-- Name: identities; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.identities (
+    provider_id text NOT NULL,
+    user_id uuid NOT NULL,
+    identity_data jsonb NOT NULL,
+    provider text NOT NULL,
+    last_sign_in_at timestamp with time zone,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    email text GENERATED ALWAYS AS (lower((identity_data ->> 'email'::text))) STORED,
+    id uuid DEFAULT gen_random_uuid() NOT NULL
+);
+
+
+ALTER TABLE auth.identities OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE identities; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.identities IS 'Auth: Stores identities associated to a user.';
+
+
+--
+-- Name: COLUMN identities.email; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.identities.email IS 'Auth: Email is a generated column that references the optional email property in the identity_data';
+
+
+--
+-- Name: instances; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.instances (
+    id uuid NOT NULL,
+    uuid uuid,
+    raw_base_config text,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
+);
+
+
+ALTER TABLE auth.instances OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE instances; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.instances IS 'Auth: Manages users across multiple sites.';
+
+
+--
+-- Name: mfa_amr_claims; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.mfa_amr_claims (
+    session_id uuid NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    authentication_method text NOT NULL,
+    id uuid NOT NULL
+);
+
+
+ALTER TABLE auth.mfa_amr_claims OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE mfa_amr_claims; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.mfa_amr_claims IS 'auth: stores authenticator method reference claims for multi factor authentication';
+
+
+--
+-- Name: mfa_challenges; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.mfa_challenges (
+    id uuid NOT NULL,
+    factor_id uuid NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    verified_at timestamp with time zone,
+    ip_address inet NOT NULL,
+    otp_code text,
+    web_authn_session_data jsonb
+);
+
+
+ALTER TABLE auth.mfa_challenges OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE mfa_challenges; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.mfa_challenges IS 'auth: stores metadata about challenge requests made';
+
+
+--
+-- Name: mfa_factors; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.mfa_factors (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    friendly_name text,
+    factor_type auth.factor_type NOT NULL,
+    status auth.factor_status NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    secret text,
+    phone text,
+    last_challenged_at timestamp with time zone,
+    web_authn_credential jsonb,
+    web_authn_aaguid uuid,
+    last_webauthn_challenge_data jsonb
+);
+
+
+ALTER TABLE auth.mfa_factors OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE mfa_factors; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.mfa_factors IS 'auth: stores metadata about factors';
+
+
+--
+-- Name: COLUMN mfa_factors.last_webauthn_challenge_data; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.mfa_factors.last_webauthn_challenge_data IS 'Stores the latest WebAuthn challenge data including attestation/assertion for customer verification';
+
+
+--
+-- Name: oauth_authorizations; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.oauth_authorizations (
+    id uuid NOT NULL,
+    authorization_id text NOT NULL,
+    client_id uuid NOT NULL,
+    user_id uuid,
+    redirect_uri text NOT NULL,
+    scope text NOT NULL,
+    state text,
+    resource text,
+    code_challenge text,
+    code_challenge_method auth.code_challenge_method,
+    response_type auth.oauth_response_type DEFAULT 'code'::auth.oauth_response_type NOT NULL,
+    status auth.oauth_authorization_status DEFAULT 'pending'::auth.oauth_authorization_status NOT NULL,
+    authorization_code text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone DEFAULT (now() + '00:03:00'::interval) NOT NULL,
+    approved_at timestamp with time zone,
+    nonce text,
+    CONSTRAINT oauth_authorizations_authorization_code_length CHECK ((char_length(authorization_code) <= 255)),
+    CONSTRAINT oauth_authorizations_code_challenge_length CHECK ((char_length(code_challenge) <= 128)),
+    CONSTRAINT oauth_authorizations_expires_at_future CHECK ((expires_at > created_at)),
+    CONSTRAINT oauth_authorizations_nonce_length CHECK ((char_length(nonce) <= 255)),
+    CONSTRAINT oauth_authorizations_redirect_uri_length CHECK ((char_length(redirect_uri) <= 2048)),
+    CONSTRAINT oauth_authorizations_resource_length CHECK ((char_length(resource) <= 2048)),
+    CONSTRAINT oauth_authorizations_scope_length CHECK ((char_length(scope) <= 4096)),
+    CONSTRAINT oauth_authorizations_state_length CHECK ((char_length(state) <= 4096))
+);
+
+
+ALTER TABLE auth.oauth_authorizations OWNER TO supabase_auth_admin;
+
+--
+-- Name: oauth_client_states; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.oauth_client_states (
+    id uuid NOT NULL,
+    provider_type text NOT NULL,
+    code_verifier text,
+    created_at timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE auth.oauth_client_states OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE oauth_client_states; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.oauth_client_states IS 'Stores OAuth states for third-party provider authentication flows where Supabase acts as the OAuth client.';
+
+
+--
+-- Name: oauth_clients; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.oauth_clients (
+    id uuid NOT NULL,
+    client_secret_hash text,
+    registration_type auth.oauth_registration_type NOT NULL,
+    redirect_uris text NOT NULL,
+    grant_types text NOT NULL,
+    client_name text,
+    client_uri text,
+    logo_uri text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone,
+    client_type auth.oauth_client_type DEFAULT 'confidential'::auth.oauth_client_type NOT NULL,
+    token_endpoint_auth_method text NOT NULL,
+    CONSTRAINT oauth_clients_client_name_length CHECK ((char_length(client_name) <= 1024)),
+    CONSTRAINT oauth_clients_client_uri_length CHECK ((char_length(client_uri) <= 2048)),
+    CONSTRAINT oauth_clients_logo_uri_length CHECK ((char_length(logo_uri) <= 2048)),
+    CONSTRAINT oauth_clients_token_endpoint_auth_method_check CHECK ((token_endpoint_auth_method = ANY (ARRAY['client_secret_basic'::text, 'client_secret_post'::text, 'none'::text])))
+);
+
+
+ALTER TABLE auth.oauth_clients OWNER TO supabase_auth_admin;
+
+--
+-- Name: oauth_consents; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.oauth_consents (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    client_id uuid NOT NULL,
+    scopes text NOT NULL,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL,
+    revoked_at timestamp with time zone,
+    CONSTRAINT oauth_consents_revoked_after_granted CHECK (((revoked_at IS NULL) OR (revoked_at >= granted_at))),
+    CONSTRAINT oauth_consents_scopes_length CHECK ((char_length(scopes) <= 2048)),
+    CONSTRAINT oauth_consents_scopes_not_empty CHECK ((char_length(TRIM(BOTH FROM scopes)) > 0))
+);
+
+
+ALTER TABLE auth.oauth_consents OWNER TO supabase_auth_admin;
+
+--
+-- Name: one_time_tokens; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.one_time_tokens (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    token_type auth.one_time_token_type NOT NULL,
+    token_hash text NOT NULL,
+    relates_to text NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT one_time_tokens_token_hash_check CHECK ((char_length(token_hash) > 0))
+);
+
+
+ALTER TABLE auth.one_time_tokens OWNER TO supabase_auth_admin;
+
+--
+-- Name: refresh_tokens; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.refresh_tokens (
+    instance_id uuid,
+    id bigint NOT NULL,
+    token character varying(255),
+    user_id character varying(255),
+    revoked boolean,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    parent character varying(255),
+    session_id uuid
+);
+
+
+ALTER TABLE auth.refresh_tokens OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE refresh_tokens; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.refresh_tokens IS 'Auth: Store of tokens used to refresh JWT tokens once they expire.';
+
+
+--
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE SEQUENCE auth.refresh_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE auth.refresh_tokens_id_seq OWNER TO supabase_auth_admin;
+
+--
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER SEQUENCE auth.refresh_tokens_id_seq OWNED BY auth.refresh_tokens.id;
+
+
+--
+-- Name: saml_providers; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.saml_providers (
+    id uuid NOT NULL,
+    sso_provider_id uuid NOT NULL,
+    entity_id text NOT NULL,
+    metadata_xml text NOT NULL,
+    metadata_url text,
+    attribute_mapping jsonb,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    name_id_format text,
+    CONSTRAINT "entity_id not empty" CHECK ((char_length(entity_id) > 0)),
+    CONSTRAINT "metadata_url not empty" CHECK (((metadata_url = NULL::text) OR (char_length(metadata_url) > 0))),
+    CONSTRAINT "metadata_xml not empty" CHECK ((char_length(metadata_xml) > 0))
+);
+
+
+ALTER TABLE auth.saml_providers OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE saml_providers; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.saml_providers IS 'Auth: Manages SAML Identity Provider connections.';
+
+
+--
+-- Name: saml_relay_states; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.saml_relay_states (
+    id uuid NOT NULL,
+    sso_provider_id uuid NOT NULL,
+    request_id text NOT NULL,
+    for_email text,
+    redirect_to text,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    flow_state_id uuid,
+    CONSTRAINT "request_id not empty" CHECK ((char_length(request_id) > 0))
+);
+
+
+ALTER TABLE auth.saml_relay_states OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE saml_relay_states; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.saml_relay_states IS 'Auth: Contains SAML Relay State information for each Service Provider initiated login.';
+
+
+--
+-- Name: schema_migrations; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.schema_migrations (
+    version character varying(255) NOT NULL
+);
+
+
+ALTER TABLE auth.schema_migrations OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE schema_migrations; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.schema_migrations IS 'Auth: Manages updates to the auth system.';
+
+
+--
+-- Name: sessions; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.sessions (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    factor_id uuid,
+    aal auth.aal_level,
+    not_after timestamp with time zone,
+    refreshed_at timestamp without time zone,
+    user_agent text,
+    ip inet,
+    tag text,
+    oauth_client_id uuid,
+    refresh_token_hmac_key text,
+    refresh_token_counter bigint,
+    scopes text,
+    CONSTRAINT sessions_scopes_length CHECK ((char_length(scopes) <= 4096))
+);
+
+
+ALTER TABLE auth.sessions OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE sessions; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.sessions IS 'Auth: Stores session data associated to a user.';
+
+
+--
+-- Name: COLUMN sessions.not_after; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.sessions.not_after IS 'Auth: Not after is a nullable column that contains a timestamp after which the session should be regarded as expired.';
+
+
+--
+-- Name: COLUMN sessions.refresh_token_hmac_key; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.sessions.refresh_token_hmac_key IS 'Holds a HMAC-SHA256 key used to sign refresh tokens for this session.';
+
+
+--
+-- Name: COLUMN sessions.refresh_token_counter; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.sessions.refresh_token_counter IS 'Holds the ID (counter) of the last issued refresh token.';
+
+
+--
+-- Name: sso_domains; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.sso_domains (
+    id uuid NOT NULL,
+    sso_provider_id uuid NOT NULL,
+    domain text NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    CONSTRAINT "domain not empty" CHECK ((char_length(domain) > 0))
+);
+
+
+ALTER TABLE auth.sso_domains OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE sso_domains; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.sso_domains IS 'Auth: Manages SSO email address domain mapping to an SSO Identity Provider.';
+
+
+--
+-- Name: sso_providers; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.sso_providers (
+    id uuid NOT NULL,
+    resource_id text,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    disabled boolean,
+    CONSTRAINT "resource_id not empty" CHECK (((resource_id = NULL::text) OR (char_length(resource_id) > 0)))
+);
+
+
+ALTER TABLE auth.sso_providers OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE sso_providers; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.sso_providers IS 'Auth: Manages SSO identity provider information; see saml_providers for SAML.';
+
+
+--
+-- Name: COLUMN sso_providers.resource_id; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.sso_providers.resource_id IS 'Auth: Uniquely identifies a SSO provider according to a user-chosen resource ID (case insensitive), useful in infrastructure as code.';
+
+
+--
+-- Name: users; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.users (
+    instance_id uuid,
+    id uuid NOT NULL,
+    aud character varying(255),
+    role character varying(255),
+    email character varying(255),
+    encrypted_password character varying(255),
+    email_confirmed_at timestamp with time zone,
+    invited_at timestamp with time zone,
+    confirmation_token character varying(255),
+    confirmation_sent_at timestamp with time zone,
+    recovery_token character varying(255),
+    recovery_sent_at timestamp with time zone,
+    email_change_token_new character varying(255),
+    email_change character varying(255),
+    email_change_sent_at timestamp with time zone,
+    last_sign_in_at timestamp with time zone,
+    raw_app_meta_data jsonb,
+    raw_user_meta_data jsonb,
+    is_super_admin boolean,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    phone text DEFAULT NULL::character varying,
+    phone_confirmed_at timestamp with time zone,
+    phone_change text DEFAULT ''::character varying,
+    phone_change_token character varying(255) DEFAULT ''::character varying,
+    phone_change_sent_at timestamp with time zone,
+    confirmed_at timestamp with time zone GENERATED ALWAYS AS (LEAST(email_confirmed_at, phone_confirmed_at)) STORED,
+    email_change_token_current character varying(255) DEFAULT ''::character varying,
+    email_change_confirm_status smallint DEFAULT 0,
+    banned_until timestamp with time zone,
+    reauthentication_token character varying(255) DEFAULT ''::character varying,
+    reauthentication_sent_at timestamp with time zone,
+    is_sso_user boolean DEFAULT false NOT NULL,
+    deleted_at timestamp with time zone,
+    is_anonymous boolean DEFAULT false NOT NULL,
+    CONSTRAINT users_email_change_confirm_status_check CHECK (((email_change_confirm_status >= 0) AND (email_change_confirm_status <= 2)))
+);
+
+
+ALTER TABLE auth.users OWNER TO supabase_auth_admin;
+
+--
+-- Name: TABLE users; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON TABLE auth.users IS 'Auth: Stores user login data within a secure schema.';
+
+
+--
+-- Name: COLUMN users.is_sso_user; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.';
+
+
+--
+-- Name: webauthn_challenges; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.webauthn_challenges (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid,
+    challenge_type text NOT NULL,
+    session_data jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    CONSTRAINT webauthn_challenges_challenge_type_check CHECK ((challenge_type = ANY (ARRAY['signup'::text, 'registration'::text, 'authentication'::text])))
+);
+
+
+ALTER TABLE auth.webauthn_challenges OWNER TO supabase_auth_admin;
+
+--
+-- Name: webauthn_credentials; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE TABLE auth.webauthn_credentials (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    credential_id bytea NOT NULL,
+    public_key bytea NOT NULL,
+    attestation_type text DEFAULT ''::text NOT NULL,
+    aaguid uuid,
+    sign_count bigint DEFAULT 0 NOT NULL,
+    transports jsonb DEFAULT '[]'::jsonb NOT NULL,
+    backup_eligible boolean DEFAULT false NOT NULL,
+    backed_up boolean DEFAULT false NOT NULL,
+    friendly_name text DEFAULT ''::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_used_at timestamp with time zone
+);
+
+
+ALTER TABLE auth.webauthn_credentials OWNER TO supabase_auth_admin;
+
+--
+-- Name: _prisma_migrations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public._prisma_migrations (
+    id character varying(36) NOT NULL,
+    checksum character varying(64) NOT NULL,
+    finished_at timestamp with time zone,
+    migration_name character varying(255) NOT NULL,
+    logs text,
+    rolled_back_at timestamp with time zone,
+    started_at timestamp with time zone DEFAULT now() NOT NULL,
+    applied_steps_count integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public._prisma_migrations OWNER TO postgres;
+
+--
+-- Name: annees_scolaires; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.annees_scolaires (
+    id integer NOT NULL,
+    libelle character varying(20) NOT NULL,
+    date_debut date NOT NULL,
+    date_fin date NOT NULL,
+    est_active boolean DEFAULT false,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.annees_scolaires OWNER TO postgres;
+
+--
+-- Name: annees_scolaires_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.annees_scolaires_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.annees_scolaires_id_seq OWNER TO postgres;
+
+--
+-- Name: annees_scolaires_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.annees_scolaires_id_seq OWNED BY public.annees_scolaires.id;
+
+
+--
+-- Name: annonces; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.annonces (
+    id integer NOT NULL,
+    titre character varying(255) NOT NULL,
+    contenu text NOT NULL,
+    cible character varying(50) DEFAULT 'tous'::character varying,
+    type character varying(50) DEFAULT 'information'::character varying,
+    classe_id integer,
+    image_url text,
+    date_publication timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    date_modification timestamp(6) without time zone,
+    date_programmee timestamp(6) without time zone,
+    publie_par integer
+);
+
+
+ALTER TABLE public.annonces OWNER TO postgres;
+
+--
+-- Name: annonces_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.annonces_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.annonces_id_seq OWNER TO postgres;
+
+--
+-- Name: annonces_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.annonces_id_seq OWNED BY public.annonces.id;
+
+
+--
+-- Name: articles_librairie; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.articles_librairie (
+    id integer NOT NULL,
+    nom character varying(255) NOT NULL,
+    description text,
+    prix_unitaire integer NOT NULL,
+    quantite_stock integer DEFAULT 0,
+    categorie character varying(100) DEFAULT 'fourniture'::character varying,
+    image_url text,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.articles_librairie OWNER TO postgres;
+
+--
+-- Name: articles_librairie_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.articles_librairie_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.articles_librairie_id_seq OWNER TO postgres;
+
+--
+-- Name: articles_librairie_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.articles_librairie_id_seq OWNED BY public.articles_librairie.id;
+
+
+--
+-- Name: avances_salaires; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.avances_salaires (
+    id integer NOT NULL,
+    personnel_id integer NOT NULL,
+    montant integer NOT NULL,
+    motif text,
+    date_avance timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP,
+    mois_deduction integer NOT NULL,
+    annee_deduction integer NOT NULL,
+    statut character varying(20) DEFAULT 'accorde'::character varying,
+    accorde_par integer,
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.avances_salaires OWNER TO postgres;
+
+--
+-- Name: avances_salaires_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.avances_salaires_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.avances_salaires_id_seq OWNER TO postgres;
+
+--
+-- Name: avances_salaires_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.avances_salaires_id_seq OWNED BY public.avances_salaires.id;
+
+
+--
+-- Name: budget_previsionnel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.budget_previsionnel (
+    id integer NOT NULL,
+    annee integer NOT NULL,
+    categorie_code character varying(20) NOT NULL,
+    montant_prevu integer DEFAULT 0 NOT NULL,
+    notes text,
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.budget_previsionnel OWNER TO postgres;
+
+--
+-- Name: budget_previsionnel_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.budget_previsionnel_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.budget_previsionnel_id_seq OWNER TO postgres;
+
+--
+-- Name: budget_previsionnel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.budget_previsionnel_id_seq OWNED BY public.budget_previsionnel.id;
+
+
+--
+-- Name: bus; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bus (
+    id integer NOT NULL,
+    immatriculation character varying(50) NOT NULL,
+    capacite integer,
+    chauffeur_nom character varying(100),
+    chauffeur_tel character varying(20)
+);
+
+
+ALTER TABLE public.bus OWNER TO postgres;
+
+--
+-- Name: bus_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.bus_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.bus_id_seq OWNER TO postgres;
+
+--
+-- Name: bus_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.bus_id_seq OWNED BY public.bus.id;
+
+
+--
+-- Name: cantine_menus; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cantine_menus (
+    id integer NOT NULL,
+    date date NOT NULL,
+    plat character varying(255),
+    accompagnement character varying(255),
+    dessert character varying(255),
+    regime_special boolean DEFAULT false,
+    prix integer,
+    prix_annuel integer
+);
+
+
+ALTER TABLE public.cantine_menus OWNER TO postgres;
+
+--
+-- Name: cantine_menus_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.cantine_menus_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.cantine_menus_id_seq OWNER TO postgres;
+
+--
+-- Name: cantine_menus_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.cantine_menus_id_seq OWNED BY public.cantine_menus.id;
+
+
+--
+-- Name: categories_depenses; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.categories_depenses (
+    id integer NOT NULL,
+    code character varying(20) NOT NULL,
+    libelle character varying(100) NOT NULL,
+    type character varying(10) DEFAULT 'sortie'::character varying NOT NULL,
+    description text,
+    is_active boolean DEFAULT true,
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.categories_depenses OWNER TO postgres;
+
+--
+-- Name: categories_depenses_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.categories_depenses_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.categories_depenses_id_seq OWNER TO postgres;
+
+--
+-- Name: categories_depenses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.categories_depenses_id_seq OWNED BY public.categories_depenses.id;
+
+
+--
+-- Name: categories_quiz; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.categories_quiz (
+    id integer NOT NULL,
+    nom character varying(100) NOT NULL,
+    description text,
+    couleur character varying(7) DEFAULT '#6B46C1'::character varying,
+    icon character varying(50) DEFAULT 'BookOpen'::character varying,
+    est_active boolean DEFAULT true,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.categories_quiz OWNER TO postgres;
+
+--
+-- Name: categories_quiz_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.categories_quiz_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.categories_quiz_id_seq OWNER TO postgres;
+
+--
+-- Name: categories_quiz_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.categories_quiz_id_seq OWNED BY public.categories_quiz.id;
+
+
+--
+-- Name: classes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.classes (
+    id integer NOT NULL,
+    nom character varying(50) NOT NULL,
+    niveau character varying(50) NOT NULL,
+    salle character varying(50),
+    capacite_max integer DEFAULT 30,
+    titulaire_id integer,
+    code_acces character varying(20),
+    frais_inscription integer DEFAULT 0,
+    annee_scolaire_id integer,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    premier_versement integer DEFAULT 0,
+    deuxieme_versement integer DEFAULT 0,
+    troisieme_versement integer DEFAULT 0,
+    total_versement integer DEFAULT 0,
+    reinscription_premier_versement integer DEFAULT 0,
+    reinscription_deuxieme_versement integer DEFAULT 0,
+    reinscription_troisieme_versement integer DEFAULT 0,
+    reinscription_total_versement integer DEFAULT 0
+);
+
+
+ALTER TABLE public.classes OWNER TO postgres;
+
+--
+-- Name: classes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.classes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.classes_id_seq OWNER TO postgres;
+
+--
+-- Name: classes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.classes_id_seq OWNED BY public.classes.id;
+
+
+--
+-- Name: commandes_fournitures; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.commandes_fournitures (
+    id integer NOT NULL,
+    preinscription_id integer,
+    article_id integer,
+    quantite integer DEFAULT 1 NOT NULL,
+    prix_unitaire integer NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.commandes_fournitures OWNER TO postgres;
+
+--
+-- Name: commandes_fournitures_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.commandes_fournitures_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.commandes_fournitures_id_seq OWNER TO postgres;
+
+--
+-- Name: commandes_fournitures_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.commandes_fournitures_id_seq OWNED BY public.commandes_fournitures.id;
+
+
+--
+-- Name: commandes_librairie; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.commandes_librairie (
+    id integer NOT NULL,
+    parent_id integer,
+    numero_commande character varying(50) NOT NULL,
+    date_commande timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    statut character varying(20) DEFAULT 'en_attente'::character varying,
+    total integer NOT NULL,
+    observations text,
+    date_traitement timestamp(6) without time zone,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.commandes_librairie OWNER TO postgres;
+
+--
+-- Name: commandes_librairie_articles; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.commandes_librairie_articles (
+    id integer NOT NULL,
+    commande_id integer,
+    article_id integer,
+    quantite integer NOT NULL,
+    prix_unitaire integer NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.commandes_librairie_articles OWNER TO postgres;
+
+--
+-- Name: commandes_librairie_articles_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.commandes_librairie_articles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.commandes_librairie_articles_id_seq OWNER TO postgres;
+
+--
+-- Name: commandes_librairie_articles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.commandes_librairie_articles_id_seq OWNED BY public.commandes_librairie_articles.id;
+
+
+--
+-- Name: commandes_librairie_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.commandes_librairie_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.commandes_librairie_id_seq OWNER TO postgres;
+
+--
+-- Name: commandes_librairie_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.commandes_librairie_id_seq OWNED BY public.commandes_librairie.id;
+
+
+--
+-- Name: conges_personnel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.conges_personnel (
+    id integer NOT NULL,
+    personnel_id integer NOT NULL,
+    type_conge character varying(50) DEFAULT 'annuel'::character varying NOT NULL,
+    date_debut date NOT NULL,
+    date_fin date NOT NULL,
+    nombre_jours integer,
+    motif text,
+    statut character varying(20) DEFAULT 'en_attente'::character varying,
+    approuve_par integer,
+    date_approbation timestamp(6) with time zone,
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.conges_personnel OWNER TO postgres;
+
+--
+-- Name: conges_personnel_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.conges_personnel_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.conges_personnel_id_seq OWNER TO postgres;
+
+--
+-- Name: conges_personnel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.conges_personnel_id_seq OWNED BY public.conges_personnel.id;
+
+
+--
+-- Name: contrats_personnel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.contrats_personnel (
+    id integer NOT NULL,
+    personnel_id integer NOT NULL,
+    type_contrat character varying(50) DEFAULT 'CDI'::character varying NOT NULL,
+    date_debut date NOT NULL,
+    date_fin date,
+    salaire_brut integer NOT NULL,
+    salaire_net integer NOT NULL,
+    heures_semaine numeric(5,2) DEFAULT 40,
+    conges_annuels integer DEFAULT 25,
+    observations text,
+    is_actif boolean DEFAULT true,
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.contrats_personnel OWNER TO postgres;
+
+--
+-- Name: contrats_personnel_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.contrats_personnel_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.contrats_personnel_id_seq OWNER TO postgres;
+
+--
+-- Name: contrats_personnel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.contrats_personnel_id_seq OWNED BY public.contrats_personnel.id;
+
+
+--
+-- Name: depenses; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.depenses (
+    id integer NOT NULL,
+    categorie character varying(100) NOT NULL,
+    montant integer NOT NULL,
+    description text,
+    date_depense timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP,
+    sous_categorie character varying(100),
+    reference character varying(100),
+    fournisseur character varying(200),
+    numero_recu character varying(100),
+    saisi_par integer,
+    valide_par integer,
+    statut character varying(20) DEFAULT 'valide'::character varying,
+    exercice_annee integer DEFAULT EXTRACT(year FROM now()),
+    exercice_mois integer DEFAULT EXTRACT(month FROM now()),
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.depenses OWNER TO postgres;
+
+--
+-- Name: depenses_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.depenses_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.depenses_id_seq OWNER TO postgres;
+
+--
+-- Name: depenses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.depenses_id_seq OWNED BY public.depenses.id;
+
+
+--
+-- Name: devoirs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.devoirs (
+    id integer NOT NULL,
+    enseignement_id integer,
+    titre character varying(255) NOT NULL,
+    description text,
+    fichier_url text,
+    date_limite date NOT NULL,
+    date_publication date DEFAULT CURRENT_DATE
+);
+
+
+ALTER TABLE public.devoirs OWNER TO postgres;
+
+--
+-- Name: devoirs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.devoirs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.devoirs_id_seq OWNER TO postgres;
+
+--
+-- Name: devoirs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.devoirs_id_seq OWNED BY public.devoirs.id;
+
+
+--
+-- Name: echeances_paiement; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.echeances_paiement (
+    id integer NOT NULL,
+    preinscription_id integer,
+    type character varying(50) NOT NULL,
+    echeance character varying(50) NOT NULL,
+    montant integer NOT NULL,
+    date_echeance date,
+    statut character varying(20) DEFAULT 'en_attente'::character varying,
+    date_paiement date,
+    reference_transaction character varying(100),
+    mode_paiement character varying(50),
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    reinscription_id integer
+);
+
+
+ALTER TABLE public.echeances_paiement OWNER TO postgres;
+
+--
+-- Name: echeances_paiement_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.echeances_paiement_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.echeances_paiement_id_seq OWNER TO postgres;
+
+--
+-- Name: echeances_paiement_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.echeances_paiement_id_seq OWNED BY public.echeances_paiement.id;
+
+
+--
+-- Name: eleves; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.eleves (
+    id integer NOT NULL,
+    utilisateur_id integer,
+    matricule character varying(50) NOT NULL,
+    date_naissance date NOT NULL,
+    lieu_naissance character varying(100),
+    sexe character varying(1),
+    nationalite character varying(50) DEFAULT 'Guin├⌐enne'::character varying,
+    classe_id integer,
+    date_inscription date DEFAULT CURRENT_DATE,
+    est_inscrit boolean DEFAULT true,
+    carte_scolaire_url text,
+    photo_url text,
+    deleted_at timestamp without time zone
+);
+
+
+ALTER TABLE public.eleves OWNER TO postgres;
+
+--
+-- Name: eleves_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.eleves_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.eleves_id_seq OWNER TO postgres;
+
+--
+-- Name: eleves_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.eleves_id_seq OWNED BY public.eleves.id;
+
+
+--
+-- Name: emprunts_bibliotheque; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.emprunts_bibliotheque (
+    id integer NOT NULL,
+    livre_id integer,
+    eleve_id integer,
+    date_emprunt timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    date_retour_prevue timestamp(6) without time zone NOT NULL,
+    date_retour_reelle timestamp(6) without time zone,
+    statut character varying(20) DEFAULT 'en_cours'::character varying
+);
+
+
+ALTER TABLE public.emprunts_bibliotheque OWNER TO postgres;
+
+--
+-- Name: emprunts_bibliotheque_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.emprunts_bibliotheque_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.emprunts_bibliotheque_id_seq OWNER TO postgres;
+
+--
+-- Name: emprunts_bibliotheque_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.emprunts_bibliotheque_id_seq OWNED BY public.emprunts_bibliotheque.id;
+
+
+--
+-- Name: enseignements; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.enseignements (
+    id integer NOT NULL,
+    enseignant_id integer,
+    classe_id integer,
+    matiere_id integer,
+    heures_semaine numeric(5,2),
+    heures_mois numeric(5,2),
+    heures_an numeric(5,2),
+    annee_scolaire_id integer
+);
+
+
+ALTER TABLE public.enseignements OWNER TO postgres;
+
+--
+-- Name: enseignements_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.enseignements_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.enseignements_id_seq OWNER TO postgres;
+
+--
+-- Name: enseignements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.enseignements_id_seq OWNED BY public.enseignements.id;
+
+
+--
+-- Name: examens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.examens (
+    id integer NOT NULL,
+    enseignement_id integer,
+    titre character varying(255) NOT NULL,
+    duree_minutes integer,
+    date_debut timestamp(6) without time zone,
+    date_fin timestamp(6) without time zone,
+    est_actif boolean DEFAULT true,
+    fichier_url text
+);
+
+
+ALTER TABLE public.examens OWNER TO postgres;
+
+--
+-- Name: examens_eleves; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.examens_eleves (
+    id integer NOT NULL,
+    examen_id integer NOT NULL,
+    eleve_id integer NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.examens_eleves OWNER TO postgres;
+
+--
+-- Name: examens_eleves_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.examens_eleves_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.examens_eleves_id_seq OWNER TO postgres;
+
+--
+-- Name: examens_eleves_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.examens_eleves_id_seq OWNED BY public.examens_eleves.id;
+
+
+--
+-- Name: examens_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.examens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.examens_id_seq OWNER TO postgres;
+
+--
+-- Name: examens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.examens_id_seq OWNED BY public.examens.id;
+
+
+--
+-- Name: frais_scolaires; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.frais_scolaires (
+    id integer NOT NULL,
+    nom character varying(100),
+    type_frais character varying(50) NOT NULL,
+    montant integer NOT NULL,
+    obligatoire boolean DEFAULT true,
+    frequence character varying(50) DEFAULT 'mensuel'::character varying,
+    niveau character varying(50),
+    annee_scolaire_id integer,
+    description text
+);
+
+
+ALTER TABLE public.frais_scolaires OWNER TO postgres;
+
+--
+-- Name: frais_scolaires_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.frais_scolaires_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.frais_scolaires_id_seq OWNER TO postgres;
+
+--
+-- Name: frais_scolaires_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.frais_scolaires_id_seq OWNED BY public.frais_scolaires.id;
+
+
+--
+-- Name: inscriptions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.inscriptions (
+    id integer NOT NULL,
+    preinscription_id integer,
+    eleve_id integer,
+    parent_id integer,
+    numero_matricule character varying(50) NOT NULL,
+    date_inscription date DEFAULT CURRENT_DATE,
+    annee_scolaire_id integer,
+    statut character varying(50) DEFAULT 'active'::character varying,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.inscriptions OWNER TO postgres;
+
+--
+-- Name: inscriptions_cantine; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.inscriptions_cantine (
+    id integer NOT NULL,
+    eleve_id integer,
+    est_actif boolean DEFAULT true,
+    solde numeric(12,2) DEFAULT 0,
+    preferences_alimentaires text,
+    allergies text,
+    date_inscription date DEFAULT CURRENT_DATE
+);
+
+
+ALTER TABLE public.inscriptions_cantine OWNER TO postgres;
+
+--
+-- Name: inscriptions_cantine_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.inscriptions_cantine_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inscriptions_cantine_id_seq OWNER TO postgres;
+
+--
+-- Name: inscriptions_cantine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.inscriptions_cantine_id_seq OWNED BY public.inscriptions_cantine.id;
+
+
+--
+-- Name: inscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.inscriptions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inscriptions_id_seq OWNER TO postgres;
+
+--
+-- Name: inscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.inscriptions_id_seq OWNED BY public.inscriptions.id;
+
+
+--
+-- Name: inscriptions_transport; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.inscriptions_transport (
+    id integer NOT NULL,
+    eleve_id integer,
+    ligne_id integer,
+    date_debut date,
+    date_fin date,
+    est_actif boolean DEFAULT true
+);
+
+
+ALTER TABLE public.inscriptions_transport OWNER TO postgres;
+
+--
+-- Name: inscriptions_transport_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.inscriptions_transport_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inscriptions_transport_id_seq OWNER TO postgres;
+
+--
+-- Name: inscriptions_transport_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.inscriptions_transport_id_seq OWNED BY public.inscriptions_transport.id;
+
+
+--
+-- Name: lecons; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.lecons (
+    id integer NOT NULL,
+    enseignement_id integer,
+    titre character varying(255) NOT NULL,
+    description text,
+    contenu text,
+    fichier_url text,
+    video_url text,
+    date_publication date DEFAULT CURRENT_DATE
+);
+
+
+ALTER TABLE public.lecons OWNER TO postgres;
+
+--
+-- Name: lecons_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.lecons_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.lecons_id_seq OWNER TO postgres;
+
+--
+-- Name: lecons_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.lecons_id_seq OWNED BY public.lecons.id;
+
+
+--
+-- Name: lien_parent_eleve; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.lien_parent_eleve (
+    parent_id integer NOT NULL,
+    eleve_id integer NOT NULL,
+    lien character varying(50) DEFAULT 'parent'::character varying
+);
+
+
+ALTER TABLE public.lien_parent_eleve OWNER TO postgres;
+
+--
+-- Name: lignes_transport; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.lignes_transport (
+    id integer NOT NULL,
+    nom character varying(100),
+    bus_id integer,
+    horaire_matin time(6) without time zone,
+    horaire_soir time(6) without time zone,
+    prix_abonnement integer
+);
+
+
+ALTER TABLE public.lignes_transport OWNER TO postgres;
+
+--
+-- Name: lignes_transport_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.lignes_transport_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.lignes_transport_id_seq OWNER TO postgres;
+
+--
+-- Name: lignes_transport_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.lignes_transport_id_seq OWNED BY public.lignes_transport.id;
+
+
+--
+-- Name: livres_bibliotheque; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.livres_bibliotheque (
+    id integer NOT NULL,
+    titre character varying(255) NOT NULL,
+    auteur character varying(255),
+    isbn character varying(50),
+    quantite integer DEFAULT 1,
+    disponible integer DEFAULT 1,
+    emplacement character varying(50),
+    categorie character varying(100),
+    image_url text
+);
+
+
+ALTER TABLE public.livres_bibliotheque OWNER TO postgres;
+
+--
+-- Name: livres_bibliotheque_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.livres_bibliotheque_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.livres_bibliotheque_id_seq OWNER TO postgres;
+
+--
+-- Name: livres_bibliotheque_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.livres_bibliotheque_id_seq OWNED BY public.livres_bibliotheque.id;
+
+
+--
+-- Name: logs_activites; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.logs_activites (
+    id integer NOT NULL,
+    utilisateur_id integer,
+    action character varying(255),
+    details text,
+    ip_address character varying(45),
+    date_action timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.logs_activites OWNER TO postgres;
+
+--
+-- Name: logs_activites_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.logs_activites_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.logs_activites_id_seq OWNER TO postgres;
+
+--
+-- Name: logs_activites_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.logs_activites_id_seq OWNED BY public.logs_activites.id;
+
+
+--
+-- Name: matieres; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.matieres (
+    id integer NOT NULL,
+    nom character varying(100) NOT NULL,
+    coefficient integer DEFAULT 1,
+    description text
+);
+
+
+ALTER TABLE public.matieres OWNER TO postgres;
+
+--
+-- Name: matieres_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.matieres_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.matieres_id_seq OWNER TO postgres;
+
+--
+-- Name: matieres_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.matieres_id_seq OWNED BY public.matieres.id;
+
+
+--
+-- Name: menus_cantine; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.menus_cantine (
+    id integer NOT NULL,
+    date date NOT NULL,
+    plat character varying(255),
+    accompagnement character varying(255),
+    dessert character varying(255),
+    prix numeric(10,2) DEFAULT 5000,
+    allergenes text,
+    calories integer,
+    regime_special boolean DEFAULT false
+);
+
+
+ALTER TABLE public.menus_cantine OWNER TO postgres;
+
+--
+-- Name: menus_cantine_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.menus_cantine_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.menus_cantine_id_seq OWNER TO postgres;
+
+--
+-- Name: menus_cantine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.menus_cantine_id_seq OWNED BY public.menus_cantine.id;
+
+
+--
+-- Name: messages; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.messages (
+    id integer NOT NULL,
+    expediteur_id integer,
+    destinataire_id integer,
+    sujet character varying(255),
+    contenu text,
+    est_lu boolean DEFAULT false,
+    date_envoi timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.messages OWNER TO postgres;
+
+--
+-- Name: messages_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.messages_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.messages_id_seq OWNER TO postgres;
+
+--
+-- Name: messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.messages_id_seq OWNED BY public.messages.id;
+
+
+--
+-- Name: mouvements_caisse; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mouvements_caisse (
+    id integer NOT NULL,
+    type character varying(10) NOT NULL,
+    montant integer NOT NULL,
+    categorie character varying(100) NOT NULL,
+    sous_categorie character varying(100),
+    description text,
+    reference character varying(100),
+    date_mouvement timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    exercice_annee integer DEFAULT EXTRACT(year FROM now()) NOT NULL,
+    exercice_mois integer DEFAULT EXTRACT(month FROM now()) NOT NULL,
+    saisi_par integer,
+    valide_par integer,
+    statut character varying(20) DEFAULT 'valide'::character varying,
+    recu_url text,
+    created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.mouvements_caisse OWNER TO postgres;
+
+--
+-- Name: mouvements_caisse_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.mouvements_caisse_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.mouvements_caisse_id_seq OWNER TO postgres;
+
+--
+-- Name: mouvements_caisse_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.mouvements_caisse_id_seq OWNED BY public.mouvements_caisse.id;
+
+
+--
+-- Name: notes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.notes (
+    id integer NOT NULL,
+    eleve_id integer,
+    enseignement_id integer,
+    type_note character varying(50),
+    valeur numeric(5,2) NOT NULL,
+    coefficient integer DEFAULT 1,
+    date_saisie date DEFAULT CURRENT_DATE,
+    commentaire text,
+    enseignant_id integer
+);
+
+
+ALTER TABLE public.notes OWNER TO postgres;
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.notes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.notes_id_seq OWNER TO postgres;
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.notes_id_seq OWNED BY public.notes.id;
+
+
+--
+-- Name: options_qcm; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.options_qcm (
+    id integer NOT NULL,
+    question_id integer,
+    option_texte text NOT NULL,
+    est_correcte boolean DEFAULT false
+);
+
+
+ALTER TABLE public.options_qcm OWNER TO postgres;
+
+--
+-- Name: options_qcm_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.options_qcm_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.options_qcm_id_seq OWNER TO postgres;
+
+--
+-- Name: options_qcm_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.options_qcm_id_seq OWNED BY public.options_qcm.id;
+
+
+--
+-- Name: options_quiz; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.options_quiz (
+    id integer NOT NULL,
+    question_id integer,
+    option_texte text NOT NULL,
+    est_correcte boolean DEFAULT false,
+    ordre integer
+);
+
+
+ALTER TABLE public.options_quiz OWNER TO postgres;
+
+--
+-- Name: options_quiz_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.options_quiz_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.options_quiz_id_seq OWNER TO postgres;
+
+--
+-- Name: options_quiz_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.options_quiz_id_seq OWNED BY public.options_quiz.id;
+
+
+--
+-- Name: paiements; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.paiements (
+    id integer NOT NULL,
+    eleve_id integer,
+    montant integer NOT NULL,
+    type_frais character varying(50),
+    mois integer,
+    annee integer,
+    mode_paiement character varying(50),
+    reference_transaction character varying(100),
+    statut character varying(20) DEFAULT 'valide'::character varying,
+    date_paiement date DEFAULT CURRENT_DATE,
+    "re├ºu_url" text,
+    saisie_par integer,
+    preinscription_id integer,
+    reinscription_id integer
+);
+
+
+ALTER TABLE public.paiements OWNER TO postgres;
+
+--
+-- Name: paiements_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.paiements_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.paiements_id_seq OWNER TO postgres;
+
+--
+-- Name: paiements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.paiements_id_seq OWNED BY public.paiements.id;
+
+
+--
+-- Name: paiements_salaires; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.paiements_salaires (
+    id integer NOT NULL,
+    personnel_id integer,
+    montant integer NOT NULL,
+    mois integer NOT NULL,
+    annee integer NOT NULL,
+    mode_paiement character varying(50),
+    reference_transaction character varying(100),
+    saisie_par integer,
+    statut character varying(20) DEFAULT 'paye'::character varying,
+    date_paiement timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    note text,
+    salaire_base integer DEFAULT 0,
+    prime_mensuelle integer DEFAULT 0,
+    prime_responsabilite integer DEFAULT 0,
+    prime_craie integer DEFAULT 0,
+    retenue_sanction integer DEFAULT 0,
+    autres_retenues integer DEFAULT 0,
+    details_lignes jsonb DEFAULT '[]'::jsonb,
+    total_brut integer DEFAULT 0,
+    total_deductions integer DEFAULT 0
+);
+
+
+ALTER TABLE public.paiements_salaires OWNER TO postgres;
+
+--
+-- Name: paiements_salaires_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.paiements_salaires_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.paiements_salaires_id_seq OWNER TO postgres;
+
+--
+-- Name: paiements_salaires_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.paiements_salaires_id_seq OWNED BY public.paiements_salaires.id;
+
+
+--
+-- Name: parents; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.parents (
+    id integer NOT NULL,
+    utilisateur_id integer,
+    profession character varying(100),
+    situation_matrimoniale character varying(100)
+);
+
+
+ALTER TABLE public.parents OWNER TO postgres;
+
+--
+-- Name: parents_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.parents_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.parents_id_seq OWNER TO postgres;
+
+--
+-- Name: parents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.parents_id_seq OWNED BY public.parents.id;
+
+
+--
+-- Name: participations_quiz; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.participations_quiz (
+    id integer NOT NULL,
+    quiz_id integer,
+    eleve_id integer,
+    date_debut timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    date_fin timestamp(6) without time zone,
+    score_total integer DEFAULT 0,
+    points_obtenus integer DEFAULT 0,
+    reponses_correctes integer DEFAULT 0,
+    reponses_totales integer DEFAULT 0,
+    pourcentage numeric(5,2) DEFAULT 0,
+    est_termine boolean DEFAULT false
+);
+
+
+ALTER TABLE public.participations_quiz OWNER TO postgres;
+
+--
+-- Name: participations_quiz_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.participations_quiz_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.participations_quiz_id_seq OWNER TO postgres;
+
+--
+-- Name: participations_quiz_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.participations_quiz_id_seq OWNED BY public.participations_quiz.id;
+
+
+--
+-- Name: personnels; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.personnels (
+    id integer NOT NULL,
+    utilisateur_id integer,
+    matricule_personnel character varying(50) NOT NULL,
+    type character varying(50),
+    date_embauche date DEFAULT CURRENT_DATE,
+    salaire_base integer,
+    carte_personnel_url text,
+    statut character varying(20) DEFAULT 'actif'::character varying,
+    departement character varying(100),
+    prime_mensuelle integer DEFAULT 0,
+    mode_paiement_salaire character varying(50) DEFAULT 'virement'::character varying,
+    carte_id_url text,
+    cv_url text,
+    certificat_residence_url text
+);
+
+
+ALTER TABLE public.personnels OWNER TO postgres;
+
+--
+-- Name: personnels_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.personnels_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.personnels_id_seq OWNER TO postgres;
+
+--
+-- Name: personnels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.personnels_id_seq OWNED BY public.personnels.id;
+
+
+--
+-- Name: preinscription_cantine; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.preinscription_cantine (
+    id integer NOT NULL,
+    preinscription_id integer,
+    menu_id integer,
+    prix integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.preinscription_cantine OWNER TO postgres;
+
+--
+-- Name: preinscription_cantine_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.preinscription_cantine_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.preinscription_cantine_id_seq OWNER TO postgres;
+
+--
+-- Name: preinscription_cantine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.preinscription_cantine_id_seq OWNED BY public.preinscription_cantine.id;
+
+
+--
+-- Name: preinscription_transport; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.preinscription_transport (
+    id integer NOT NULL,
+    preinscription_id integer,
+    ligne_id integer,
+    prix integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.preinscription_transport OWNER TO postgres;
+
+--
+-- Name: preinscription_transport_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.preinscription_transport_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.preinscription_transport_id_seq OWNER TO postgres;
+
+--
+-- Name: preinscription_transport_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.preinscription_transport_id_seq OWNED BY public.preinscription_transport.id;
+
+
+--
+-- Name: preinscriptions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.preinscriptions (
+    id integer NOT NULL,
+    parent_id integer,
+    enfant_nom character varying(100) NOT NULL,
+    enfant_prenom character varying(100) NOT NULL,
+    date_naissance date NOT NULL,
+    lieu_naissance character varying(100),
+    sexe character varying(10) NOT NULL,
+    niveau character varying(50) NOT NULL,
+    classe character varying(50) NOT NULL,
+    acte_naissance_url text,
+    photo_url text,
+    bulletin_url text,
+    statut character varying(50) DEFAULT 'en_attente'::character varying,
+    numero_dossier character varying(50),
+    date_preinscription timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    observations text,
+    traite_par integer,
+    date_traitement timestamp(6) without time zone,
+    frais_montant integer DEFAULT 0,
+    frais_statut character varying(20) DEFAULT 'non_paye'::character varying,
+    frais_mode_paiement character varying(50),
+    frais_reference character varying(100),
+    frais_date_paiement timestamp(6) without time zone,
+    plan_paiement_id integer,
+    montant_total_plan integer DEFAULT 0,
+    montant_restant_plan integer DEFAULT 0,
+    type_inscription character varying(50) DEFAULT 'inscription'::character varying,
+    est_reinscription boolean DEFAULT false
+);
+
+
+ALTER TABLE public.preinscriptions OWNER TO postgres;
+
+--
+-- Name: preinscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.preinscriptions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.preinscriptions_id_seq OWNER TO postgres;
+
+--
+-- Name: preinscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.preinscriptions_id_seq OWNED BY public.preinscriptions.id;
+
+
+--
+-- Name: presences; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.presences (
+    id integer NOT NULL,
+    eleve_id integer,
+    classe_id integer,
+    date date NOT NULL,
+    statut character varying(20),
+    heure_arrivee time(6) without time zone,
+    justificatif_url text,
+    enseignant_id integer
+);
+
+
+ALTER TABLE public.presences OWNER TO postgres;
+
+--
+-- Name: presences_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.presences_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.presences_id_seq OWNER TO postgres;
+
+--
+-- Name: presences_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.presences_id_seq OWNED BY public.presences.id;
+
+
+--
+-- Name: presences_transport; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.presences_transport (
+    id integer NOT NULL,
+    eleve_id integer NOT NULL,
+    date date NOT NULL,
+    statut character varying(20) NOT NULL,
+    heure_arrivee time(6) without time zone,
+    commentaire text,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.presences_transport OWNER TO postgres;
+
+--
+-- Name: presences_transport_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.presences_transport_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.presences_transport_id_seq OWNER TO postgres;
+
+--
+-- Name: presences_transport_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.presences_transport_id_seq OWNED BY public.presences_transport.id;
+
+
+--
+-- Name: questions_qcm; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.questions_qcm (
+    id integer NOT NULL,
+    examen_id integer,
+    question text NOT NULL,
+    points integer DEFAULT 1,
+    ordre integer
+);
+
+
+ALTER TABLE public.questions_qcm OWNER TO postgres;
+
+--
+-- Name: questions_qcm_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.questions_qcm_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.questions_qcm_id_seq OWNER TO postgres;
+
+--
+-- Name: questions_qcm_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.questions_qcm_id_seq OWNED BY public.questions_qcm.id;
+
+
+--
+-- Name: questions_quiz; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.questions_quiz (
+    id integer NOT NULL,
+    categorie_id integer,
+    enseignement_id integer,
+    question text NOT NULL,
+    explication text,
+    difficulte character varying(20) DEFAULT 'facile'::character varying,
+    points integer DEFAULT 1,
+    temps_secondes integer DEFAULT 30,
+    est_active boolean DEFAULT true,
+    ordre integer,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_by integer
+);
+
+
+ALTER TABLE public.questions_quiz OWNER TO postgres;
+
+--
+-- Name: questions_quiz_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.questions_quiz_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.questions_quiz_id_seq OWNER TO postgres;
+
+--
+-- Name: questions_quiz_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.questions_quiz_id_seq OWNED BY public.questions_quiz.id;
+
+
+--
+-- Name: quiz; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.quiz (
+    id integer NOT NULL,
+    enseignement_id integer,
+    titre character varying(255) NOT NULL,
+    description text,
+    type character varying(50) DEFAULT 'qcm'::character varying,
+    duree_minutes integer DEFAULT 10,
+    est_actif boolean DEFAULT true,
+    date_debut timestamp(6) without time zone,
+    date_fin timestamp(6) without time zone,
+    est_aleatoire boolean DEFAULT false,
+    afficher_resultats boolean DEFAULT true,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    fichier_url text
+);
+
+
+ALTER TABLE public.quiz OWNER TO postgres;
+
+--
+-- Name: quiz_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.quiz_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.quiz_id_seq OWNER TO postgres;
+
+--
+-- Name: quiz_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.quiz_id_seq OWNED BY public.quiz.id;
+
+
+--
+-- Name: quiz_questions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.quiz_questions (
+    id integer NOT NULL,
+    quiz_id integer,
+    question_id integer,
+    ordre integer,
+    points_personnalises integer
+);
+
+
+ALTER TABLE public.quiz_questions OWNER TO postgres;
+
+--
+-- Name: quiz_questions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.quiz_questions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.quiz_questions_id_seq OWNER TO postgres;
+
+--
+-- Name: quiz_questions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.quiz_questions_id_seq OWNED BY public.quiz_questions.id;
+
+
+--
+-- Name: reinscriptions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reinscriptions (
+    id integer NOT NULL,
+    inscription_id integer,
+    eleve_id integer,
+    parent_id integer,
+    annee_scolaire_id integer,
+    classe_id integer,
+    montant_frais integer DEFAULT 500000,
+    frais_statut character varying(50) DEFAULT 'non_paye'::character varying,
+    frais_mode_paiement character varying(50),
+    frais_reference character varying(100),
+    frais_date_paiement timestamp(6) without time zone,
+    statut character varying(50) DEFAULT 'en_attente'::character varying,
+    date_reinscription timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    observations text,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    acte_naissance_url text,
+    photo_url text,
+    bulletin_url text,
+    date_traitement timestamp(6) without time zone,
+    numero_dossier character varying(50),
+    enfant_nom character varying(100),
+    enfant_prenom character varying(100),
+    date_naissance date,
+    lieu_naissance character varying(200),
+    sexe character varying(10),
+    niveau character varying(50),
+    classe_nom character varying(50),
+    parent_nom character varying(100),
+    parent_prenom character varying(100),
+    parent_email character varying(100),
+    parent_telephone character varying(20),
+    montant_total_plan integer DEFAULT 0,
+    montant_restant_plan integer DEFAULT 0
+);
+
+
+ALTER TABLE public.reinscriptions OWNER TO postgres;
+
+--
+-- Name: reinscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reinscriptions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reinscriptions_id_seq OWNER TO postgres;
+
+--
+-- Name: reinscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reinscriptions_id_seq OWNED BY public.reinscriptions.id;
+
+
+--
+-- Name: reponses_eleves_qcm; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reponses_eleves_qcm (
+    id integer NOT NULL,
+    examen_id integer,
+    eleve_id integer,
+    question_id integer,
+    option_id integer,
+    date_reponse timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.reponses_eleves_qcm OWNER TO postgres;
+
+--
+-- Name: reponses_eleves_qcm_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reponses_eleves_qcm_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reponses_eleves_qcm_id_seq OWNER TO postgres;
+
+--
+-- Name: reponses_eleves_qcm_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reponses_eleves_qcm_id_seq OWNED BY public.reponses_eleves_qcm.id;
+
+
+--
+-- Name: reponses_quiz; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reponses_quiz (
+    id integer NOT NULL,
+    participation_id integer,
+    question_id integer,
+    option_id integer,
+    est_correcte boolean DEFAULT false,
+    temps_reponse_ms integer,
+    date_reponse timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.reponses_quiz OWNER TO postgres;
+
+--
+-- Name: reponses_quiz_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reponses_quiz_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reponses_quiz_id_seq OWNER TO postgres;
+
+--
+-- Name: reponses_quiz_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reponses_quiz_id_seq OWNED BY public.reponses_quiz.id;
+
+
+--
+-- Name: reservations_cantine; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reservations_cantine (
+    id integer NOT NULL,
+    eleve_id integer,
+    menu_id integer,
+    date date NOT NULL,
+    statut character varying(20) DEFAULT 'confirmee'::character varying,
+    paye boolean DEFAULT false,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.reservations_cantine OWNER TO postgres;
+
+--
+-- Name: reservations_cantine_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reservations_cantine_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reservations_cantine_id_seq OWNER TO postgres;
+
+--
+-- Name: reservations_cantine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reservations_cantine_id_seq OWNED BY public.reservations_cantine.id;
+
+
+--
+-- Name: reserves_cantine; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reserves_cantine (
+    id integer NOT NULL,
+    eleve_id integer,
+    date date NOT NULL,
+    est_present boolean DEFAULT false,
+    date_reservation date DEFAULT CURRENT_DATE
+);
+
+
+ALTER TABLE public.reserves_cantine OWNER TO postgres;
+
+--
+-- Name: reserves_cantine_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reserves_cantine_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reserves_cantine_id_seq OWNER TO postgres;
+
+--
+-- Name: reserves_cantine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reserves_cantine_id_seq OWNED BY public.reserves_cantine.id;
+
+
+--
+-- Name: reset_tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.reset_tokens (
+    id integer NOT NULL,
+    email character varying(255) NOT NULL,
+    token character varying(255) NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    used boolean DEFAULT false
+);
+
+
+ALTER TABLE public.reset_tokens OWNER TO postgres;
+
+--
+-- Name: reset_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.reset_tokens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reset_tokens_id_seq OWNER TO postgres;
+
+--
+-- Name: reset_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.reset_tokens_id_seq OWNED BY public.reset_tokens.id;
+
+
+--
+-- Name: services_annexes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.services_annexes (
+    id integer NOT NULL,
+    nom character varying(100) NOT NULL,
+    montant_mensuel integer NOT NULL,
+    type character varying(50) DEFAULT 'optionnel'::character varying,
+    description text,
+    actif boolean DEFAULT true,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.services_annexes OWNER TO postgres;
+
+--
+-- Name: services_annexes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.services_annexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.services_annexes_id_seq OWNER TO postgres;
+
+--
+-- Name: services_annexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.services_annexes_id_seq OWNED BY public.services_annexes.id;
+
+
+--
+-- Name: sessions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sessions (
+    id integer NOT NULL,
+    utilisateur_id integer,
+    token character varying(255) NOT NULL,
+    expire_le timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.sessions OWNER TO postgres;
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.sessions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.sessions_id_seq OWNER TO postgres;
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.sessions_id_seq OWNED BY public.sessions.id;
+
+
+--
+-- Name: soumissions_devoirs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.soumissions_devoirs (
+    id integer NOT NULL,
+    devoir_id integer,
+    eleve_id integer,
+    fichier_url text,
+    date_soumission timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    note numeric(5,2),
+    commentaire text,
+    est_retard boolean DEFAULT false
+);
+
+
+ALTER TABLE public.soumissions_devoirs OWNER TO postgres;
+
+--
+-- Name: soumissions_devoirs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.soumissions_devoirs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.soumissions_devoirs_id_seq OWNER TO postgres;
+
+--
+-- Name: soumissions_devoirs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.soumissions_devoirs_id_seq OWNED BY public.soumissions_devoirs.id;
+
+
+--
+-- Name: transactions_cantine; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.transactions_cantine (
+    id integer NOT NULL,
+    eleve_id integer,
+    montant numeric(12,2) NOT NULL,
+    type character varying(20),
+    description text,
+    date timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.transactions_cantine OWNER TO postgres;
+
+--
+-- Name: transactions_cantine_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.transactions_cantine_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.transactions_cantine_id_seq OWNER TO postgres;
+
+--
+-- Name: transactions_cantine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.transactions_cantine_id_seq OWNED BY public.transactions_cantine.id;
+
+
+--
+-- Name: utilisateurs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.utilisateurs (
+    id integer NOT NULL,
+    email character varying(255) NOT NULL,
+    password character varying(255) NOT NULL,
+    prenom character varying(100) NOT NULL,
+    nom character varying(100) NOT NULL,
+    telephone character varying(20),
+    adresse text,
+    photo_url text,
+    role character varying(50) NOT NULL,
+    est_actif boolean DEFAULT true,
+    derniere_connexion timestamp(6) without time zone,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    deleted_at timestamp without time zone
+);
+
+
+ALTER TABLE public.utilisateurs OWNER TO postgres;
+
+--
+-- Name: utilisateurs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.utilisateurs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.utilisateurs_id_seq OWNER TO postgres;
+
+--
+-- Name: utilisateurs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.utilisateurs_id_seq OWNED BY public.utilisateurs.id;
+
+
+--
+-- Name: ventes_librairie; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.ventes_librairie (
+    id integer NOT NULL,
+    article_id integer,
+    eleve_id integer,
+    quantite integer DEFAULT 1 NOT NULL,
+    montant_total integer NOT NULL,
+    date_vente timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP,
+    vendu_par integer
+);
+
+
+ALTER TABLE public.ventes_librairie OWNER TO postgres;
+
+--
+-- Name: ventes_librairie_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.ventes_librairie_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ventes_librairie_id_seq OWNER TO postgres;
+
+--
+-- Name: ventes_librairie_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.ventes_librairie_id_seq OWNED BY public.ventes_librairie.id;
+
+
+--
+-- Name: messages; Type: TABLE; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+CREATE TABLE realtime.messages (
+    topic text NOT NULL,
+    extension text NOT NULL,
+    payload jsonb,
+    event text,
+    private boolean DEFAULT false,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    inserted_at timestamp without time zone DEFAULT now() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    binary_payload bytea
+)
+PARTITION BY RANGE (inserted_at);
+
+
+ALTER TABLE realtime.messages OWNER TO supabase_realtime_admin;
+
+--
+-- Name: schema_migrations; Type: TABLE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TABLE realtime.schema_migrations (
+    version bigint NOT NULL,
+    inserted_at timestamp(0) without time zone
+);
+
+
+ALTER TABLE realtime.schema_migrations OWNER TO supabase_admin;
+
+--
+-- Name: subscription; Type: TABLE; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TABLE realtime.subscription (
+    id bigint NOT NULL,
+    subscription_id uuid NOT NULL,
+    entity regclass NOT NULL,
+    filters realtime.user_defined_filter[] DEFAULT '{}'::realtime.user_defined_filter[] NOT NULL,
+    claims jsonb NOT NULL,
+    claims_role regrole GENERATED ALWAYS AS (realtime.to_regrole((claims ->> 'role'::text))) STORED NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    action_filter text DEFAULT '*'::text,
+    selected_columns text[],
+    CONSTRAINT subscription_action_filter_check CHECK ((action_filter = ANY (ARRAY['*'::text, 'INSERT'::text, 'UPDATE'::text, 'DELETE'::text])))
+);
+
+
+ALTER TABLE realtime.subscription OWNER TO supabase_admin;
+
+--
+-- Name: subscription_id_seq; Type: SEQUENCE; Schema: realtime; Owner: supabase_admin
+--
+
+ALTER TABLE realtime.subscription ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME realtime.subscription_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: buckets; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.buckets (
+    id text NOT NULL,
+    name text NOT NULL,
+    owner uuid,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    public boolean DEFAULT false,
+    avif_autodetection boolean DEFAULT false,
+    file_size_limit bigint,
+    allowed_mime_types text[],
+    owner_id text,
+    type storage.buckettype DEFAULT 'STANDARD'::storage.buckettype NOT NULL
+);
+
+
+ALTER TABLE storage.buckets OWNER TO supabase_storage_admin;
+
+--
+-- Name: COLUMN buckets.owner; Type: COMMENT; Schema: storage; Owner: supabase_storage_admin
+--
+
+COMMENT ON COLUMN storage.buckets.owner IS 'Field is deprecated, use owner_id instead';
+
+
+--
+-- Name: buckets_analytics; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.buckets_analytics (
+    name text NOT NULL,
+    type storage.buckettype DEFAULT 'ANALYTICS'::storage.buckettype NOT NULL,
+    format text DEFAULT 'ICEBERG'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    deleted_at timestamp with time zone
+);
+
+
+ALTER TABLE storage.buckets_analytics OWNER TO supabase_storage_admin;
+
+--
+-- Name: buckets_vectors; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.buckets_vectors (
+    id text NOT NULL,
+    type storage.buckettype DEFAULT 'VECTOR'::storage.buckettype NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE storage.buckets_vectors OWNER TO supabase_storage_admin;
+
+--
+-- Name: migrations; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.migrations (
+    id integer NOT NULL,
+    name character varying(100) NOT NULL,
+    hash character varying(40) NOT NULL,
+    executed_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE storage.migrations OWNER TO supabase_storage_admin;
+
+--
+-- Name: objects; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.objects (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    bucket_id text,
+    name text,
+    owner uuid,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    last_accessed_at timestamp with time zone DEFAULT now(),
+    metadata jsonb,
+    path_tokens text[] GENERATED ALWAYS AS (string_to_array(name, '/'::text)) STORED,
+    version text,
+    owner_id text,
+    user_metadata jsonb
+);
+
+
+ALTER TABLE storage.objects OWNER TO supabase_storage_admin;
+
+--
+-- Name: COLUMN objects.owner; Type: COMMENT; Schema: storage; Owner: supabase_storage_admin
+--
+
+COMMENT ON COLUMN storage.objects.owner IS 'Field is deprecated, use owner_id instead';
+
+
+--
+-- Name: s3_multipart_uploads; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.s3_multipart_uploads (
+    id text NOT NULL,
+    in_progress_size bigint DEFAULT 0 NOT NULL,
+    upload_signature text NOT NULL,
+    bucket_id text NOT NULL,
+    key text NOT NULL COLLATE pg_catalog."C",
+    version text NOT NULL,
+    owner_id text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    user_metadata jsonb,
+    metadata jsonb
+);
+
+
+ALTER TABLE storage.s3_multipart_uploads OWNER TO supabase_storage_admin;
+
+--
+-- Name: s3_multipart_uploads_parts; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.s3_multipart_uploads_parts (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    upload_id text NOT NULL,
+    size bigint DEFAULT 0 NOT NULL,
+    part_number integer NOT NULL,
+    bucket_id text NOT NULL,
+    key text NOT NULL COLLATE pg_catalog."C",
+    etag text NOT NULL,
+    owner_id text,
+    version text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE storage.s3_multipart_uploads_parts OWNER TO supabase_storage_admin;
+
+--
+-- Name: vector_indexes; Type: TABLE; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TABLE storage.vector_indexes (
+    id text DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL COLLATE pg_catalog."C",
+    bucket_id text NOT NULL,
+    data_type text NOT NULL,
+    dimension integer NOT NULL,
+    distance_metric text NOT NULL,
+    metadata_configuration jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE storage.vector_indexes OWNER TO supabase_storage_admin;
+
+--
+-- Name: refresh_tokens id; Type: DEFAULT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('auth.refresh_tokens_id_seq'::regclass);
+
+
+--
+-- Name: annees_scolaires id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.annees_scolaires ALTER COLUMN id SET DEFAULT nextval('public.annees_scolaires_id_seq'::regclass);
+
+
+--
+-- Name: annonces id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.annonces ALTER COLUMN id SET DEFAULT nextval('public.annonces_id_seq'::regclass);
+
+
+--
+-- Name: articles_librairie id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.articles_librairie ALTER COLUMN id SET DEFAULT nextval('public.articles_librairie_id_seq'::regclass);
+
+
+--
+-- Name: avances_salaires id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.avances_salaires ALTER COLUMN id SET DEFAULT nextval('public.avances_salaires_id_seq'::regclass);
+
+
+--
+-- Name: budget_previsionnel id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.budget_previsionnel ALTER COLUMN id SET DEFAULT nextval('public.budget_previsionnel_id_seq'::regclass);
+
+
+--
+-- Name: bus id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bus ALTER COLUMN id SET DEFAULT nextval('public.bus_id_seq'::regclass);
+
+
+--
+-- Name: cantine_menus id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cantine_menus ALTER COLUMN id SET DEFAULT nextval('public.cantine_menus_id_seq'::regclass);
+
+
+--
+-- Name: categories_depenses id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.categories_depenses ALTER COLUMN id SET DEFAULT nextval('public.categories_depenses_id_seq'::regclass);
+
+
+--
+-- Name: categories_quiz id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.categories_quiz ALTER COLUMN id SET DEFAULT nextval('public.categories_quiz_id_seq'::regclass);
+
+
+--
+-- Name: classes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.classes ALTER COLUMN id SET DEFAULT nextval('public.classes_id_seq'::regclass);
+
+
+--
+-- Name: commandes_fournitures id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_fournitures ALTER COLUMN id SET DEFAULT nextval('public.commandes_fournitures_id_seq'::regclass);
+
+
+--
+-- Name: commandes_librairie id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie ALTER COLUMN id SET DEFAULT nextval('public.commandes_librairie_id_seq'::regclass);
+
+
+--
+-- Name: commandes_librairie_articles id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie_articles ALTER COLUMN id SET DEFAULT nextval('public.commandes_librairie_articles_id_seq'::regclass);
+
+
+--
+-- Name: conges_personnel id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conges_personnel ALTER COLUMN id SET DEFAULT nextval('public.conges_personnel_id_seq'::regclass);
+
+
+--
+-- Name: contrats_personnel id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrats_personnel ALTER COLUMN id SET DEFAULT nextval('public.contrats_personnel_id_seq'::regclass);
+
+
+--
+-- Name: depenses id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.depenses ALTER COLUMN id SET DEFAULT nextval('public.depenses_id_seq'::regclass);
+
+
+--
+-- Name: devoirs id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.devoirs ALTER COLUMN id SET DEFAULT nextval('public.devoirs_id_seq'::regclass);
+
+
+--
+-- Name: echeances_paiement id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.echeances_paiement ALTER COLUMN id SET DEFAULT nextval('public.echeances_paiement_id_seq'::regclass);
+
+
+--
+-- Name: eleves id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.eleves ALTER COLUMN id SET DEFAULT nextval('public.eleves_id_seq'::regclass);
+
+
+--
+-- Name: emprunts_bibliotheque id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.emprunts_bibliotheque ALTER COLUMN id SET DEFAULT nextval('public.emprunts_bibliotheque_id_seq'::regclass);
+
+
+--
+-- Name: enseignements id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.enseignements ALTER COLUMN id SET DEFAULT nextval('public.enseignements_id_seq'::regclass);
+
+
+--
+-- Name: examens id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens ALTER COLUMN id SET DEFAULT nextval('public.examens_id_seq'::regclass);
+
+
+--
+-- Name: examens_eleves id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens_eleves ALTER COLUMN id SET DEFAULT nextval('public.examens_eleves_id_seq'::regclass);
+
+
+--
+-- Name: frais_scolaires id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.frais_scolaires ALTER COLUMN id SET DEFAULT nextval('public.frais_scolaires_id_seq'::regclass);
+
+
+--
+-- Name: inscriptions id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions ALTER COLUMN id SET DEFAULT nextval('public.inscriptions_id_seq'::regclass);
+
+
+--
+-- Name: inscriptions_cantine id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_cantine ALTER COLUMN id SET DEFAULT nextval('public.inscriptions_cantine_id_seq'::regclass);
+
+
+--
+-- Name: inscriptions_transport id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_transport ALTER COLUMN id SET DEFAULT nextval('public.inscriptions_transport_id_seq'::regclass);
+
+
+--
+-- Name: lecons id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lecons ALTER COLUMN id SET DEFAULT nextval('public.lecons_id_seq'::regclass);
+
+
+--
+-- Name: lignes_transport id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lignes_transport ALTER COLUMN id SET DEFAULT nextval('public.lignes_transport_id_seq'::regclass);
+
+
+--
+-- Name: livres_bibliotheque id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.livres_bibliotheque ALTER COLUMN id SET DEFAULT nextval('public.livres_bibliotheque_id_seq'::regclass);
+
+
+--
+-- Name: logs_activites id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.logs_activites ALTER COLUMN id SET DEFAULT nextval('public.logs_activites_id_seq'::regclass);
+
+
+--
+-- Name: matieres id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matieres ALTER COLUMN id SET DEFAULT nextval('public.matieres_id_seq'::regclass);
+
+
+--
+-- Name: menus_cantine id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.menus_cantine ALTER COLUMN id SET DEFAULT nextval('public.menus_cantine_id_seq'::regclass);
+
+
+--
+-- Name: messages id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages ALTER COLUMN id SET DEFAULT nextval('public.messages_id_seq'::regclass);
+
+
+--
+-- Name: mouvements_caisse id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mouvements_caisse ALTER COLUMN id SET DEFAULT nextval('public.mouvements_caisse_id_seq'::regclass);
+
+
+--
+-- Name: notes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notes ALTER COLUMN id SET DEFAULT nextval('public.notes_id_seq'::regclass);
+
+
+--
+-- Name: options_qcm id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.options_qcm ALTER COLUMN id SET DEFAULT nextval('public.options_qcm_id_seq'::regclass);
+
+
+--
+-- Name: options_quiz id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.options_quiz ALTER COLUMN id SET DEFAULT nextval('public.options_quiz_id_seq'::regclass);
+
+
+--
+-- Name: paiements id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements ALTER COLUMN id SET DEFAULT nextval('public.paiements_id_seq'::regclass);
+
+
+--
+-- Name: paiements_salaires id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements_salaires ALTER COLUMN id SET DEFAULT nextval('public.paiements_salaires_id_seq'::regclass);
+
+
+--
+-- Name: parents id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.parents ALTER COLUMN id SET DEFAULT nextval('public.parents_id_seq'::regclass);
+
+
+--
+-- Name: participations_quiz id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.participations_quiz ALTER COLUMN id SET DEFAULT nextval('public.participations_quiz_id_seq'::regclass);
+
+
+--
+-- Name: personnels id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personnels ALTER COLUMN id SET DEFAULT nextval('public.personnels_id_seq'::regclass);
+
+
+--
+-- Name: preinscription_cantine id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_cantine ALTER COLUMN id SET DEFAULT nextval('public.preinscription_cantine_id_seq'::regclass);
+
+
+--
+-- Name: preinscription_transport id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_transport ALTER COLUMN id SET DEFAULT nextval('public.preinscription_transport_id_seq'::regclass);
+
+
+--
+-- Name: preinscriptions id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscriptions ALTER COLUMN id SET DEFAULT nextval('public.preinscriptions_id_seq'::regclass);
+
+
+--
+-- Name: presences id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences ALTER COLUMN id SET DEFAULT nextval('public.presences_id_seq'::regclass);
+
+
+--
+-- Name: presences_transport id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences_transport ALTER COLUMN id SET DEFAULT nextval('public.presences_transport_id_seq'::regclass);
+
+
+--
+-- Name: questions_qcm id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_qcm ALTER COLUMN id SET DEFAULT nextval('public.questions_qcm_id_seq'::regclass);
+
+
+--
+-- Name: questions_quiz id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_quiz ALTER COLUMN id SET DEFAULT nextval('public.questions_quiz_id_seq'::regclass);
+
+
+--
+-- Name: quiz id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz ALTER COLUMN id SET DEFAULT nextval('public.quiz_id_seq'::regclass);
+
+
+--
+-- Name: quiz_questions id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz_questions ALTER COLUMN id SET DEFAULT nextval('public.quiz_questions_id_seq'::regclass);
+
+
+--
+-- Name: reinscriptions id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions ALTER COLUMN id SET DEFAULT nextval('public.reinscriptions_id_seq'::regclass);
+
+
+--
+-- Name: reponses_eleves_qcm id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_eleves_qcm ALTER COLUMN id SET DEFAULT nextval('public.reponses_eleves_qcm_id_seq'::regclass);
+
+
+--
+-- Name: reponses_quiz id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_quiz ALTER COLUMN id SET DEFAULT nextval('public.reponses_quiz_id_seq'::regclass);
+
+
+--
+-- Name: reservations_cantine id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservations_cantine ALTER COLUMN id SET DEFAULT nextval('public.reservations_cantine_id_seq'::regclass);
+
+
+--
+-- Name: reserves_cantine id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reserves_cantine ALTER COLUMN id SET DEFAULT nextval('public.reserves_cantine_id_seq'::regclass);
+
+
+--
+-- Name: reset_tokens id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reset_tokens ALTER COLUMN id SET DEFAULT nextval('public.reset_tokens_id_seq'::regclass);
+
+
+--
+-- Name: services_annexes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.services_annexes ALTER COLUMN id SET DEFAULT nextval('public.services_annexes_id_seq'::regclass);
+
+
+--
+-- Name: sessions id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sessions ALTER COLUMN id SET DEFAULT nextval('public.sessions_id_seq'::regclass);
+
+
+--
+-- Name: soumissions_devoirs id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.soumissions_devoirs ALTER COLUMN id SET DEFAULT nextval('public.soumissions_devoirs_id_seq'::regclass);
+
+
+--
+-- Name: transactions_cantine id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions_cantine ALTER COLUMN id SET DEFAULT nextval('public.transactions_cantine_id_seq'::regclass);
+
+
+--
+-- Name: utilisateurs id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.utilisateurs ALTER COLUMN id SET DEFAULT nextval('public.utilisateurs_id_seq'::regclass);
+
+
+--
+-- Name: ventes_librairie id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ventes_librairie ALTER COLUMN id SET DEFAULT nextval('public.ventes_librairie_id_seq'::regclass);
+
+
+--
+-- Data for Name: audit_log_entries; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.audit_log_entries (instance_id, id, payload, created_at, ip_address) FROM stdin;
+\.
+
+
+--
+-- Data for Name: custom_oauth_providers; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.custom_oauth_providers (id, provider_type, identifier, name, client_id, client_secret, acceptable_client_ids, scopes, pkce_enabled, attribute_mapping, authorization_params, enabled, email_optional, issuer, discovery_url, skip_nonce_check, cached_discovery, discovery_cached_at, authorization_url, token_url, userinfo_url, jwks_uri, created_at, updated_at, custom_claims_allowlist) FROM stdin;
+\.
+
+
+--
+-- Data for Name: flow_state; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.flow_state (id, user_id, auth_code, code_challenge_method, code_challenge, provider_type, provider_access_token, provider_refresh_token, created_at, updated_at, authentication_method, auth_code_issued_at, invite_token, referrer, oauth_client_state_id, linking_target_id, email_optional) FROM stdin;
+\.
+
+
+--
+-- Data for Name: identities; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at, id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: instances; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.instances (id, uuid, raw_base_config, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: mfa_amr_claims; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.mfa_amr_claims (session_id, created_at, updated_at, authentication_method, id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: mfa_challenges; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.mfa_challenges (id, factor_id, created_at, verified_at, ip_address, otp_code, web_authn_session_data) FROM stdin;
+\.
+
+
+--
+-- Data for Name: mfa_factors; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at, secret, phone, last_challenged_at, web_authn_credential, web_authn_aaguid, last_webauthn_challenge_data) FROM stdin;
+\.
+
+
+--
+-- Data for Name: oauth_authorizations; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.oauth_authorizations (id, authorization_id, client_id, user_id, redirect_uri, scope, state, resource, code_challenge, code_challenge_method, response_type, status, authorization_code, created_at, expires_at, approved_at, nonce) FROM stdin;
+\.
+
+
+--
+-- Data for Name: oauth_client_states; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.oauth_client_states (id, provider_type, code_verifier, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: oauth_clients; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.oauth_clients (id, client_secret_hash, registration_type, redirect_uris, grant_types, client_name, client_uri, logo_uri, created_at, updated_at, deleted_at, client_type, token_endpoint_auth_method) FROM stdin;
+\.
+
+
+--
+-- Data for Name: oauth_consents; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.oauth_consents (id, user_id, client_id, scopes, granted_at, revoked_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: one_time_tokens; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.one_time_tokens (id, user_id, token_type, token_hash, relates_to, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: refresh_tokens; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.refresh_tokens (instance_id, id, token, user_id, revoked, created_at, updated_at, parent, session_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: saml_providers; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.saml_providers (id, sso_provider_id, entity_id, metadata_xml, metadata_url, attribute_mapping, created_at, updated_at, name_id_format) FROM stdin;
+\.
+
+
+--
+-- Data for Name: saml_relay_states; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.saml_relay_states (id, sso_provider_id, request_id, for_email, redirect_to, created_at, updated_at, flow_state_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: schema_migrations; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.schema_migrations (version) FROM stdin;
+20171026211738
+20171026211808
+20171026211834
+20180103212743
+20180108183307
+20180119214651
+20180125194653
+00
+20210710035447
+20210722035447
+20210730183235
+20210909172000
+20210927181326
+20211122151130
+20211124214934
+20211202183645
+20220114185221
+20220114185340
+20220224000811
+20220323170000
+20220429102000
+20220531120530
+20220614074223
+20220811173540
+20221003041349
+20221003041400
+20221011041400
+20221020193600
+20221021073300
+20221021082433
+20221027105023
+20221114143122
+20221114143410
+20221125140132
+20221208132122
+20221215195500
+20221215195800
+20221215195900
+20230116124310
+20230116124412
+20230131181311
+20230322519590
+20230402418590
+20230411005111
+20230508135423
+20230523124323
+20230818113222
+20230914180801
+20231027141322
+20231114161723
+20231117164230
+20240115144230
+20240214120130
+20240306115329
+20240314092811
+20240427152123
+20240612123726
+20240729123726
+20240802193726
+20240806073726
+20241009103726
+20250717082212
+20250731150234
+20250804100000
+20250901200500
+20250903112500
+20250904133000
+20250925093508
+20251007112900
+20251104100000
+20251111201300
+20251201000000
+20260115000000
+20260121000000
+20260219120000
+20260302000000
+20260625000000
+\.
+
+
+--
+-- Data for Name: sessions; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter, scopes) FROM stdin;
+\.
+
+
+--
+-- Data for Name: sso_domains; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.sso_domains (id, sso_provider_id, domain, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: sso_providers; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.sso_providers (id, resource_id, created_at, updated_at, disabled) FROM stdin;
+\.
+
+
+--
+-- Data for Name: users; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, invited_at, confirmation_token, confirmation_sent_at, recovery_token, recovery_sent_at, email_change_token_new, email_change, email_change_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, is_super_admin, created_at, updated_at, phone, phone_confirmed_at, phone_change, phone_change_token, phone_change_sent_at, email_change_token_current, email_change_confirm_status, banned_until, reauthentication_token, reauthentication_sent_at, is_sso_user, deleted_at, is_anonymous) FROM stdin;
+\.
+
+
+--
+-- Data for Name: webauthn_challenges; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.webauthn_challenges (id, user_id, challenge_type, session_data, created_at, expires_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: webauthn_credentials; Type: TABLE DATA; Schema: auth; Owner: supabase_auth_admin
+--
+
+COPY auth.webauthn_credentials (id, user_id, credential_id, public_key, attestation_type, aaguid, sign_count, transports, backup_eligible, backed_up, friendly_name, created_at, updated_at, last_used_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: _prisma_migrations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
+7b2f10da-163a-4be5-8745-2421b8cd44e5	6a9ce3a02e16f62e3cf2c04c8e46848607aa51c65eef6a45f622eb90701088e7	2026-07-10 01:42:04.173749+00	20260519205632_init	\N	\N	2026-07-10 01:42:03.157229+00	1
+08aca0b2-69ac-4778-ace9-5ca701faa5a7	064b4e8a45d4e630c1c9bb2ba8720d8b965528886ef013f2f25ac6fc305a49e6	2026-07-10 01:42:45.144099+00	20260710014242_init	\N	\N	2026-07-10 01:42:43.736261+00	1
+\.
+
+
+--
+-- Data for Name: annees_scolaires; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.annees_scolaires (id, libelle, date_debut, date_fin, est_active, created_at) FROM stdin;
+1	2025-2026	2025-09-01	2026-06-30	t	2026-07-18 00:20:41.256555
+2	2025-2026	2025-09-01	2026-06-30	f	2026-07-18 19:48:50.980978
+3	2025-2026	2025-09-01	2026-06-30	f	2026-07-19 20:58:51.648536
+\.
+
+
+--
+-- Data for Name: annonces; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.annonces (id, titre, contenu, cible, type, classe_id, image_url, date_publication, date_modification, date_programmee, publie_par) FROM stdin;
+\.
+
+
+--
+-- Data for Name: articles_librairie; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.articles_librairie (id, nom, description, prix_unitaire, quantite_stock, categorie, image_url, created_at) FROM stdin;
+1	Tenues scolaire	Tenue primaire	175000	1000	uniforme	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/librairie/librairie_1783776236197_6015.jpg	2026-07-11 13:23:58.014423
+\.
+
+
+--
+-- Data for Name: avances_salaires; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.avances_salaires (id, personnel_id, montant, motif, date_avance, mois_deduction, annee_deduction, statut, accorde_par, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: budget_previsionnel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.budget_previsionnel (id, annee, categorie_code, montant_prevu, notes, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bus; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bus (id, immatriculation, capacite, chauffeur_nom, chauffeur_tel) FROM stdin;
+1	RC6578	70	Mory Cond├⌐	62829992
+\.
+
+
+--
+-- Data for Name: cantine_menus; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cantine_menus (id, date, plat, accompagnement, dessert, regime_special, prix, prix_annuel) FROM stdin;
+1	2026-07-11	Voir a la cantine scolaire	FRIT	G	t	\N	4000000
+\.
+
+
+--
+-- Data for Name: categories_depenses; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.categories_depenses (id, code, libelle, type, description, is_active, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: categories_quiz; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.categories_quiz (id, nom, description, couleur, icon, est_active, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: classes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.classes (id, nom, niveau, salle, capacite_max, titulaire_id, code_acces, frais_inscription, annee_scolaire_id, created_at, premier_versement, deuxieme_versement, troisieme_versement, total_versement, reinscription_premier_versement, reinscription_deuxieme_versement, reinscription_troisieme_versement, reinscription_total_versement) FROM stdin;
+1	Cr├¿che	Maternelle	\N	30	\N	\N	5900000	\N	2026-07-11 12:22:47.647619	2800000	2100000	1000000	5900000	2600000	2100000	1000000	5700000
+2	1ere ANNEE	Primaire	\N	30	\N	\N	6400000	\N	2026-07-11 13:09:20.866519	2800000	2100000	1500000	6400000	2600000	2100000	1500000	6200000
+3	CP2	Primaire	\N	30	\N	\N	6400000	1	2026-07-29 18:54:55.983625	2800000	2100000	1500000	6400000	2600000	2100000	1500000	6200000
+4	CE1	Primaire	\N	30	\N	\N	6400000	1	2026-07-29 18:57:24.939628	2800000	2100000	1500000	6400000	2600000	2100000	1500000	6200000
+\.
+
+
+--
+-- Data for Name: commandes_fournitures; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.commandes_fournitures (id, preinscription_id, article_id, quantite, prix_unitaire, created_at) FROM stdin;
+6	14	1	2	175000	2026-07-29 17:47:52.457187
+\.
+
+
+--
+-- Data for Name: commandes_librairie; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.commandes_librairie (id, parent_id, numero_commande, date_commande, statut, total, observations, date_traitement, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: commandes_librairie_articles; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.commandes_librairie_articles (id, commande_id, article_id, quantite, prix_unitaire, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: conges_personnel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.conges_personnel (id, personnel_id, type_conge, date_debut, date_fin, nombre_jours, motif, statut, approuve_par, date_approbation, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: contrats_personnel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.contrats_personnel (id, personnel_id, type_contrat, date_debut, date_fin, salaire_brut, salaire_net, heures_semaine, conges_annuels, observations, is_actif, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: depenses; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.depenses (id, categorie, montant, description, date_depense, sous_categorie, reference, fournisseur, numero_recu, saisi_par, valide_par, statut, exercice_annee, exercice_mois, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: devoirs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.devoirs (id, enseignement_id, titre, description, fichier_url, date_limite, date_publication) FROM stdin;
+\.
+
+
+--
+-- Data for Name: echeances_paiement; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.echeances_paiement (id, preinscription_id, type, echeance, montant, date_echeance, statut, date_paiement, reference_transaction, mode_paiement, created_at, updated_at, reinscription_id) FROM stdin;
+53	14	inscription	1er_versement	2800000	2026-07-29	en_attente	\N	\N	\N	2026-07-29 17:47:53.081253	2026-07-29 17:47:53.081253	\N
+54	14	inscription	2eme_versement	2100000	2026-09-29	en_attente	\N	\N	\N	2026-07-29 17:47:53.287382	2026-07-29 17:47:53.287382	\N
+55	14	inscription	3eme_versement	1000000	2026-11-29	en_attente	\N	\N	\N	2026-07-29 17:47:53.459291	2026-07-29 17:47:53.459291	\N
+56	14	fournitures	fournitures	350000	2026-07-29	en_attente	\N	\N	\N	2026-07-29 17:47:53.626289	2026-07-29 17:47:53.626289	\N
+\.
+
+
+--
+-- Data for Name: eleves; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.eleves (id, utilisateur_id, matricule, date_naissance, lieu_naissance, sexe, nationalite, classe_id, date_inscription, est_inscrit, carte_scolaire_url, photo_url, deleted_at) FROM stdin;
+6	18	ELE-1785347606424-645	2025-09-09	POPO	M	Guin├⌐enne	1	2026-07-29	t	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: emprunts_bibliotheque; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.emprunts_bibliotheque (id, livre_id, eleve_id, date_emprunt, date_retour_prevue, date_retour_reelle, statut) FROM stdin;
+\.
+
+
+--
+-- Data for Name: enseignements; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.enseignements (id, enseignant_id, classe_id, matiere_id, heures_semaine, heures_mois, heures_an, annee_scolaire_id) FROM stdin;
+8	2	2	\N	\N	\N	\N	1
+9	3	1	\N	\N	\N	\N	1
+10	5	2	\N	\N	\N	\N	1
+\.
+
+
+--
+-- Data for Name: examens; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.examens (id, enseignement_id, titre, duree_minutes, date_debut, date_fin, est_actif, fichier_url) FROM stdin;
+\.
+
+
+--
+-- Data for Name: examens_eleves; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.examens_eleves (id, examen_id, eleve_id, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: frais_scolaires; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.frais_scolaires (id, nom, type_frais, montant, obligatoire, frequence, niveau, annee_scolaire_id, description) FROM stdin;
+\.
+
+
+--
+-- Data for Name: inscriptions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.inscriptions (id, preinscription_id, eleve_id, parent_id, numero_matricule, date_inscription, annee_scolaire_id, statut, created_at, updated_at) FROM stdin;
+6	14	6	1	ELE-1785347606424-645	2026-07-29	1	active	2026-07-29 17:53:28.429373	2026-07-29 17:53:28.429373
+\.
+
+
+--
+-- Data for Name: inscriptions_cantine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.inscriptions_cantine (id, eleve_id, est_actif, solde, preferences_alimentaires, allergies, date_inscription) FROM stdin;
+\.
+
+
+--
+-- Data for Name: inscriptions_transport; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.inscriptions_transport (id, eleve_id, ligne_id, date_debut, date_fin, est_actif) FROM stdin;
+\.
+
+
+--
+-- Data for Name: lecons; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.lecons (id, enseignement_id, titre, description, contenu, fichier_url, video_url, date_publication) FROM stdin;
+\.
+
+
+--
+-- Data for Name: lien_parent_eleve; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.lien_parent_eleve (parent_id, eleve_id, lien) FROM stdin;
+1	6	parent
+\.
+
+
+--
+-- Data for Name: lignes_transport; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.lignes_transport (id, nom, bus_id, horaire_matin, horaire_soir, prix_abonnement) FROM stdin;
+1	Sanoyah - Coayah	1	07:00:00	16:30:00	300000
+\.
+
+
+--
+-- Data for Name: livres_bibliotheque; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.livres_bibliotheque (id, titre, auteur, isbn, quantite, disponible, emplacement, categorie, image_url) FROM stdin;
+\.
+
+
+--
+-- Data for Name: logs_activites; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.logs_activites (id, utilisateur_id, action, details, ip_address, date_action) FROM stdin;
+\.
+
+
+--
+-- Data for Name: matieres; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.matieres (id, nom, coefficient, description) FROM stdin;
+\.
+
+
+--
+-- Data for Name: menus_cantine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.menus_cantine (id, date, plat, accompagnement, dessert, prix, allergenes, calories, regime_special) FROM stdin;
+\.
+
+
+--
+-- Data for Name: messages; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.messages (id, expediteur_id, destinataire_id, sujet, contenu, est_lu, date_envoi) FROM stdin;
+\.
+
+
+--
+-- Data for Name: mouvements_caisse; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.mouvements_caisse (id, type, montant, categorie, sous_categorie, description, reference, date_mouvement, exercice_annee, exercice_mois, saisi_par, valide_par, statut, recu_url, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: notes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.notes (id, eleve_id, enseignement_id, type_note, valeur, coefficient, date_saisie, commentaire, enseignant_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: options_qcm; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.options_qcm (id, question_id, option_texte, est_correcte) FROM stdin;
+\.
+
+
+--
+-- Data for Name: options_quiz; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.options_quiz (id, question_id, option_texte, est_correcte, ordre) FROM stdin;
+\.
+
+
+--
+-- Data for Name: paiements; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.paiements (id, eleve_id, montant, type_frais, mois, annee, mode_paiement, reference_transaction, statut, date_paiement, "re├ºu_url", saisie_par, preinscription_id, reinscription_id) FROM stdin;
+16	\N	100000	inscription	7	2026	especes	\N	valide	2026-07-29	\N	1	14	\N
+\.
+
+
+--
+-- Data for Name: paiements_salaires; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.paiements_salaires (id, personnel_id, montant, mois, annee, mode_paiement, reference_transaction, saisie_par, statut, date_paiement, note, salaire_base, prime_mensuelle, prime_responsabilite, prime_craie, retenue_sanction, autres_retenues, details_lignes, total_brut, total_deductions) FROM stdin;
+1	3	2500000	7	2026	especes	SAL-202607-PER-2026-016	\N	paye	2026-07-20 14:30:20.129705	\N	0	0	0	0	0	0	[]	0	0
+2	2	3000000	7	2026	especes	SAL-202607-PER-2026-015	1	paye	2026-07-23 11:08:19.97621	\N	3500000	0	0	0	0	0	[{"date": "2026-07-23", "type": "Avance", "motif": "AVANCE SUR SALAIRE", "montant": 500000}]	3500000	500000
+5	3	2200000	6	2026	especes	SAL-202606-PER-2026-016	1	paye	2026-07-23 12:27:08.892237	\N	2500000	0	0	0	0	0	[{"date": "2026-07-23", "type": "Avance", "motif": "AVANCE SUR SALAIRE", "montant": 300000}]	2500000	300000
+6	3	1600000	5	2026	especes	SAL-202605-PER-2026-016	1	paye	2026-07-23 12:28:54.190468	\N	2500000	0	0	0	0	0	[{"date": "2026-07-23", "type": "Avance", "motif": "AVANCE SUR SALAIRE", "montant": 200000}, {"date": "2026-07-23", "type": "Bon", "motif": "POUR SON T├ëL├ëPHONE", "montant": 100000}, {"date": "2026-07-23", "type": "Avance", "motif": "MANQUEMENT AU SERVICE", "montant": 300000}, {"date": "2026-07-23", "type": "Avance", "motif": "MANQUEMENT AUX PRINCIPES DU SERVICE", "montant": 300000}]	2500000	900000
+\.
+
+
+--
+-- Data for Name: parents; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.parents (id, utilisateur_id, profession, situation_matrimoniale) FROM stdin;
+1	8	Informaticien	{"mereNom":"Camara","merePrenom":"Mariame","merePhone":"+224627421720","mereProfession":"GPT"}
+\.
+
+
+--
+-- Data for Name: participations_quiz; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.participations_quiz (id, quiz_id, eleve_id, date_debut, date_fin, score_total, points_obtenus, reponses_correctes, reponses_totales, pourcentage, est_termine) FROM stdin;
+\.
+
+
+--
+-- Data for Name: personnels; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.personnels (id, utilisateur_id, matricule_personnel, type, date_embauche, salaire_base, carte_personnel_url, statut, departement, prime_mensuelle, mode_paiement_salaire, carte_id_url, cv_url, certificat_residence_url) FROM stdin;
+2	15	PER-2026-015	ENSEIGNANT	2025-09-18	3500000	\N	actif	P├⌐dagogie	0	virement	\N	\N	\N
+3	16	PER-2026-016	ENSEIGNANT	2026-07-20	2500000	\N	actif	P├⌐dagogie	0	virement	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/personnel_DIALLO/personnel_DIALLO_carte_id_url_1784555990537.png	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/personnel_DIALLO/personnel_DIALLO_cv_url_1784555997545.pdf	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/personnel_DIALLO/personnel_DIALLO_certificat_residence_url_1784556012329.pdf
+5	19	PER-2026-019	ENSEIGNANT	2026-07-29	2500000	\N	actif	P├⌐dagogie	0	virement	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: preinscription_cantine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.preinscription_cantine (id, preinscription_id, menu_id, prix, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: preinscription_transport; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.preinscription_transport (id, preinscription_id, ligne_id, prix, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: preinscriptions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.preinscriptions (id, parent_id, enfant_nom, enfant_prenom, date_naissance, lieu_naissance, sexe, niveau, classe, acte_naissance_url, photo_url, bulletin_url, statut, numero_dossier, date_preinscription, observations, traite_par, date_traitement, frais_montant, frais_statut, frais_mode_paiement, frais_reference, frais_date_paiement, plan_paiement_id, montant_total_plan, montant_restant_plan, type_inscription, est_reinscription) FROM stdin;
+14	1	POPO	BIBI	2025-09-09	POPO	M	Maternelle	Cr├¿che	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/4ccd727d-4dfa-42b3-957d-aba88d89c7d3/4ccd727d-4dfa-42b3-957d-aba88d89c7d3_acte_1785347261873.pdf	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/4ccd727d-4dfa-42b3-957d-aba88d89c7d3/4ccd727d-4dfa-42b3-957d-aba88d89c7d3_photo_1785347266632.jpg	\N	valide	PRE-26-270613-8517	2026-07-29 17:47:52.260092	OK	1	2026-07-29 17:53:28.588292	5900000	partiel	\N	\N	\N	\N	5900000	6150000	inscription	f
+\.
+
+
+--
+-- Data for Name: presences; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.presences (id, eleve_id, classe_id, date, statut, heure_arrivee, justificatif_url, enseignant_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: presences_transport; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.presences_transport (id, eleve_id, date, statut, heure_arrivee, commentaire, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: questions_qcm; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.questions_qcm (id, examen_id, question, points, ordre) FROM stdin;
+\.
+
+
+--
+-- Data for Name: questions_quiz; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.questions_quiz (id, categorie_id, enseignement_id, question, explication, difficulte, points, temps_secondes, est_active, ordre, created_at, created_by) FROM stdin;
+\.
+
+
+--
+-- Data for Name: quiz; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.quiz (id, enseignement_id, titre, description, type, duree_minutes, est_actif, date_debut, date_fin, est_aleatoire, afficher_resultats, created_at, fichier_url) FROM stdin;
+\.
+
+
+--
+-- Data for Name: quiz_questions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.quiz_questions (id, quiz_id, question_id, ordre, points_personnalises) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reinscriptions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reinscriptions (id, inscription_id, eleve_id, parent_id, annee_scolaire_id, classe_id, montant_frais, frais_statut, frais_mode_paiement, frais_reference, frais_date_paiement, statut, date_reinscription, observations, created_at, updated_at, acte_naissance_url, photo_url, bulletin_url, date_traitement, numero_dossier, enfant_nom, enfant_prenom, date_naissance, lieu_naissance, sexe, niveau, classe_nom, parent_nom, parent_prenom, parent_email, parent_telephone, montant_total_plan, montant_restant_plan) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reponses_eleves_qcm; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reponses_eleves_qcm (id, examen_id, eleve_id, question_id, option_id, date_reponse) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reponses_quiz; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reponses_quiz (id, participation_id, question_id, option_id, est_correcte, temps_reponse_ms, date_reponse) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reservations_cantine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reservations_cantine (id, eleve_id, menu_id, date, statut, paye, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reserves_cantine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reserves_cantine (id, eleve_id, date, est_present, date_reservation) FROM stdin;
+\.
+
+
+--
+-- Data for Name: reset_tokens; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.reset_tokens (id, email, token, expires_at, created_at, used) FROM stdin;
+\.
+
+
+--
+-- Data for Name: services_annexes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.services_annexes (id, nom, montant_mensuel, type, description, actif, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: sessions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.sessions (id, utilisateur_id, token, expire_le, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: soumissions_devoirs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.soumissions_devoirs (id, devoir_id, eleve_id, fichier_url, date_soumission, note, commentaire, est_retard) FROM stdin;
+\.
+
+
+--
+-- Data for Name: transactions_cantine; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.transactions_cantine (id, eleve_id, montant, type, description, date) FROM stdin;
+\.
+
+
+--
+-- Data for Name: utilisateurs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.utilisateurs (id, email, password, prenom, nom, telephone, adresse, photo_url, role, est_actif, derniere_connexion, created_at, updated_at, deleted_at) FROM stdin;
+1	admin@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Super	Admin	\N	\N	\N	SUPER_ADMIN	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+2	comptable@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Claire	Comptable	\N	\N	\N	COMPTABLE	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+3	directeur@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Paul	Directeur	\N	\N	\N	DIRECTEUR_GENERAL	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+4	cantine@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Aissatou	Kane	\N	\N	\N	ADMIN_CANTINE	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+5	librairie@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Fatou	Diop	\N	\N	\N	ADMIN_LIBRAIRIE	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+6	bibliotheque@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Mamadou	Diallo	\N	\N	\N	ADMIN_BIBLIOTHEQUE	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+7	transport@eief.com	$2b$10$Cl.LbpccIdc1.rBfxmuvGuhrvsgOasr/kus9dyvifHCojG8ZiPR72	Amadou	Camara	\N	\N	\N	ADMIN_TRANSPORT	t	\N	2026-07-11 12:07:11.175285	2026-07-11 12:07:11.175285	\N
+8	mohamedkc237@gmail.com	$2b$10$5ZdlH.unWzUPr9nDKwVSXuaSyB/DH/nGHqt1SttjMrdXUdLWsh9TS	Mohamed Kolomba	Camara	+224627421722	Conakry	\N	PARENT	t	\N	2026-07-11 12:32:18.525629	2026-07-11 12:32:18.525629	\N
+15	24saranfof@gmail.com	$2b$10$Z2n5ziEWF/sAt9hvPlUJ3.NxKlaQFUycW.a/J3VYw/PXmPi8Kg.ua	Saran	Fofana	627577353	Conakry	\N	ENSEIGNANT	t	\N	2026-07-18 00:09:49.435969	2026-07-18 00:09:49.435969	\N
+16	cotechservices.gn@gmail.com	$2b$10$cb6u0gnL9HWCS4SmXQHKdutO5FF4QlPmaBAEvbp7ss4C.xys79iVe	OUMOU	DIALLO	610093485	Conakry	https://zwdpyhpbcrcccqgsthnc.supabase.co/storage/v1/object/public/preinscriptions/personnel_DIALLO/personnel_DIALLO_photo_url_1784555987093.png	ENSEIGNANT	t	\N	2026-07-20 14:00:21.744086	2026-07-20 14:00:21.744086	\N
+18	bibi.popo449@eief.com	$2b$10$GDgoFCc9VlHoYf0IQRHuEu0.4TaozufqIwas/grEojJE6dvK1QqzG	BIBI	POPO	\N	\N	\N	ELEVE	t	\N	2026-07-29 17:53:27.609402	2026-07-29 17:53:27.609402	\N
+19	mamadou@diallo.com	$2b$10$mAIHjyvjgbx5XIkQSV7NGenqfnBkDwziIcBfFkoh1/j00Re8XYmFi	MAMADOU	DIALLO	628899898	Conakry	\N	ENSEIGNANT	t	\N	2026-07-29 18:01:05.977525	2026-07-29 18:01:05.977525	\N
+\.
+
+
+--
+-- Data for Name: ventes_librairie; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.ventes_librairie (id, article_id, eleve_id, quantite, montant_total, date_vente, vendu_par) FROM stdin;
+\.
+
+
+--
+-- Data for Name: schema_migrations; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
+--
+
+COPY realtime.schema_migrations (version, inserted_at) FROM stdin;
+20211116024918	2026-05-21 14:27:13
+20211116045059	2026-05-21 14:27:13
+20211116050929	2026-05-21 14:27:13
+20211116051442	2026-05-21 14:27:13
+20211116212300	2026-05-21 14:27:13
+20211116213355	2026-05-21 14:27:13
+20211116213934	2026-05-21 14:27:13
+20211116214523	2026-05-21 14:27:13
+20211122062447	2026-05-21 14:27:13
+20211124070109	2026-05-21 14:27:13
+20211202204204	2026-05-21 14:27:13
+20211202204605	2026-05-21 14:27:13
+20211210212804	2026-05-21 14:27:13
+20211228014915	2026-05-21 14:27:14
+20220107221237	2026-05-21 14:27:14
+20220228202821	2026-05-21 14:27:14
+20220312004840	2026-05-21 14:27:14
+20220603231003	2026-05-21 14:27:14
+20220603232444	2026-05-21 14:27:14
+20220615214548	2026-05-21 14:27:14
+20220712093339	2026-05-21 14:27:14
+20220908172859	2026-05-21 14:27:14
+20220916233421	2026-05-21 14:27:14
+20230119133233	2026-05-21 14:27:14
+20230128025114	2026-05-21 14:27:14
+20230128025212	2026-05-21 14:27:14
+20230227211149	2026-05-21 14:27:14
+20230228184745	2026-05-21 14:27:14
+20230308225145	2026-05-21 14:27:14
+20230328144023	2026-05-21 14:27:14
+20231018144023	2026-05-21 14:27:14
+20231204144023	2026-05-21 14:27:14
+20231204144024	2026-05-21 14:27:14
+20231204144025	2026-05-21 14:27:14
+20240108234812	2026-05-21 14:27:14
+20240109165339	2026-05-21 14:27:14
+20240227174441	2026-05-21 14:27:14
+20240311171622	2026-05-21 14:27:14
+20240321100241	2026-05-21 14:27:14
+20240401105812	2026-05-21 14:27:14
+20240418121054	2026-05-21 14:27:14
+20240523004032	2026-05-21 14:27:14
+20240618124746	2026-05-21 14:27:14
+20240801235015	2026-05-21 14:27:14
+20240805133720	2026-05-21 14:27:14
+20240827160934	2026-05-21 14:27:14
+20240919163303	2026-05-21 14:27:14
+20240919163305	2026-05-21 14:27:14
+20241019105805	2026-05-21 14:27:14
+20241030150047	2026-05-21 14:27:14
+20241108114728	2026-05-21 14:27:14
+20241121104152	2026-05-21 14:27:14
+20241130184212	2026-05-21 14:27:14
+20241220035512	2026-05-21 14:27:14
+20241220123912	2026-05-21 14:27:14
+20241224161212	2026-05-21 14:27:14
+20250107150512	2026-05-21 14:27:14
+20250110162412	2026-05-21 14:27:14
+20250123174212	2026-05-21 14:27:14
+20250128220012	2026-05-21 14:27:14
+20250506224012	2026-05-21 14:27:14
+20250523164012	2026-05-21 14:27:14
+20250714121412	2026-05-21 14:27:14
+20250905041441	2026-05-21 14:27:14
+20251103001201	2026-05-21 14:27:14
+20251120212548	2026-05-21 14:27:14
+20251120215549	2026-05-21 14:27:14
+20260218120000	2026-05-21 14:27:14
+20260326120000	2026-05-21 14:27:14
+20260514120000	2026-06-06 17:29:11
+20260527120000	2026-06-06 17:29:11
+20260528120000	2026-06-06 17:29:11
+20260603120000	2026-06-06 17:29:11
+20260605120000	2026-06-28 00:22:40
+20260606110000	2026-06-28 00:22:40
+20260616120000	2026-06-28 00:22:40
+20260624120000	2026-06-28 00:22:40
+20260626120000	2026-07-06 13:19:22
+20260706120000	2026-07-10 00:26:52
+\.
+
+
+--
+-- Data for Name: subscription; Type: TABLE DATA; Schema: realtime; Owner: supabase_admin
+--
+
+COPY realtime.subscription (id, subscription_id, entity, filters, claims, created_at, action_filter, selected_columns) FROM stdin;
+\.
+
+
+--
+-- Data for Name: buckets; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.buckets (id, name, owner, created_at, updated_at, public, avif_autodetection, file_size_limit, allowed_mime_types, owner_id, type) FROM stdin;
+preinscriptions	preinscriptions	\N	2026-05-29 12:10:22.355129+00	2026-05-29 12:10:22.355129+00	t	f	\N	\N	\N	STANDARD
+\.
+
+
+--
+-- Data for Name: buckets_analytics; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.buckets_analytics (name, type, format, created_at, updated_at, id, deleted_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: buckets_vectors; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.buckets_vectors (id, type, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.migrations (id, name, hash, executed_at) FROM stdin;
+0	create-migrations-table	e18db593bcde2aca2a408c4d1100f6abba2195df	2026-05-21 14:27:18.187293
+1	initialmigration	6ab16121fbaa08bbd11b712d05f358f9b555d777	2026-05-21 14:27:18.213618
+2	storage-schema	f6a1fa2c93cbcd16d4e487b362e45fca157a8dbd	2026-05-21 14:27:18.216794
+3	pathtoken-column	2cb1b0004b817b29d5b0a971af16bafeede4b70d	2026-05-21 14:27:18.24122
+4	add-migrations-rls	427c5b63fe1c5937495d9c635c263ee7a5905058	2026-05-21 14:27:18.249583
+5	add-size-functions	79e081a1455b63666c1294a440f8ad4b1e6a7f84	2026-05-21 14:27:18.252887
+6	change-column-name-in-get-size	ded78e2f1b5d7e616117897e6443a925965b30d2	2026-05-21 14:27:18.256278
+7	add-rls-to-buckets	e7e7f86adbc51049f341dfe8d30256c1abca17aa	2026-05-21 14:27:18.260593
+8	add-public-to-buckets	fd670db39ed65f9d08b01db09d6202503ca2bab3	2026-05-21 14:27:18.26334
+9	fix-search-function	af597a1b590c70519b464a4ab3be54490712796b	2026-05-21 14:27:18.265925
+10	search-files-search-function	b595f05e92f7e91211af1bbfe9c6a13bb3391e16	2026-05-21 14:27:18.268615
+11	add-trigger-to-auto-update-updated_at-column	7425bdb14366d1739fa8a18c83100636d74dcaa2	2026-05-21 14:27:18.27218
+12	add-automatic-avif-detection-flag	8e92e1266eb29518b6a4c5313ab8f29dd0d08df9	2026-05-21 14:27:18.275914
+13	add-bucket-custom-limits	cce962054138135cd9a8c4bcd531598684b25e7d	2026-05-21 14:27:18.278525
+14	use-bytes-for-max-size	941c41b346f9802b411f06f30e972ad4744dad27	2026-05-21 14:27:18.281959
+15	add-can-insert-object-function	934146bc38ead475f4ef4b555c524ee5d66799e5	2026-05-21 14:27:18.314406
+16	add-version	76debf38d3fd07dcfc747ca49096457d95b1221b	2026-05-21 14:27:18.317731
+17	drop-owner-foreign-key	f1cbb288f1b7a4c1eb8c38504b80ae2a0153d101	2026-05-21 14:27:18.320382
+18	add_owner_id_column_deprecate_owner	e7a511b379110b08e2f214be852c35414749fe66	2026-05-21 14:27:18.324167
+19	alter-default-value-objects-id	02e5e22a78626187e00d173dc45f58fa66a4f043	2026-05-21 14:27:18.330729
+20	list-objects-with-delimiter	cd694ae708e51ba82bf012bba00caf4f3b6393b7	2026-05-21 14:27:18.333972
+21	s3-multipart-uploads	8c804d4a566c40cd1e4cc5b3725a664a9303657f	2026-05-21 14:27:18.338121
+22	s3-multipart-uploads-big-ints	9737dc258d2397953c9953d9b86920b8be0cdb73	2026-05-21 14:27:18.348252
+23	optimize-search-function	9d7e604cddc4b56a5422dc68c9313f4a1b6f132c	2026-05-21 14:27:18.359267
+24	operation-function	8312e37c2bf9e76bbe841aa5fda889206d2bf8aa	2026-05-21 14:27:18.362099
+25	custom-metadata	d974c6057c3db1c1f847afa0e291e6165693b990	2026-05-21 14:27:18.364671
+26	objects-prefixes	215cabcb7f78121892a5a2037a09fedf9a1ae322	2026-05-21 14:27:18.367269
+27	search-v2	859ba38092ac96eb3964d83bf53ccc0b141663a6	2026-05-21 14:27:18.369445
+28	object-bucket-name-sorting	c73a2b5b5d4041e39705814fd3a1b95502d38ce4	2026-05-21 14:27:18.371591
+29	create-prefixes	ad2c1207f76703d11a9f9007f821620017a66c21	2026-05-21 14:27:18.373752
+30	update-object-levels	2be814ff05c8252fdfdc7cfb4b7f5c7e17f0bed6	2026-05-21 14:27:18.37583
+31	objects-level-index	b40367c14c3440ec75f19bbce2d71e914ddd3da0	2026-05-21 14:27:18.377938
+32	backward-compatible-index-on-objects	e0c37182b0f7aee3efd823298fb3c76f1042c0f7	2026-05-21 14:27:18.380001
+33	backward-compatible-index-on-prefixes	b480e99ed951e0900f033ec4eb34b5bdcb4e3d49	2026-05-21 14:27:18.382156
+34	optimize-search-function-v1	ca80a3dc7bfef894df17108785ce29a7fc8ee456	2026-05-21 14:27:18.384187
+35	add-insert-trigger-prefixes	458fe0ffd07ec53f5e3ce9df51bfdf4861929ccc	2026-05-21 14:27:18.386362
+36	optimise-existing-functions	6ae5fca6af5c55abe95369cd4f93985d1814ca8f	2026-05-21 14:27:18.388451
+37	add-bucket-name-length-trigger	3944135b4e3e8b22d6d4cbb568fe3b0b51df15c1	2026-05-21 14:27:18.390761
+38	iceberg-catalog-flag-on-buckets	02716b81ceec9705aed84aa1501657095b32e5c5	2026-05-21 14:27:18.393804
+39	add-search-v2-sort-support	6706c5f2928846abee18461279799ad12b279b78	2026-05-21 14:27:18.400246
+40	fix-prefix-race-conditions-optimized	7ad69982ae2d372b21f48fc4829ae9752c518f6b	2026-05-21 14:27:18.402461
+41	add-object-level-update-trigger	07fcf1a22165849b7a029deed059ffcde08d1ae0	2026-05-21 14:27:18.404763
+42	rollback-prefix-triggers	771479077764adc09e2ea2043eb627503c034cd4	2026-05-21 14:27:18.406982
+43	fix-object-level	84b35d6caca9d937478ad8a797491f38b8c2979f	2026-05-21 14:27:18.409995
+44	vector-bucket-type	99c20c0ffd52bb1ff1f32fb992f3b351e3ef8fb3	2026-05-21 14:27:18.41206
+45	vector-buckets	049e27196d77a7cb76497a85afae669d8b230953	2026-05-21 14:27:18.41511
+46	buckets-objects-grants	fedeb96d60fefd8e02ab3ded9fbde05632f84aed	2026-05-21 14:27:18.426362
+47	iceberg-table-metadata	649df56855c24d8b36dd4cc1aeb8251aa9ad42c2	2026-05-21 14:27:18.429736
+48	iceberg-catalog-ids	e0e8b460c609b9999ccd0df9ad14294613eed939	2026-05-21 14:27:18.432537
+49	buckets-objects-grants-postgres	072b1195d0d5a2f888af6b2302a1938dd94b8b3d	2026-05-21 14:27:18.451845
+50	search-v2-optimised	6323ac4f850aa14e7387eb32102869578b5bd478	2026-05-21 14:27:18.454672
+51	index-backward-compatible-search	2ee395d433f76e38bcd3856debaf6e0e5b674011	2026-05-21 14:27:19.785991
+52	drop-not-used-indexes-and-functions	5cc44c8696749ac11dd0dc37f2a3802075f3a171	2026-05-21 14:27:19.789035
+53	drop-index-lower-name	d0cb18777d9e2a98ebe0bc5cc7a42e57ebe41854	2026-05-21 14:27:19.812334
+54	drop-index-object-level	6289e048b1472da17c31a7eba1ded625a6457e67	2026-05-21 14:27:19.815541
+55	prevent-direct-deletes	262a4798d5e0f2e7c8970232e03ce8be695d5819	2026-05-21 14:27:19.816881
+56	fix-optimized-search-function	b823ed1e418101032fa01374edc9a436e54e3ed4	2026-05-21 14:27:19.825467
+57	s3-multipart-uploads-metadata	f127886e00d1b374fadbc7c6b31e09336aad5287	2026-05-21 14:27:19.833403
+58	operation-ergonomics	00ca5d483b3fe0d522133d9002ccc5df98365120	2026-05-21 14:27:19.837095
+59	drop-unused-functions	38456f13e39691c2bbb4b5151d0d1cdbabd4a8c4	2026-05-21 14:27:19.842456
+60	optimize-existing-functions-again	db35e1c91a9201e59f4fef8d972c2f277d68b157	2026-05-21 14:27:19.846009
+\.
+
+
+--
+-- Data for Name: objects; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata, version, owner_id, user_metadata) FROM stdin;
+d1f1749b-d9e9-49bb-8eac-5b441832ce3b	preinscriptions	77467488-aec6-4090-a587-a570534e6dad/77467488-aec6-4090-a587-a570534e6dad_acte_1780057789617.pdf	\N	2026-05-29 12:29:52.639413+00	2026-05-29 12:29:52.639413+00	2026-05-29 12:29:52.639413+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T12:29:53.000Z", "contentLength": 1419276, "httpStatusCode": 200}	beebc24f-4e56-4a87-895f-b5eb7572682a	\N	{}
+1249b0bc-7aba-4581-87f4-0390cf1b8fd0	preinscriptions	bibliotheque/bibliotheque_1780769938405_6340.jpg	\N	2026-06-06 18:19:00.302115+00	2026-06-06 18:19:00.302115+00	2026-06-06 18:19:00.302115+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-06T18:19:01.000Z", "contentLength": 110734, "httpStatusCode": 200}	49ee6006-83a3-482c-8162-93d05821acd5	\N	{}
+5bcf6ba9-b1e9-4a10-bd4d-947bb7f8e072	preinscriptions	77467488-aec6-4090-a587-a570534e6dad/77467488-aec6-4090-a587-a570534e6dad_photo_1780057794856.jpeg	\N	2026-05-29 12:29:55.252916+00	2026-05-29 12:29:55.252916+00	2026-05-29 12:29:55.252916+00	{"eTag": "\\"5899d5dc86c2406937cc9c3a2cffc41d\\"", "size": 75203, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T12:29:56.000Z", "contentLength": 75203, "httpStatusCode": 200}	89150b2c-15d6-4b40-ba7a-d5486601c2c6	\N	{}
+0eb23cdf-cb31-4b53-af6d-6e489d2a1b5d	preinscriptions	0d0bb341-4692-4f38-b5b5-0006a8975917/0d0bb341-4692-4f38-b5b5-0006a8975917_acte_1780076558194.jpeg	\N	2026-05-29 17:42:39.67829+00	2026-05-29 17:42:39.67829+00	2026-05-29 17:42:39.67829+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T17:42:40.000Z", "contentLength": 104345, "httpStatusCode": 200}	45a77998-117e-40f3-a72f-86e74e97f5f8	\N	{}
+9ccbaa2f-ae48-4c74-8655-51561b48a27d	preinscriptions	bibliotheque/bibliotheque_1780770267072_7870.jpg	\N	2026-06-06 18:24:29.04354+00	2026-06-06 18:24:29.04354+00	2026-06-06 18:24:29.04354+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-06T18:24:30.000Z", "contentLength": 110734, "httpStatusCode": 200}	06021074-876e-44c9-aacb-0477fe6a0268	\N	{}
+0e40b89c-341e-4fdd-a768-77c2ec6a6db1	preinscriptions	0d0bb341-4692-4f38-b5b5-0006a8975917/0d0bb341-4692-4f38-b5b5-0006a8975917_photo_1780076559607.jpeg	\N	2026-05-29 17:42:40.339789+00	2026-05-29 17:42:40.339789+00	2026-05-29 17:42:40.339789+00	{"eTag": "\\"5f308c66f1cef64551e7715c17bf36f1\\"", "size": 15372, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T17:42:41.000Z", "contentLength": 15372, "httpStatusCode": 200}	00a9726c-8721-49ee-9322-579a6b0d5092	\N	{}
+ffc4181a-c0cf-4897-81c0-f43769ed074e	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_photo_1781468682727.png	\N	2026-06-14 20:24:45.614711+00	2026-06-14 20:24:45.614711+00	2026-06-14 20:24:45.614711+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:24:46.000Z", "contentLength": 22191, "httpStatusCode": 200}	105522cb-ff22-4901-b201-3e241c6187e4	\N	{}
+28417325-bcf4-43bf-8891-5d3cffe731d4	preinscriptions	0348031c-65fa-44fd-b0e8-b97bf7b17031/0348031c-65fa-44fd-b0e8-b97bf7b17031_acte_1780097752499.jpeg	\N	2026-05-29 23:35:54.389595+00	2026-05-29 23:35:54.389595+00	2026-05-29 23:35:54.389595+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T23:35:55.000Z", "contentLength": 104345, "httpStatusCode": 200}	031d29f2-f46a-474c-a6dd-ea366cdcc075	\N	{}
+39eaeea6-126c-4b16-8067-c623be4a7c5d	preinscriptions	0348031c-65fa-44fd-b0e8-b97bf7b17031/0348031c-65fa-44fd-b0e8-b97bf7b17031_photo_1780097753982.jpg	\N	2026-05-29 23:35:55.132373+00	2026-05-29 23:35:55.132373+00	2026-05-29 23:35:55.132373+00	{"eTag": "\\"f96f3121eb77dd728e89048d95b2e638\\"", "size": 53754, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T23:35:56.000Z", "contentLength": 53754, "httpStatusCode": 200}	3595cbdf-bb91-4d90-ba3f-bf25d96fe718	\N	{}
+283a9033-68fb-4773-aef8-9ce8a870a0b4	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_acte_1781468948460.png	\N	2026-06-14 20:29:11.029032+00	2026-06-14 20:29:11.029032+00	2026-06-14 20:29:11.029032+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:29:11.000Z", "contentLength": 22191, "httpStatusCode": 200}	963b5334-4fa0-4bb8-bd6d-d85e1bc769bf	\N	{}
+5350ffd9-aa27-46dc-9570-bd3668defc0a	preinscriptions	4f690c53-ede0-4333-8dc5-e2366f95a7d5/4f690c53-ede0-4333-8dc5-e2366f95a7d5_acte_1780098696565.jpeg	\N	2026-05-29 23:51:38.425182+00	2026-05-29 23:51:38.425182+00	2026-05-29 23:51:38.425182+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T23:51:39.000Z", "contentLength": 104345, "httpStatusCode": 200}	3e5b336c-cca6-434c-857c-4db8cf4bea6a	\N	{}
+441e40fc-6327-40ef-9d37-94cc0cce6148	preinscriptions	4f690c53-ede0-4333-8dc5-e2366f95a7d5/4f690c53-ede0-4333-8dc5-e2366f95a7d5_photo_1780098698023.jpeg	\N	2026-05-29 23:51:39.167581+00	2026-05-29 23:51:39.167581+00	2026-05-29 23:51:39.167581+00	{"eTag": "\\"5899d5dc86c2406937cc9c3a2cffc41d\\"", "size": 75203, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-29T23:51:40.000Z", "contentLength": 75203, "httpStatusCode": 200}	76e2b12f-d518-4b0a-8f33-037f40e6c09c	\N	{}
+321ccbaa-7832-4ab6-93dd-040530149540	preinscriptions	0f9d3efb-7f4d-4cff-9d4e-cb39cba045e0/0f9d3efb-7f4d-4cff-9d4e-cb39cba045e0_acte_1782224726937.jpg	\N	2026-06-23 14:25:30.480346+00	2026-06-23 14:25:30.480346+00	2026-06-23 14:25:30.480346+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T14:25:31.000Z", "contentLength": 414566, "httpStatusCode": 200}	aa736033-6c85-4e69-97fa-93135b8ddd46	\N	{}
+f2ee4b7a-7976-429e-ad1b-7fdf790d3ab8	preinscriptions	9b56a428-522b-4c19-9eaa-4eeae09d999c/9b56a428-522b-4c19-9eaa-4eeae09d999c_acte_1780100432065.jpeg	\N	2026-05-30 00:20:34.110024+00	2026-05-30 00:20:34.110024+00	2026-05-30 00:20:34.110024+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T00:20:35.000Z", "contentLength": 104345, "httpStatusCode": 200}	fffbd994-9b7c-4d32-9476-d54c25b9763f	\N	{}
+a201d454-c7bc-45e9-9098-a6eb2ee488dc	preinscriptions	annonces/annonce_1781398235663_3668.avif	\N	2026-06-14 00:50:36.407837+00	2026-06-14 00:50:36.407837+00	2026-06-14 00:50:36.407837+00	{"eTag": "\\"89f02098f020c37983bb368778f01d39\\"", "size": 68040, "mimetype": "image/avif", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T00:50:37.000Z", "contentLength": 68040, "httpStatusCode": 200}	88288c38-c52a-4aff-9aff-182c79123ab6	\N	{}
+d940fd9b-7335-4cf0-8dd1-2080aa5e909b	preinscriptions	9b56a428-522b-4c19-9eaa-4eeae09d999c/9b56a428-522b-4c19-9eaa-4eeae09d999c_photo_1780100433824.png	\N	2026-05-30 00:20:35.850868+00	2026-05-30 00:20:35.850868+00	2026-05-30 00:20:35.850868+00	{"eTag": "\\"3cd619e6c77ff745e61ab1f2c5898b98\\"", "size": 1861522, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T00:20:36.000Z", "contentLength": 1861522, "httpStatusCode": 200}	404fef2b-5935-4dae-9f0f-2c5945dab764	\N	{}
+1f8274ce-a8f5-4478-b2fe-82836ebe85f8	preinscriptions	8e13c467-dadb-443f-a51a-0a18fd2bc3e2/8e13c467-dadb-443f-a51a-0a18fd2bc3e2_acte_1782655518234.png	\N	2026-06-28 14:05:21.576707+00	2026-06-28 14:05:21.576707+00	2026-06-28 14:05:21.576707+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:05:22.000Z", "contentLength": 1818598, "httpStatusCode": 200}	65090c17-2e4e-4ceb-a014-b7d34a915adb	\N	{}
+19eb68dc-0eee-49a5-a518-5fb8a97ab828	preinscriptions	9b56a428-522b-4c19-9eaa-4eeae09d999c/9b56a428-522b-4c19-9eaa-4eeae09d999c_acte_1780101842067.jpeg	\N	2026-05-30 00:44:03.823675+00	2026-05-30 00:44:03.823675+00	2026-05-30 00:44:03.823675+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T00:44:04.000Z", "contentLength": 104345, "httpStatusCode": 200}	10d6b013-ce43-418e-bfb7-08f9a2fcb52d	\N	{}
+70791bf6-28f0-4e6e-80f4-4e959816fb97	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_photo_1781468949560.png	\N	2026-06-14 20:29:11.454773+00	2026-06-14 20:29:11.454773+00	2026-06-14 20:29:11.454773+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:29:12.000Z", "contentLength": 22191, "httpStatusCode": 200}	e75ddaab-bb00-496a-92c5-2ec255dfac2d	\N	{}
+2a7e09d9-0d9c-4c19-9f5c-a979e958aa25	preinscriptions	9b56a428-522b-4c19-9eaa-4eeae09d999c/9b56a428-522b-4c19-9eaa-4eeae09d999c_photo_1780101843422.png	\N	2026-05-30 00:44:05.951407+00	2026-05-30 00:44:05.951407+00	2026-05-30 00:44:05.951407+00	{"eTag": "\\"3cd619e6c77ff745e61ab1f2c5898b98\\"", "size": 1861522, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T00:44:06.000Z", "contentLength": 1861522, "httpStatusCode": 200}	137f039b-e510-48d6-b4cc-4a2b397d56de	\N	{}
+aaa63dc0-99cb-461a-83ee-b5863e8bb9d0	preinscriptions	1c097548-9a23-4ccf-9a00-4840cb1851b4/1c097548-9a23-4ccf-9a00-4840cb1851b4_acte_1780140734550.jpeg	\N	2026-05-30 11:32:17.247547+00	2026-05-30 11:32:17.247547+00	2026-05-30 11:32:17.247547+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T11:32:18.000Z", "contentLength": 104345, "httpStatusCode": 200}	087177b8-0c3e-4534-be53-be8e8ebb532a	\N	{}
+23531287-017b-4099-a3f8-f9efc17b24c2	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_acte_1781469006865.png	\N	2026-06-14 20:30:09.407013+00	2026-06-14 20:30:09.407013+00	2026-06-14 20:30:09.407013+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:30:10.000Z", "contentLength": 22191, "httpStatusCode": 200}	2f0bf1d8-0240-4596-8f19-4df2e3c414c4	\N	{}
+fceee672-d2f9-4c08-899d-b0c0ede179e8	preinscriptions	1c097548-9a23-4ccf-9a00-4840cb1851b4/1c097548-9a23-4ccf-9a00-4840cb1851b4_photo_1780140736287.png	\N	2026-05-30 11:32:18.007398+00	2026-05-30 11:32:18.007398+00	2026-05-30 11:32:18.007398+00	{"eTag": "\\"4f190178f9025efedbe9f5c2c51b8070\\"", "size": 10582, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T11:32:18.000Z", "contentLength": 10582, "httpStatusCode": 200}	fd63bf23-457a-4f40-8444-3cd431b80538	\N	{}
+9d3a7254-d0fd-4d93-a0f9-c7b0c389039e	preinscriptions	e113e90b-db10-46ff-a902-1713e0165775/e113e90b-db10-46ff-a902-1713e0165775_acte_1780141550598.jpeg	\N	2026-05-30 11:45:53.348044+00	2026-05-30 11:45:53.348044+00	2026-05-30 11:45:53.348044+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T11:45:54.000Z", "contentLength": 104345, "httpStatusCode": 200}	78a6ec72-1ed3-4af0-b833-7fca4d101899	\N	{}
+eb92f73b-799c-4e08-b226-56d112dcb241	preinscriptions	e113e90b-db10-46ff-a902-1713e0165775/e113e90b-db10-46ff-a902-1713e0165775_photo_1780141552305.jpeg	\N	2026-05-30 11:45:54.108176+00	2026-05-30 11:45:54.108176+00	2026-05-30 11:45:54.108176+00	{"eTag": "\\"5f308c66f1cef64551e7715c17bf36f1\\"", "size": 15372, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T11:45:55.000Z", "contentLength": 15372, "httpStatusCode": 200}	728d3184-91bd-49d4-b37f-a7005b9dbebe	\N	{}
+3f6569c6-2590-4baf-a7db-586a4979f6e4	preinscriptions	0f9d3efb-7f4d-4cff-9d4e-cb39cba045e0/0f9d3efb-7f4d-4cff-9d4e-cb39cba045e0_photo_1782224729527.jpg	\N	2026-06-23 14:25:32.236792+00	2026-06-23 14:25:32.236792+00	2026-06-23 14:25:32.236792+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T14:25:33.000Z", "contentLength": 414566, "httpStatusCode": 200}	97910130-3a4f-4215-9ff0-6b7dc479253f	\N	{}
+a708f113-cfae-47cf-bf18-409bed10312d	preinscriptions	be26b959-4fcb-40a2-980a-9343810c1361/be26b959-4fcb-40a2-980a-9343810c1361_acte_1780156303993.jpg	\N	2026-05-30 15:51:45.453214+00	2026-05-30 15:51:45.453214+00	2026-05-30 15:51:45.453214+00	{"eTag": "\\"13299ae9490e2b31157e3d2b9f798997\\"", "size": 497598, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T15:51:46.000Z", "contentLength": 497598, "httpStatusCode": 200}	8cfdbab1-0d16-469e-9a48-af67dbded832	\N	{}
+e9f8528d-61ae-4b5e-9394-80427976663b	preinscriptions	annonces/annonce_1781401573097_4391.png	\N	2026-06-14 01:46:16.275835+00	2026-06-14 01:46:16.275835+00	2026-06-14 01:46:16.275835+00	{"eTag": "\\"d82f6538298e0cfefab8d523f45a0033\\"", "size": 2460642, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T01:46:17.000Z", "contentLength": 2460642, "httpStatusCode": 200}	0451a312-ac1a-4bcc-a686-71c530830269	\N	{}
+5ad5b005-ba48-4571-b9c7-8625fe4c686e	preinscriptions	be26b959-4fcb-40a2-980a-9343810c1361/be26b959-4fcb-40a2-980a-9343810c1361_photo_1780156306837.jpg	\N	2026-05-30 15:51:47.328482+00	2026-05-30 15:51:47.328482+00	2026-05-30 15:51:47.328482+00	{"eTag": "\\"87d99e7f1c0f6068b7ef93abb5f3e5f0\\"", "size": 68850, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-30T15:51:48.000Z", "contentLength": 68850, "httpStatusCode": 200}	f1b7fd66-ec45-4768-bc2c-b6feeb039112	\N	{}
+abd57236-57a4-4d25-bd5b-d12b7fff576a	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_photo_1781469007889.png	\N	2026-06-14 20:30:09.750134+00	2026-06-14 20:30:09.750134+00	2026-06-14 20:30:09.750134+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:30:10.000Z", "contentLength": 22191, "httpStatusCode": 200}	2c9bee60-0d36-4c73-8d50-2073008dc48a	\N	{}
+869f0120-e8e2-481c-a0d0-b43ba37864d9	preinscriptions	e2c75930-596f-4e97-98c8-8794c10c0b26/e2c75930-596f-4e97-98c8-8794c10c0b26_acte_1780257967353.png	\N	2026-05-31 20:06:08.536268+00	2026-05-31 20:06:08.536268+00	2026-05-31 20:06:08.536268+00	{"eTag": "\\"0d23b211dc54c9768d136c7bc1257424\\"", "size": 134622, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T20:06:09.000Z", "contentLength": 134622, "httpStatusCode": 200}	bafa235b-edb2-4aa1-a996-87120dd6019c	\N	{}
+adf875fb-e028-437b-a8ef-f2a4c2b35508	preinscriptions	a8c7c1f8-5df1-4882-87c2-7d749c11ec1b/a8c7c1f8-5df1-4882-87c2-7d749c11ec1b_acte_1782403111956.jpeg	\N	2026-06-25 15:58:37.880646+00	2026-06-25 15:58:37.880646+00	2026-06-25 15:58:37.880646+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:58:38.000Z", "contentLength": 104345, "httpStatusCode": 200}	b767edf1-0bb1-4d94-9dbd-769a937f496d	\N	{}
+e423184d-8025-4536-934f-d0150da6154f	preinscriptions	e2c75930-596f-4e97-98c8-8794c10c0b26/e2c75930-596f-4e97-98c8-8794c10c0b26_photo_1780257968720.jpg	\N	2026-05-31 20:06:09.136345+00	2026-05-31 20:06:09.136345+00	2026-05-31 20:06:09.136345+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T20:06:10.000Z", "contentLength": 44432, "httpStatusCode": 200}	257ad492-b274-46b9-af84-1ff113d23dc4	\N	{}
+bdf53644-195c-43fe-8412-969ac5cc462a	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_acte_1781469056802.png	\N	2026-06-14 20:30:59.198928+00	2026-06-14 20:30:59.198928+00	2026-06-14 20:30:59.198928+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:31:00.000Z", "contentLength": 22191, "httpStatusCode": 200}	e033a028-dc15-41bc-9b6e-83da9d8c9424	\N	{}
+c99b468d-adee-49c3-9783-c9bf6a53324e	preinscriptions	bdfc464f-b675-42a4-bc31-9eca90252099/bdfc464f-b675-42a4-bc31-9eca90252099_acte_1780258274643.png	\N	2026-05-31 20:11:15.927573+00	2026-05-31 20:11:15.927573+00	2026-05-31 20:11:15.927573+00	{"eTag": "\\"0d23b211dc54c9768d136c7bc1257424\\"", "size": 134622, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T20:11:16.000Z", "contentLength": 134622, "httpStatusCode": 200}	022fc343-965d-4510-8c9a-b881d537c892	\N	{}
+c2b4babf-c1f5-41e0-a843-d5a0c5f78765	preinscriptions	bdfc464f-b675-42a4-bc31-9eca90252099/bdfc464f-b675-42a4-bc31-9eca90252099_photo_1780258276167.jpg	\N	2026-05-31 20:11:16.483476+00	2026-05-31 20:11:16.483476+00	2026-05-31 20:11:16.483476+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T20:11:17.000Z", "contentLength": 44432, "httpStatusCode": 200}	649e7b38-77f1-4e89-9f03-1fece660e70d	\N	{}
+ac0cfc05-eed9-476e-ac62-f500073c558b	preinscriptions	4387e22b-78f7-4387-a240-e2e60cbeeae9/4387e22b-78f7-4387-a240-e2e60cbeeae9_acte_1780259090572.png	\N	2026-05-31 20:24:51.651952+00	2026-05-31 20:24:51.651952+00	2026-05-31 20:24:51.651952+00	{"eTag": "\\"0d23b211dc54c9768d136c7bc1257424\\"", "size": 134622, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T20:24:52.000Z", "contentLength": 134622, "httpStatusCode": 200}	c7a761dd-598b-4281-a96c-2397b796120b	\N	{}
+8ffe1e7c-e5e8-427d-a0a5-925440539f86	preinscriptions	4387e22b-78f7-4387-a240-e2e60cbeeae9/4387e22b-78f7-4387-a240-e2e60cbeeae9_photo_1780259091861.jpg	\N	2026-05-31 20:24:52.188859+00	2026-05-31 20:24:52.188859+00	2026-05-31 20:24:52.188859+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T20:24:53.000Z", "contentLength": 44432, "httpStatusCode": 200}	af4fbc5e-7f44-42fa-bc84-20f5246316c6	\N	{}
+4d08aa6e-865c-4d1f-81b0-1b023e054c90	preinscriptions	130e1b66-3408-4d23-911b-251957c45090/130e1b66-3408-4d23-911b-251957c45090_acte_1780264297295.png	\N	2026-05-31 21:51:37.506137+00	2026-05-31 21:51:37.506137+00	2026-05-31 21:51:37.506137+00	{"eTag": "\\"0d23b211dc54c9768d136c7bc1257424\\"", "size": 134622, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T21:51:38.000Z", "contentLength": 134622, "httpStatusCode": 200}	0c11076b-51f5-4b00-bb80-016da64cbf23	\N	{}
+19dc7c88-7208-43ad-b48d-506a78e8a69f	preinscriptions	95a441bd-33ec-4f72-95c5-0cf23f57b00b/95a441bd-33ec-4f72-95c5-0cf23f57b00b_acte_1781466792412.png	\N	2026-06-14 19:53:15.145078+00	2026-06-14 19:53:15.145078+00	2026-06-14 19:53:15.145078+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T19:53:16.000Z", "contentLength": 22191, "httpStatusCode": 200}	b7f6b904-3524-4194-a8d0-43099f44f8e4	\N	{}
+cdf31928-4ec5-4f6c-a78f-60f23e5888f7	preinscriptions	130e1b66-3408-4d23-911b-251957c45090/130e1b66-3408-4d23-911b-251957c45090_photo_1780264298306.jpg	\N	2026-05-31 21:51:38.10317+00	2026-05-31 21:51:38.10317+00	2026-05-31 21:51:38.10317+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T21:51:39.000Z", "contentLength": 44432, "httpStatusCode": 200}	01890c75-ed18-4555-ba7c-a260975515eb	\N	{}
+e1eacfdf-8c3d-4a5c-a83b-3e3aa8d2f102	preinscriptions	e628d56a-cece-494b-8abd-65f019fd23bf/e628d56a-cece-494b-8abd-65f019fd23bf_acte_1782225530967.jpg	\N	2026-06-23 14:38:56.17055+00	2026-06-23 14:38:56.17055+00	2026-06-23 14:38:56.17055+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T14:38:57.000Z", "contentLength": 414566, "httpStatusCode": 200}	2c084cad-f7a4-4cf8-947f-c838fc6f9a5f	\N	{}
+4f222da9-81e5-4ee2-b5a5-d918bda6d8a6	preinscriptions	130e1b66-3408-4d23-911b-251957c45090/130e1b66-3408-4d23-911b-251957c45090_bulletin_1780264298922.pdf	\N	2026-05-31 21:51:39.249834+00	2026-05-31 21:51:39.249834+00	2026-05-31 21:51:39.249834+00	{"eTag": "\\"75fe075acde650dabdf28eb76427c436\\"", "size": 520716, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T21:51:40.000Z", "contentLength": 520716, "httpStatusCode": 200}	39920f5a-1167-4e2d-a5ad-59ae8af7446a	\N	{}
+22e167c7-ced5-4c1c-ab6e-89e0b9472986	preinscriptions	5adda9b3-1e1c-437e-810a-3aec15c18e49/5adda9b3-1e1c-437e-810a-3aec15c18e49_photo_1781466794086.png	\N	2026-06-14 19:53:15.92455+00	2026-06-14 19:53:15.92455+00	2026-06-14 19:53:15.92455+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T19:53:16.000Z", "contentLength": 22191, "httpStatusCode": 200}	898bc2cb-1d3d-4bbd-8af3-d0c04c476cf4	\N	{}
+4230048e-e64e-43d5-a2bc-812004f670e5	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_photo_1781469057714.png	\N	2026-06-14 20:30:59.561523+00	2026-06-14 20:30:59.561523+00	2026-06-14 20:30:59.561523+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:31:00.000Z", "contentLength": 22191, "httpStatusCode": 200}	0ca4dcf7-e02b-482f-a1d5-b81caef565d5	\N	{}
+eb4f0899-3165-4ed3-9f18-4c0309961126	preinscriptions	3e0806b9-b24a-4aba-8a77-3cffef84db2b/3e0806b9-b24a-4aba-8a77-3cffef84db2b_acte_1780265576527.png	\N	2026-05-31 22:12:57.452806+00	2026-05-31 22:12:57.452806+00	2026-05-31 22:12:57.452806+00	{"eTag": "\\"0d23b211dc54c9768d136c7bc1257424\\"", "size": 134622, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:12:58.000Z", "contentLength": 134622, "httpStatusCode": 200}	077353ff-23f1-445d-a437-67e09e55d5b3	\N	{}
+11013fbf-854b-4c96-9861-84cb7926a582	preinscriptions	450f18fe-bc9b-49d1-b2ea-8adb7f1722f3/450f18fe-bc9b-49d1-b2ea-8adb7f1722f3_acte_1780265576464.png	\N	2026-05-31 22:12:57.49079+00	2026-05-31 22:12:57.49079+00	2026-05-31 22:12:57.49079+00	{"eTag": "\\"0d23b211dc54c9768d136c7bc1257424\\"", "size": 134622, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:12:58.000Z", "contentLength": 134622, "httpStatusCode": 200}	738d1adc-2428-45b1-a6e9-c4e4d5b6a188	\N	{}
+56c6d8f1-d4ec-4a01-ab54-8baf47cb4b13	preinscriptions	663719f0-8abc-4706-9f7a-01a843b2dc7b/663719f0-8abc-4706-9f7a-01a843b2dc7b_acte_1780265576740.pdf	\N	2026-05-31 22:12:57.784821+00	2026-05-31 22:12:57.784821+00	2026-05-31 22:12:57.784821+00	{"eTag": "\\"75fe075acde650dabdf28eb76427c436\\"", "size": 520716, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:12:58.000Z", "contentLength": 520716, "httpStatusCode": 200}	11b2eb96-5846-44ff-967a-71054e833aa8	\N	{}
+83a0aff4-fa89-431d-9b97-bdae8c7ba877	preinscriptions	3e0806b9-b24a-4aba-8a77-3cffef84db2b/3e0806b9-b24a-4aba-8a77-3cffef84db2b_photo_1780265578633.jpg	\N	2026-05-31 22:12:58.313795+00	2026-05-31 22:12:58.313795+00	2026-05-31 22:12:58.313795+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:12:59.000Z", "contentLength": 44432, "httpStatusCode": 200}	de1cfd76-7f39-4cba-9c62-22103a6afec2	\N	{}
+f0d56425-97ce-486a-a40d-ef5af5847cda	preinscriptions	450f18fe-bc9b-49d1-b2ea-8adb7f1722f3/450f18fe-bc9b-49d1-b2ea-8adb7f1722f3_photo_1780265578715.jpg	\N	2026-05-31 22:12:58.511388+00	2026-05-31 22:12:58.511388+00	2026-05-31 22:12:58.511388+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:12:59.000Z", "contentLength": 44432, "httpStatusCode": 200}	f703291f-4738-40f0-aaaf-6a54948b1675	\N	{}
+d608d915-781e-4d08-9636-38296ae22f8a	preinscriptions	e628d56a-cece-494b-8abd-65f019fd23bf/e628d56a-cece-494b-8abd-65f019fd23bf_photo_1782225535188.jpg	\N	2026-06-23 14:39:00.319599+00	2026-06-23 14:39:00.319599+00	2026-06-23 14:39:00.319599+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T14:39:01.000Z", "contentLength": 414566, "httpStatusCode": 200}	c8603d0c-f7c3-4330-a4f4-6b13e9d2a272	\N	{}
+017d27d0-af4c-4640-b0e4-d4f2cfc00532	preinscriptions	663719f0-8abc-4706-9f7a-01a843b2dc7b/663719f0-8abc-4706-9f7a-01a843b2dc7b_photo_1780265578864.jpg	\N	2026-05-31 22:12:58.690649+00	2026-05-31 22:12:58.690649+00	2026-05-31 22:12:58.690649+00	{"eTag": "\\"c665d76a20d8503c435abd96d5433792\\"", "size": 44432, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:12:59.000Z", "contentLength": 44432, "httpStatusCode": 200}	400b3180-566f-4ed1-b748-c9f35a7da406	\N	{}
+ed2ee5da-246d-42e8-a17d-bce54f231cbf	preinscriptions	5adda9b3-1e1c-437e-810a-3aec15c18e49/5adda9b3-1e1c-437e-810a-3aec15c18e49_acte_1781466792353.png	\N	2026-06-14 19:53:15.130088+00	2026-06-14 19:53:15.130088+00	2026-06-14 19:53:15.130088+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T19:53:16.000Z", "contentLength": 22191, "httpStatusCode": 200}	07dbdcf7-fb43-4de3-90d7-b45155b237d8	\N	{}
+3d735ff1-1779-40bd-afaa-e5dba658563d	preinscriptions	663719f0-8abc-4706-9f7a-01a843b2dc7b/663719f0-8abc-4706-9f7a-01a843b2dc7b_bulletin_1780265579790.pdf	\N	2026-05-31 22:12:59.871277+00	2026-05-31 22:12:59.871277+00	2026-05-31 22:12:59.871277+00	{"eTag": "\\"75fe075acde650dabdf28eb76427c436\\"", "size": 520716, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-05-31T22:13:00.000Z", "contentLength": 520716, "httpStatusCode": 200}	b7b47e4c-064c-4f3f-94c9-1d94e1cb72c6	\N	{}
+c14a57b2-bb03-4bab-b0d3-0e182fae4628	preinscriptions	95a441bd-33ec-4f72-95c5-0cf23f57b00b/95a441bd-33ec-4f72-95c5-0cf23f57b00b_photo_1781466794108.png	\N	2026-06-14 19:53:15.935604+00	2026-06-14 19:53:15.935604+00	2026-06-14 19:53:15.935604+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T19:53:16.000Z", "contentLength": 22191, "httpStatusCode": 200}	9f8ba58b-7c39-46ca-8a61-a678f064c885	\N	{}
+3bea04d2-b696-4eb5-9fe2-e15b0074d504	preinscriptions	annonces/annonce_1780587876749_8818.png	\N	2026-06-04 15:44:39.982643+00	2026-06-04 15:44:39.982643+00	2026-06-04 15:44:39.982643+00	{"eTag": "\\"6dfee3e16c6ceadfc32045c4ca5af8c6\\"", "size": 161109, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T15:44:40.000Z", "contentLength": 161109, "httpStatusCode": 200}	a519a820-8ee5-486e-a504-8e2f7c0c3dce	\N	{}
+1d03c715-81bd-4852-b9d7-6dcef416318f	preinscriptions	annonces/annonce_1780587879150_512.png	\N	2026-06-04 15:44:41.49772+00	2026-06-04 15:44:41.49772+00	2026-06-04 15:44:41.49772+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T15:44:42.000Z", "contentLength": 352774, "httpStatusCode": 200}	ee21f4ed-8619-46cb-af8f-2dab540d3453	\N	{}
+021c6fe0-a264-4499-88ec-3c98674b99f3	preinscriptions	706bfd6b-bdf1-45c6-84d7-10cc63380d37/706bfd6b-bdf1-45c6-84d7-10cc63380d37_acte_1781522185546.png	\N	2026-06-15 11:16:32.394489+00	2026-06-15 11:16:32.394489+00	2026-06-15 11:16:32.394489+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T11:16:33.000Z", "contentLength": 22191, "httpStatusCode": 200}	aa3cb4b5-929b-4b95-b356-bc4f10b1e81a	\N	{}
+3fb871a1-d6a3-41d5-88e9-ccf5e2947970	preinscriptions	annonces/annonce_1780589992729_8569.png	\N	2026-06-04 16:19:54.742717+00	2026-06-04 16:19:54.742717+00	2026-06-04 16:19:54.742717+00	{"eTag": "\\"252163da5936c3818d4b82a972c8a7eb\\"", "size": 31984, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:19:55.000Z", "contentLength": 31984, "httpStatusCode": 200}	a139cd13-a5ff-448c-bb0b-b540d63f89ce	\N	{}
+387c6cd1-5fae-42a5-8541-78c252c68d27	preinscriptions	annonces/annonce_1780590643232_910.png	\N	2026-06-04 16:30:45.289407+00	2026-06-04 16:30:45.289407+00	2026-06-04 16:30:45.289407+00	{"eTag": "\\"80305fbb97e7579815fab93ce971704f\\"", "size": 32055, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:30:46.000Z", "contentLength": 32055, "httpStatusCode": 200}	9eeb57b6-484c-4b85-b817-36d3147f32ca	\N	{}
+04f138e7-dbf9-4e31-8f8d-1fd2fd20b8d8	preinscriptions	annonces/annonce_1780590662610_5815.png	\N	2026-06-04 16:31:05.256108+00	2026-06-04 16:31:05.256108+00	2026-06-04 16:31:05.256108+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:31:06.000Z", "contentLength": 352774, "httpStatusCode": 200}	86edf253-04ac-477b-a2fd-91e0e536048a	\N	{}
+ce9f4df8-54f7-40c6-905b-253cd19220a4	preinscriptions	annonces/annonce_1780590675071_9918.png	\N	2026-06-04 16:31:18.028639+00	2026-06-04 16:31:18.028639+00	2026-06-04 16:31:18.028639+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:31:18.000Z", "contentLength": 352774, "httpStatusCode": 200}	a3d838ce-c985-48b4-8c85-d173ed3b66ce	\N	{}
+c55287bf-4ddb-4cbe-9f7f-85f51ed439eb	preinscriptions	annonces/annonce_1780590878427_4435.png	\N	2026-06-04 16:34:41.707316+00	2026-06-04 16:34:41.707316+00	2026-06-04 16:34:41.707316+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:34:42.000Z", "contentLength": 352774, "httpStatusCode": 200}	5eb4151e-7fa3-4224-92d7-fe3babbe5f44	\N	{}
+78a74ac3-f8f0-409a-9c11-0106875da5eb	preinscriptions	annonces/annonce_1780590918971_76.png	\N	2026-06-04 16:35:20.937866+00	2026-06-04 16:35:20.937866+00	2026-06-04 16:35:20.937866+00	{"eTag": "\\"80305fbb97e7579815fab93ce971704f\\"", "size": 32055, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:35:21.000Z", "contentLength": 32055, "httpStatusCode": 200}	68ff3dbf-95ae-4b30-bace-e4f2429fdd91	\N	{}
+48789a47-fac0-40a1-b169-7d80283ecb88	preinscriptions	8e13c467-dadb-443f-a51a-0a18fd2bc3e2/8e13c467-dadb-443f-a51a-0a18fd2bc3e2_photo_1782655520308.jpeg	\N	2026-06-28 14:05:21.940766+00	2026-06-28 14:05:21.940766+00	2026-06-28 14:05:21.940766+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:05:22.000Z", "contentLength": 104543, "httpStatusCode": 200}	7c55a32e-1167-4992-be3d-049ff0494892	\N	{}
+3725021e-064b-4107-ab7f-e8fe575e73bb	preinscriptions	annonces/annonce_1780591038877_825.png	\N	2026-06-04 16:37:20.803931+00	2026-06-04 16:37:20.803931+00	2026-06-04 16:37:20.803931+00	{"eTag": "\\"80305fbb97e7579815fab93ce971704f\\"", "size": 32055, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:37:21.000Z", "contentLength": 32055, "httpStatusCode": 200}	1aa372c8-3edf-495b-a199-a3049139c173	\N	{}
+f6f564ce-27ae-4dbb-9a69-fcca4a49fb24	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_acte_1781468652444.png	\N	2026-06-14 20:24:18.332903+00	2026-06-14 20:24:18.332903+00	2026-06-14 20:24:18.332903+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:24:19.000Z", "contentLength": 22191, "httpStatusCode": 200}	1d97501b-fa93-45aa-8d4b-303201a28032	\N	{}
+57f70ca3-c854-4fcf-8f72-6a030a97139c	preinscriptions	annonces/annonce_1780591140149_1715.png	\N	2026-06-04 16:39:01.925224+00	2026-06-04 16:39:01.925224+00	2026-06-04 16:39:01.925224+00	{"eTag": "\\"80305fbb97e7579815fab93ce971704f\\"", "size": 32055, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:39:02.000Z", "contentLength": 32055, "httpStatusCode": 200}	012d71dc-e835-42fb-b569-a7dd733249cf	\N	{}
+67630395-f430-46be-852d-094ea0c81f66	preinscriptions	fceda17b-4f70-4916-b426-1c100d062da5/fceda17b-4f70-4916-b426-1c100d062da5_acte_1782229162399.jpg	\N	2026-06-23 15:39:26.040855+00	2026-06-23 15:39:26.040855+00	2026-06-23 15:39:26.040855+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T15:39:26.000Z", "contentLength": 414566, "httpStatusCode": 200}	90918445-e679-4683-86f8-127ce8c12d7e	\N	{}
+7db95a5e-d6d1-4861-9c3b-063a92165888	preinscriptions	annonces/annonce_1780591162180_2133.png	\N	2026-06-04 16:39:24.925629+00	2026-06-04 16:39:24.925629+00	2026-06-04 16:39:24.925629+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:39:25.000Z", "contentLength": 352774, "httpStatusCode": 200}	3d104eca-a41a-45a3-9b57-3eb693feaf32	\N	{}
+feb19e20-a3bc-401e-9ba4-6e553819523e	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_photo_1781468656794.png	\N	2026-06-14 20:24:18.631127+00	2026-06-14 20:24:18.631127+00	2026-06-14 20:24:18.631127+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:24:19.000Z", "contentLength": 22191, "httpStatusCode": 200}	d1c0b22d-42ba-4544-9f43-18b384328ff0	\N	{}
+5c0fd8c8-835d-4683-bda3-8050f99a1f7f	preinscriptions	annonces/annonce_1780591184030_9878.png	\N	2026-06-04 16:39:46.863332+00	2026-06-04 16:39:46.863332+00	2026-06-04 16:39:46.863332+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:39:47.000Z", "contentLength": 352774, "httpStatusCode": 200}	2a91b268-a44f-4d5a-9c42-7e80a84608e3	\N	{}
+2628a24e-629d-40d5-b615-2fa51d864da4	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_photo_1783773202977.png	\N	2026-07-11 12:33:23.525986+00	2026-07-11 12:33:23.525986+00	2026-07-11 12:33:23.525986+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:33:24.000Z", "contentLength": 828452, "httpStatusCode": 200}	007002e3-b274-44b6-816b-09fd75be150e	\N	{}
+45ce23b5-5c91-4cff-84c6-8631a9764e88	preinscriptions	annonces/annonce_1780591237545_7525.png	\N	2026-06-04 16:40:40.487898+00	2026-06-04 16:40:40.487898+00	2026-06-04 16:40:40.487898+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:40:41.000Z", "contentLength": 352774, "httpStatusCode": 200}	b57f2e0a-aa42-4765-a9c1-be1acb277046	\N	{}
+d9566cf6-3123-49fc-a52a-3b510ae1b159	preinscriptions	fd390b52-7071-409d-bc07-eb99166d1920/fd390b52-7071-409d-bc07-eb99166d1920_acte_1781468681723.png	\N	2026-06-14 20:24:44.212644+00	2026-06-14 20:24:44.212644+00	2026-06-14 20:24:44.212644+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-14T20:24:45.000Z", "contentLength": 22191, "httpStatusCode": 200}	29bc4c0f-7439-4040-8532-ee167461b5f7	\N	{}
+6c864629-8a3d-44c2-b6a5-17d44b1ef1fd	preinscriptions	annonces/annonce_1780591287537_9548.png	\N	2026-06-04 16:41:30.268165+00	2026-06-04 16:41:30.268165+00	2026-06-04 16:41:30.268165+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:41:31.000Z", "contentLength": 352774, "httpStatusCode": 200}	744a8ec5-0e18-4de0-bd75-be76ba6c6442	\N	{}
+7f802505-8a63-42a2-8093-c6ca54208951	preinscriptions	annonces/annonce_1780591324124_2622.png	\N	2026-06-04 16:42:07.003283+00	2026-06-04 16:42:07.003283+00	2026-06-04 16:42:07.003283+00	{"eTag": "\\"71af0a615b37d46bf09215c159d6a39f\\"", "size": 352774, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T16:42:07.000Z", "contentLength": 352774, "httpStatusCode": 200}	f29ff335-7da1-4ca2-bf77-176678759052	\N	{}
+b0acd722-9d04-4a8e-89d2-29e47d84d673	preinscriptions	annonces/annonce_1780603591813_7530.png	\N	2026-06-04 20:06:52.292364+00	2026-06-04 20:06:52.292364+00	2026-06-04 20:06:52.292364+00	{"eTag": "\\"104974a4df2a76afd9cb4b268eda6a30\\"", "size": 517265, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-04T20:06:53.000Z", "contentLength": 517265, "httpStatusCode": 200}	455091ca-8a07-4b24-923f-81fd0b7fc5db	\N	{}
+43890de9-ff54-4e4a-b223-cf9688d9562b	preinscriptions	librairie/librairie_1780768791207_776.jpg	\N	2026-06-06 17:59:53.352083+00	2026-06-06 17:59:53.352083+00	2026-06-06 17:59:53.352083+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-06T17:59:54.000Z", "contentLength": 110734, "httpStatusCode": 200}	d976730e-8ece-40d3-978d-e2e86a3b387e	\N	{}
+619efa56-b08f-4cfe-9e5b-bd50bd690f2b	preinscriptions	706bfd6b-bdf1-45c6-84d7-10cc63380d37/706bfd6b-bdf1-45c6-84d7-10cc63380d37_photo_1781522194523.png	\N	2026-06-15 11:16:34.854573+00	2026-06-15 11:16:34.854573+00	2026-06-15 11:16:34.854573+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T11:16:35.000Z", "contentLength": 22191, "httpStatusCode": 200}	d835646f-d659-4ccc-8555-ab3c71d82a3a	\N	{}
+563e70f9-18fc-4a7b-9dcd-085afd45c040	preinscriptions	fceda17b-4f70-4916-b426-1c100d062da5/fceda17b-4f70-4916-b426-1c100d062da5_photo_1782229165084.jpg	\N	2026-06-23 15:39:27.912442+00	2026-06-23 15:39:27.912442+00	2026-06-23 15:39:27.912442+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T15:39:28.000Z", "contentLength": 414566, "httpStatusCode": 200}	19af8fde-bba3-44df-a94d-1fe3c64af76e	\N	{}
+696bd284-1ef8-429a-b6ca-93945414db20	preinscriptions	706bfd6b-bdf1-45c6-84d7-10cc63380d37/706bfd6b-bdf1-45c6-84d7-10cc63380d37_acte_1781522638137.png	\N	2026-06-15 11:24:00.722674+00	2026-06-15 11:24:00.722674+00	2026-06-15 11:24:00.722674+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T11:24:01.000Z", "contentLength": 22191, "httpStatusCode": 200}	c56bab5a-d333-4609-8936-813cbd0011fc	\N	{}
+852045c4-9973-48aa-981e-5beb08d6f75a	preinscriptions	706bfd6b-bdf1-45c6-84d7-10cc63380d37/706bfd6b-bdf1-45c6-84d7-10cc63380d37_photo_1781522640991.png	\N	2026-06-15 11:24:01.356536+00	2026-06-15 11:24:01.356536+00	2026-06-15 11:24:01.356536+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T11:24:02.000Z", "contentLength": 22191, "httpStatusCode": 200}	d2eefed8-93d2-46bf-a31c-99341000bcea	\N	{}
+94204433-2394-429e-9287-d890178ddece	preinscriptions	5e2d6a1a-ecb2-4cf3-a08e-e658b3cda044/5e2d6a1a-ecb2-4cf3-a08e-e658b3cda044_acte_1782229505349.jpg	\N	2026-06-23 15:45:09.042338+00	2026-06-23 15:45:09.042338+00	2026-06-23 15:45:09.042338+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T15:45:09.000Z", "contentLength": 414566, "httpStatusCode": 200}	0e3b2a7b-33c7-43fe-933b-2d5facebe424	\N	{}
+e856f17d-642d-40ab-a193-d31a2b8e9f36	preinscriptions	706bfd6b-bdf1-45c6-84d7-10cc63380d37/706bfd6b-bdf1-45c6-84d7-10cc63380d37_acte_1781522845395.png	\N	2026-06-15 11:27:28.701899+00	2026-06-15 11:27:28.701899+00	2026-06-15 11:27:28.701899+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T11:27:29.000Z", "contentLength": 22191, "httpStatusCode": 200}	363d3404-012a-4c21-8c59-17614d7548ec	\N	{}
+98fd63b1-8dd7-4d0f-a962-2cd7912f88ce	preinscriptions	706bfd6b-bdf1-45c6-84d7-10cc63380d37/706bfd6b-bdf1-45c6-84d7-10cc63380d37_photo_1781522849179.png	\N	2026-06-15 11:27:29.593006+00	2026-06-15 11:27:29.593006+00	2026-06-15 11:27:29.593006+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T11:27:30.000Z", "contentLength": 22191, "httpStatusCode": 200}	25eef7a6-b32e-421f-907f-3c19f0d9dbac	\N	{}
+e8890cc5-733c-48d6-a2d0-fa3644c48a33	preinscriptions	5e2d6a1a-ecb2-4cf3-a08e-e658b3cda044/5e2d6a1a-ecb2-4cf3-a08e-e658b3cda044_photo_1782229508071.jpg	\N	2026-06-23 15:45:10.790887+00	2026-06-23 15:45:10.790887+00	2026-06-23 15:45:10.790887+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T15:45:11.000Z", "contentLength": 414566, "httpStatusCode": 200}	9eec9ec9-3d8b-40e9-8d18-12b4b453f7e8	\N	{}
+61107b7d-13f9-4370-87fd-06972a1a0489	preinscriptions	a8c7c1f8-5df1-4882-87c2-7d749c11ec1b/a8c7c1f8-5df1-4882-87c2-7d749c11ec1b_photo_1782403116878.png	\N	2026-06-25 15:58:38.701229+00	2026-06-25 15:58:38.701229+00	2026-06-25 15:58:38.701229+00	{"eTag": "\\"29e79bebdbde8427f74e8ff50d9cbe64\\"", "size": 216570, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:58:39.000Z", "contentLength": 216570, "httpStatusCode": 200}	e81e6a46-2d8f-4e68-aa78-5c6ad98c8375	\N	{}
+2e6edd45-5d07-4c82-834d-d3df9e132637	preinscriptions	1a2eab3f-4ad9-4aa0-88ff-e4fb20120580/1a2eab3f-4ad9-4aa0-88ff-e4fb20120580_acte_1781525522834.png	\N	2026-06-15 12:12:04.310251+00	2026-06-15 12:12:04.310251+00	2026-06-15 12:12:04.310251+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T12:12:05.000Z", "contentLength": 22191, "httpStatusCode": 200}	ba72ff71-ae98-4dfb-bfd7-3c82bc9daabf	\N	{}
+a1e8c6ab-a07c-4072-9f00-1e1900a92f96	preinscriptions	9ec434f1-a5c2-4c6c-a128-3fbc128af0a0/9ec434f1-a5c2-4c6c-a128-3fbc128af0a0_acte_1781525523082.png	\N	2026-06-15 12:12:04.310843+00	2026-06-15 12:12:04.310843+00	2026-06-15 12:12:04.310843+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T12:12:05.000Z", "contentLength": 22191, "httpStatusCode": 200}	de524177-6a70-4c13-ac9d-0d1216ad32b9	\N	{}
+d22c0d01-4651-4f19-bcc6-2b643f11ec5c	preinscriptions	9ec434f1-a5c2-4c6c-a128-3fbc128af0a0/9ec434f1-a5c2-4c6c-a128-3fbc128af0a0_photo_1781525524512.png	\N	2026-06-15 12:12:04.943673+00	2026-06-15 12:12:04.943673+00	2026-06-15 12:12:04.943673+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T12:12:05.000Z", "contentLength": 22191, "httpStatusCode": 200}	242db353-4271-4006-904c-9d8ee4c6e177	\N	{}
+2a4dc4d6-22e7-44c7-8278-5bd7fd235196	preinscriptions	1a2eab3f-4ad9-4aa0-88ff-e4fb20120580/1a2eab3f-4ad9-4aa0-88ff-e4fb20120580_photo_1781525524452.png	\N	2026-06-15 12:12:05.118852+00	2026-06-15 12:12:05.118852+00	2026-06-15 12:12:05.118852+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-15T12:12:06.000Z", "contentLength": 22191, "httpStatusCode": 200}	f34198c9-7211-4e04-9017-b5b56e3974f3	\N	{}
+e5006284-90eb-4a98-856b-9074b9501420	preinscriptions	2514538d-a33d-46b8-a4f4-349895d17790/2514538d-a33d-46b8-a4f4-349895d17790_acte_1782657999713.png	\N	2026-06-28 14:46:43.542815+00	2026-06-28 14:46:43.542815+00	2026-06-28 14:46:43.542815+00	{"eTag": "\\"35c3e1a93f218a1840573d668ac974c7\\"", "size": 2178348, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:46:44.000Z", "contentLength": 2178348, "httpStatusCode": 200}	12d68bbf-beef-4e25-a3b1-0f4385aa5188	\N	{}
+44f2d47b-58c4-4dc5-af59-60535a64f569	preinscriptions	037beef6-24ac-4409-9cf2-8c50f71a4942/037beef6-24ac-4409-9cf2-8c50f71a4942_acte_1782391657228.jpeg	\N	2026-06-25 12:47:40.213681+00	2026-06-25 12:47:40.213681+00	2026-06-25 12:47:40.213681+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T12:47:41.000Z", "contentLength": 104345, "httpStatusCode": 200}	23c8f294-bce5-47fd-9c4e-8f0e04fc43de	\N	{}
+e6b7bf94-8dfb-4d8d-8ee2-e4b8d53ac747	preinscriptions	037beef6-24ac-4409-9cf2-8c50f71a4942/037beef6-24ac-4409-9cf2-8c50f71a4942_photo_1782391659467.png	\N	2026-06-25 12:47:41.863069+00	2026-06-25 12:47:41.863069+00	2026-06-25 12:47:41.863069+00	{"eTag": "\\"f0b8df8a2a802f6674803b5a0633778e\\"", "size": 509674, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T12:47:42.000Z", "contentLength": 509674, "httpStatusCode": 200}	0e7ebf33-f0e6-4b7a-8101-b12a8c99c26b	\N	{}
+c9476bcf-2486-4871-922f-858fc7b4e4c4	preinscriptions	2514538d-a33d-46b8-a4f4-349895d17790/2514538d-a33d-46b8-a4f4-349895d17790_photo_1782658002221.jpeg	\N	2026-06-28 14:46:43.882895+00	2026-06-28 14:46:43.882895+00	2026-06-28 14:46:43.882895+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:46:44.000Z", "contentLength": 104543, "httpStatusCode": 200}	97dfb218-73df-4b3a-9f60-a6073425cdaf	\N	{}
+c57ab4fd-5592-4087-82d6-26f5fb8cc03b	preinscriptions	037beef6-24ac-4409-9cf2-8c50f71a4942/037beef6-24ac-4409-9cf2-8c50f71a4942_bulletin_1782391661018.pdf	\N	2026-06-25 12:47:49.281376+00	2026-06-25 12:47:49.281376+00	2026-06-25 12:47:49.281376+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T12:47:50.000Z", "contentLength": 1419276, "httpStatusCode": 200}	b14515b4-005d-44ba-bb1c-602312897e55	\N	{}
+a41f72bd-467e-4c33-89a3-2fcd62f07b58	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_acte_1783773231744.png	\N	2026-07-11 12:33:52.374002+00	2026-07-11 12:33:52.374002+00	2026-07-11 12:33:52.374002+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:33:53.000Z", "contentLength": 880465, "httpStatusCode": 200}	1f04a323-e130-4d97-ac57-fc07fc76b8d8	\N	{}
+41dcecd7-2bb9-4bd1-bf25-b2e7fa5910c9	preinscriptions	d27d2704-13fe-4305-85de-a5314d84390e/d27d2704-13fe-4305-85de-a5314d84390e_acte_1782403322660.jpg	\N	2026-06-25 16:02:05.838977+00	2026-06-25 16:02:05.838977+00	2026-06-25 16:02:05.838977+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:02:06.000Z", "contentLength": 414566, "httpStatusCode": 200}	5afa6241-80e7-44d3-8e66-e44763ba0332	\N	{}
+124f7107-1786-48eb-b01c-a0dcb54c82e3	preinscriptions	d27d2704-13fe-4305-85de-a5314d84390e/d27d2704-13fe-4305-85de-a5314d84390e_photo_1782403324971.png	\N	2026-06-25 16:02:54.304192+00	2026-06-25 16:02:54.304192+00	2026-06-25 16:02:54.304192+00	{"eTag": "\\"2841115b6e774e7e0b71437b6528151b\\"", "size": 9394265, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:02:55.000Z", "contentLength": 9394265, "httpStatusCode": 200}	71542902-412e-4869-b879-9f7671c570ea	\N	{}
+97f0f1c9-7fe2-4a9c-8ae1-1dd69141231d	preinscriptions	d27d2704-13fe-4305-85de-a5314d84390e/d27d2704-13fe-4305-85de-a5314d84390e_bulletin_1782403373386.pdf	\N	2026-06-25 16:03:00.54926+00	2026-06-25 16:03:00.54926+00	2026-06-25 16:03:00.54926+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:03:01.000Z", "contentLength": 1419276, "httpStatusCode": 200}	4db09dbf-fb2c-45ad-85d8-e056d1146f56	\N	{}
+a9b2daaa-de9a-4cb1-b847-46bb72c86265	preinscriptions	1701a441-8a8c-4b38-8a89-2eb53e43af23/1701a441-8a8c-4b38-8a89-2eb53e43af23_acte_1782403600518.jpg	\N	2026-06-25 16:06:47.450873+00	2026-06-25 16:06:47.450873+00	2026-06-25 16:06:47.450873+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:06:48.000Z", "contentLength": 414566, "httpStatusCode": 200}	5db35963-9137-4ef7-8160-7e85fabb9c68	\N	{}
+cd2744b5-99cd-4618-9099-f8a95adbe759	preinscriptions	librairie/librairie_1781609500399_3280.avif	\N	2026-06-16 11:31:41.787553+00	2026-06-16 11:31:41.787553+00	2026-06-16 11:31:41.787553+00	{"eTag": "\\"89f02098f020c37983bb368778f01d39\\"", "size": 68040, "mimetype": "image/avif", "cacheControl": "max-age=3600", "lastModified": "2026-06-16T11:31:42.000Z", "contentLength": 68040, "httpStatusCode": 200}	9088987d-77e0-430a-b571-7b4c5c594783	\N	{}
+19c2c042-6338-4128-ace3-271458fa9e80	preinscriptions	b4553905-6182-49cd-b68b-f1041c66e1a6/b4553905-6182-49cd-b68b-f1041c66e1a6_acte_1782392047911.jpeg	\N	2026-06-25 12:54:11.2042+00	2026-06-25 12:54:11.2042+00	2026-06-25 12:54:11.2042+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T12:54:12.000Z", "contentLength": 104345, "httpStatusCode": 200}	673344a7-cbd8-44d6-943c-622d00a76856	\N	{}
+8843fe80-6208-4c40-bf10-5e0f339cf819	preinscriptions	a9105c75-d157-4e55-a7f2-fcae30a819ba/a9105c75-d157-4e55-a7f2-fcae30a819ba_acte_1782658099012.jpeg	\N	2026-06-28 14:48:21.339106+00	2026-06-28 14:48:21.339106+00	2026-06-28 14:48:21.339106+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:48:22.000Z", "contentLength": 104543, "httpStatusCode": 200}	9d4615a7-24c3-4512-bcf9-db0ceb5adf72	\N	{}
+7e80430b-f3ca-4e97-80b1-b37f82407b3a	preinscriptions	b4553905-6182-49cd-b68b-f1041c66e1a6/b4553905-6182-49cd-b68b-f1041c66e1a6_photo_1782392050386.jpeg	\N	2026-06-25 12:54:11.855218+00	2026-06-25 12:54:11.855218+00	2026-06-25 12:54:11.855218+00	{"eTag": "\\"5899d5dc86c2406937cc9c3a2cffc41d\\"", "size": 75203, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T12:54:12.000Z", "contentLength": 75203, "httpStatusCode": 200}	da9db39f-685a-4052-8338-a7569b025e5a	\N	{}
+61f27a64-a6f0-4b1e-b684-8e192ad7bf01	preinscriptions	b4553905-6182-49cd-b68b-f1041c66e1a6/b4553905-6182-49cd-b68b-f1041c66e1a6_bulletin_1782392051086.pdf	\N	2026-06-25 12:54:20.682835+00	2026-06-25 12:54:20.682835+00	2026-06-25 12:54:20.682835+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T12:54:21.000Z", "contentLength": 1419276, "httpStatusCode": 200}	f9701950-4768-4c0a-9f71-33a2d98a294d	\N	{}
+c992a326-895d-4f6d-bf05-f1bf9a73f93e	preinscriptions	1701a441-8a8c-4b38-8a89-2eb53e43af23/1701a441-8a8c-4b38-8a89-2eb53e43af23_photo_1782403606418.jpg	\N	2026-06-25 16:06:50.0508+00	2026-06-25 16:06:50.0508+00	2026-06-25 16:06:50.0508+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:06:50.000Z", "contentLength": 414566, "httpStatusCode": 200}	f72bb072-ad9a-4cb0-b570-568ab9d0189d	\N	{}
+ba7bb9c9-0fe2-4a1d-bdd7-3fa6d73e339f	preinscriptions	a9105c75-d157-4e55-a7f2-fcae30a819ba/a9105c75-d157-4e55-a7f2-fcae30a819ba_photo_1782658100100.png	\N	2026-06-28 14:48:22.916926+00	2026-06-28 14:48:22.916926+00	2026-06-28 14:48:22.916926+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:48:23.000Z", "contentLength": 2662850, "httpStatusCode": 200}	5ad501da-d0fd-4702-b015-84236a3fed33	\N	{}
+5d812491-a7a1-4275-8426-fc278a559980	preinscriptions	1701a441-8a8c-4b38-8a89-2eb53e43af23/1701a441-8a8c-4b38-8a89-2eb53e43af23_bulletin_1782403609206.pdf	\N	2026-06-25 16:06:58.35728+00	2026-06-25 16:06:58.35728+00	2026-06-25 16:06:58.35728+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:06:59.000Z", "contentLength": 1419276, "httpStatusCode": 200}	051ee5f9-3b27-4469-8083-91b22bdb391d	\N	{}
+5f04be8f-fe4d-4632-ae1c-869f876522bd	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_photo_1783773238595.png	\N	2026-07-11 12:33:59.148919+00	2026-07-11 12:33:59.148919+00	2026-07-11 12:33:59.148919+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:34:00.000Z", "contentLength": 828452, "httpStatusCode": 200}	4869e9aa-ea45-4f82-8d95-af33a0759f79	\N	{}
+8fe8542c-6e8f-4790-95d1-588a90504ea2	preinscriptions	e582ead7-8f15-4999-b5b0-191f175229d8/e582ead7-8f15-4999-b5b0-191f175229d8_acte_1782404173474.jpeg	\N	2026-06-25 16:16:16.287545+00	2026-06-25 16:16:16.287545+00	2026-06-25 16:16:16.287545+00	{"eTag": "\\"773ab5027a6992ada0cd85f75b1f1130\\"", "size": 96065, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:16:17.000Z", "contentLength": 96065, "httpStatusCode": 200}	74aaa908-6b8a-4fdf-aec6-dd9783421b73	\N	{}
+96be4843-10f3-445b-9ce6-62a6fa1077d3	preinscriptions	e582ead7-8f15-4999-b5b0-191f175229d8/e582ead7-8f15-4999-b5b0-191f175229d8_photo_1782404175332.jpeg	\N	2026-06-25 16:16:16.98524+00	2026-06-25 16:16:16.98524+00	2026-06-25 16:16:16.98524+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:16:17.000Z", "contentLength": 104345, "httpStatusCode": 200}	a87083fb-839f-4ea7-9a22-2815114e2c42	\N	{}
+a3c147d7-304c-46b0-a816-4868bca15bf2	preinscriptions	9d0c09d9-36f5-4feb-bb5a-1af511b84c39/9d0c09d9-36f5-4feb-bb5a-1af511b84c39_acte_1782405688672.jpg	\N	2026-06-25 16:41:32.224413+00	2026-06-25 16:41:32.224413+00	2026-06-25 16:41:32.224413+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:41:33.000Z", "contentLength": 414566, "httpStatusCode": 200}	aa9d8e5c-8a2d-4d7c-8676-53c2aae09219	\N	{}
+dab7d8b8-caec-4ba1-84b3-faa5d6ff5ab6	preinscriptions	librairie/librairie_1781614337443_1212.avif	\N	2026-06-16 12:52:18.96335+00	2026-06-16 12:52:18.96335+00	2026-06-16 12:52:18.96335+00	{"eTag": "\\"89f02098f020c37983bb368778f01d39\\"", "size": 68040, "mimetype": "image/avif", "cacheControl": "max-age=3600", "lastModified": "2026-06-16T12:52:19.000Z", "contentLength": 68040, "httpStatusCode": 200}	32fd4b29-def5-4513-abd5-0508e5c2fb05	\N	{}
+a4240810-50ec-4670-ac4c-b3a98a825e2c	preinscriptions	678dc949-fc5c-4f99-9603-09b0a7f5ca36/678dc949-fc5c-4f99-9603-09b0a7f5ca36_acte_1781617540691.png	\N	2026-06-16 13:45:42.413291+00	2026-06-16 13:45:42.413291+00	2026-06-16 13:45:42.413291+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-16T13:45:43.000Z", "contentLength": 22191, "httpStatusCode": 200}	3b3c7664-b40c-457f-82ee-1b2c4b347a6a	\N	{}
+d3787674-ccad-4856-9a04-918a917209f7	preinscriptions	7abbed53-70a0-46f0-a623-17d1b539f62c/7abbed53-70a0-46f0-a623-17d1b539f62c_acte_1782399244595.jpeg	\N	2026-06-25 14:54:08.240027+00	2026-06-25 14:54:08.240027+00	2026-06-25 14:54:08.240027+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T14:54:09.000Z", "contentLength": 104345, "httpStatusCode": 200}	31818130-9d30-46fc-a6f4-4dca6aa6f22b	\N	{}
+3ddc6aa3-645a-477c-9158-876a159545db	preinscriptions	678dc949-fc5c-4f99-9603-09b0a7f5ca36/678dc949-fc5c-4f99-9603-09b0a7f5ca36_photo_1781617546284.png	\N	2026-06-16 13:45:46.475701+00	2026-06-16 13:45:46.475701+00	2026-06-16 13:45:46.475701+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-16T13:45:47.000Z", "contentLength": 22191, "httpStatusCode": 200}	cd917f50-8e9f-4157-9a52-04ead346cb56	\N	{}
+49587afc-e4c9-4328-8a23-c41792bda667	preinscriptions	31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a/31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a_acte_1782659586064.jpeg	\N	2026-06-28 15:13:08.482883+00	2026-06-28 15:13:08.482883+00	2026-06-28 15:13:08.482883+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T15:13:09.000Z", "contentLength": 104543, "httpStatusCode": 200}	57b90cba-01be-4d61-97df-b8f007b01bc0	\N	{}
+7e2c480c-6fb9-49f2-a425-959a038e5dd1	preinscriptions	8a4ba33b-9ef5-4cc7-9205-8a4dde09e30e/8a4ba33b-9ef5-4cc7-9205-8a4dde09e30e_acte_1781711035673.png	\N	2026-06-17 15:43:57.101476+00	2026-06-17 15:43:57.101476+00	2026-06-17 15:43:57.101476+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-17T15:43:58.000Z", "contentLength": 22191, "httpStatusCode": 200}	6275eaa4-355c-42ec-bf98-9c3ef87a7da3	\N	{}
+a057ac1c-db8a-4549-bedf-f366bfaeb0eb	preinscriptions	7abbed53-70a0-46f0-a623-17d1b539f62c/7abbed53-70a0-46f0-a623-17d1b539f62c_photo_1782399247616.jpeg	\N	2026-06-25 14:54:09.162737+00	2026-06-25 14:54:09.162737+00	2026-06-25 14:54:09.162737+00	{"eTag": "\\"5899d5dc86c2406937cc9c3a2cffc41d\\"", "size": 75203, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T14:54:10.000Z", "contentLength": 75203, "httpStatusCode": 200}	2f52cd7a-bc31-402c-a1b1-9bc9234e7a2c	\N	{}
+b2bbbfc4-134e-4cf7-bdc1-262ad8e14d7a	preinscriptions	8a4ba33b-9ef5-4cc7-9205-8a4dde09e30e/8a4ba33b-9ef5-4cc7-9205-8a4dde09e30e_photo_1781711037175.png	\N	2026-06-17 15:43:57.708551+00	2026-06-17 15:43:57.708551+00	2026-06-17 15:43:57.708551+00	{"eTag": "\\"5979bba171dc84e3edbefae7a6a86b36\\"", "size": 22191, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-17T15:43:58.000Z", "contentLength": 22191, "httpStatusCode": 200}	804302e2-4832-44d1-bc46-b686425c7dad	\N	{}
+886d725e-3ab5-41b9-935c-9003262f4365	preinscriptions	annonces/annonce_1781881881602_6065.jfif	\N	2026-06-19 15:11:23.596212+00	2026-06-19 15:11:23.596212+00	2026-06-19 15:11:23.596212+00	{"eTag": "\\"3cbfdf7d82dc39bb827b471be5de5af5\\"", "size": 8928, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-19T15:11:24.000Z", "contentLength": 8928, "httpStatusCode": 200}	59c4146a-62c3-4eb1-9ad7-5e592092432c	\N	{}
+c8db8478-f752-4e0c-9ff5-f8d15f4037ec	preinscriptions	librairie/librairie_1781891201575_6492.jpg	\N	2026-06-19 17:46:44.939333+00	2026-06-19 17:46:44.939333+00	2026-06-19 17:46:44.939333+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-19T17:46:45.000Z", "contentLength": 414566, "httpStatusCode": 200}	9ec6bac0-19ae-45b4-9bcd-84ecbe39b7c7	\N	{}
+91ab4fcb-4f28-48a1-a9e7-5b235a0513d7	preinscriptions	dfe38068-fde0-4e1f-a893-00bd5cfc2fec/dfe38068-fde0-4e1f-a893-00bd5cfc2fec_acte_1781891680415.jpeg	\N	2026-06-19 17:54:45.399726+00	2026-06-19 17:54:45.399726+00	2026-06-19 17:54:45.399726+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-19T17:54:46.000Z", "contentLength": 104345, "httpStatusCode": 200}	9da9d6c8-9e92-4b10-90e2-f24d09f455d0	\N	{}
+dccd2cef-cedb-4f99-9b18-6159c0f34336	preinscriptions	dfe38068-fde0-4e1f-a893-00bd5cfc2fec/dfe38068-fde0-4e1f-a893-00bd5cfc2fec_photo_1781891684946.jpg	\N	2026-06-19 17:54:46.340384+00	2026-06-19 17:54:46.340384+00	2026-06-19 17:54:46.340384+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-19T17:54:47.000Z", "contentLength": 110734, "httpStatusCode": 200}	aa338fc4-0d7b-4bd9-b43b-1c1f4234f3a4	\N	{}
+66be32d7-c68f-4fbf-abd6-b7f454b8110e	preinscriptions	7abbed53-70a0-46f0-a623-17d1b539f62c/7abbed53-70a0-46f0-a623-17d1b539f62c_bulletin_1782399248407.pdf	\N	2026-06-25 14:54:21.093528+00	2026-06-25 14:54:21.093528+00	2026-06-25 14:54:21.093528+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T14:54:22.000Z", "contentLength": 1419276, "httpStatusCode": 200}	df10020e-f353-4f8a-aff9-4da61d2794ef	\N	{}
+33ee7ac7-d078-4cdf-b72d-996746d1362d	preinscriptions	dfe38068-fde0-4e1f-a893-00bd5cfc2fec/dfe38068-fde0-4e1f-a893-00bd5cfc2fec_acte_1781891910478.jpeg	\N	2026-06-19 17:58:32.696422+00	2026-06-19 17:58:32.696422+00	2026-06-19 17:58:32.696422+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-19T17:58:33.000Z", "contentLength": 104345, "httpStatusCode": 200}	9f7384af-2517-46bc-8310-a5e281556e2b	\N	{}
+113d56d9-2584-4d5e-9cb8-e8ac125da43b	preinscriptions	31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a/31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a_photo_1782659587176.jpeg	\N	2026-06-28 15:13:09.020525+00	2026-06-28 15:13:09.020525+00	2026-06-28 15:13:09.020525+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T15:13:09.000Z", "contentLength": 104543, "httpStatusCode": 200}	8d4d149f-8f4e-41f2-b5f2-44d89aa874d2	\N	{}
+0fdb65d0-1987-462b-ba8a-ecd267eaa57f	preinscriptions	dfe38068-fde0-4e1f-a893-00bd5cfc2fec/dfe38068-fde0-4e1f-a893-00bd5cfc2fec_photo_1781891912063.jpg	\N	2026-06-19 17:58:33.275317+00	2026-06-19 17:58:33.275317+00	2026-06-19 17:58:33.275317+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-19T17:58:34.000Z", "contentLength": 110734, "httpStatusCode": 200}	7d40ade0-b75a-4bd8-932c-0d884534230a	\N	{}
+8154a4d1-8756-4319-a413-eb515787186b	preinscriptions	3af0f722-98b9-4cbf-9d16-07ead3ab3f98/3af0f722-98b9-4cbf-9d16-07ead3ab3f98_acte_1782399476742.jpeg	\N	2026-06-25 14:58:00.089215+00	2026-06-25 14:58:00.089215+00	2026-06-25 14:58:00.089215+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T14:58:01.000Z", "contentLength": 104345, "httpStatusCode": 200}	746ae5fb-c439-4726-92f0-16f502b5ea30	\N	{}
+4fd42af8-3fc0-409c-b70d-071373f0b212	preinscriptions	2bb983be-594c-4e58-9db6-7aa3c091722e/2bb983be-594c-4e58-9db6-7aa3c091722e_acte_1781914936329.jpg	\N	2026-06-20 00:22:18.921513+00	2026-06-20 00:22:18.921513+00	2026-06-20 00:22:18.921513+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T00:22:19.000Z", "contentLength": 110734, "httpStatusCode": 200}	c8f6606e-03f4-41bd-a73a-972642c7e4f7	\N	{}
+c7ea9924-9ee9-464c-a6c1-83e19f1fb4a7	preinscriptions	2bb983be-594c-4e58-9db6-7aa3c091722e/2bb983be-594c-4e58-9db6-7aa3c091722e_photo_1781914938135.jpg	\N	2026-06-20 00:22:19.624097+00	2026-06-20 00:22:19.624097+00	2026-06-20 00:22:19.624097+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T00:22:20.000Z", "contentLength": 110734, "httpStatusCode": 200}	14e978e2-816e-4b57-a746-e79a3c57ae86	\N	{}
+a07533d9-7c70-4447-86ff-149f708d6fb0	preinscriptions	3af0f722-98b9-4cbf-9d16-07ead3ab3f98/3af0f722-98b9-4cbf-9d16-07ead3ab3f98_photo_1782399479315.jpeg	\N	2026-06-25 14:58:00.872736+00	2026-06-25 14:58:00.872736+00	2026-06-25 14:58:00.872736+00	{"eTag": "\\"5899d5dc86c2406937cc9c3a2cffc41d\\"", "size": 75203, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T14:58:01.000Z", "contentLength": 75203, "httpStatusCode": 200}	07f2ea9f-fe0e-41c9-8545-39dbec7dbe9f	\N	{}
+81399aae-000f-4b25-b711-a77ba743d1db	preinscriptions	37e99766-41c8-4ae7-886d-f31cfbc89e8d/37e99766-41c8-4ae7-886d-f31cfbc89e8d_acte_1781917929430.jpg	\N	2026-06-20 01:12:11.732255+00	2026-06-20 01:12:11.732255+00	2026-06-20 01:12:11.732255+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T01:12:12.000Z", "contentLength": 105874, "httpStatusCode": 200}	5b38880c-a8c3-4442-9fba-4713e0e0c5d2	\N	{}
+e778652e-4f8c-4673-b33d-d991c3232f16	preinscriptions	37e99766-41c8-4ae7-886d-f31cfbc89e8d/37e99766-41c8-4ae7-886d-f31cfbc89e8d_photo_1781917930671.jpg	\N	2026-06-20 01:12:12.187086+00	2026-06-20 01:12:12.187086+00	2026-06-20 01:12:12.187086+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T01:12:13.000Z", "contentLength": 110734, "httpStatusCode": 200}	c31e4943-8442-478c-aac3-da0a09357467	\N	{}
+4d20d85e-810d-4460-a991-835ca7a9e12f	preinscriptions	952e49b8-4d83-4964-a9bc-25ef5b0642f9/952e49b8-4d83-4964-a9bc-25ef5b0642f9_acte_1781923859300.jpg	\N	2026-06-20 02:51:09.989642+00	2026-06-20 02:51:09.989642+00	2026-06-20 02:51:09.989642+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T02:51:10.000Z", "contentLength": 414566, "httpStatusCode": 200}	0069a230-49d7-419c-860b-a8aa6fb9ec0f	\N	{}
+39b7e0b0-ac32-4316-8eaa-9444f634a54d	preinscriptions	952e49b8-4d83-4964-a9bc-25ef5b0642f9/952e49b8-4d83-4964-a9bc-25ef5b0642f9_photo_1781923868864.jpg	\N	2026-06-20 02:51:10.747394+00	2026-06-20 02:51:10.747394+00	2026-06-20 02:51:10.747394+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T02:51:11.000Z", "contentLength": 414566, "httpStatusCode": 200}	9281dcbb-086e-4939-934e-d2b671a3086b	\N	{}
+0cf5e5b2-0f89-48cf-9256-86dd5889bbf1	preinscriptions	3af0f722-98b9-4cbf-9d16-07ead3ab3f98/3af0f722-98b9-4cbf-9d16-07ead3ab3f98_bulletin_1782399480049.pdf	\N	2026-06-25 14:58:11.934559+00	2026-06-25 14:58:11.934559+00	2026-06-25 14:58:11.934559+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T14:58:12.000Z", "contentLength": 1419276, "httpStatusCode": 200}	e37cbc96-fff7-49dc-85ab-4998a9adae83	\N	{}
+24f3e23b-5da1-45e3-9720-5c6c2fc798a3	preinscriptions	766bd5af-91de-4f2d-824f-b09dc0950d4e/766bd5af-91de-4f2d-824f-b09dc0950d4e_acte_1781924483831.jpg	\N	2026-06-20 03:01:26.457081+00	2026-06-20 03:01:26.457081+00	2026-06-20 03:01:26.457081+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T03:01:27.000Z", "contentLength": 414566, "httpStatusCode": 200}	693d2c9c-2030-4083-bf58-bfc2a28e9cbe	\N	{}
+12de39be-dc61-4f65-8d13-d409169cf0d5	preinscriptions	31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a/31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a_acte_1782659589473.jpeg	\N	2026-06-28 15:13:11.17642+00	2026-06-28 15:13:11.17642+00	2026-06-28 15:13:11.17642+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T15:13:12.000Z", "contentLength": 104543, "httpStatusCode": 200}	66ef171c-3733-49d1-8946-2617c0969b70	\N	{}
+8e206b98-1764-4705-b49f-eb0735242361	preinscriptions	766bd5af-91de-4f2d-824f-b09dc0950d4e/766bd5af-91de-4f2d-824f-b09dc0950d4e_photo_1781924485332.jpg	\N	2026-06-20 03:01:26.991564+00	2026-06-20 03:01:26.991564+00	2026-06-20 03:01:26.991564+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T03:01:27.000Z", "contentLength": 414566, "httpStatusCode": 200}	52334f88-1552-459a-a84e-69f79f7a0bb4	\N	{}
+f0c4dd11-3a67-44ef-864e-cbfbfa13c2b3	preinscriptions	273a9505-f9af-4bb7-8dc0-5c29426dae0a/273a9505-f9af-4bb7-8dc0-5c29426dae0a_acte_1782399626004.jpeg	\N	2026-06-25 15:00:29.54596+00	2026-06-25 15:00:29.54596+00	2026-06-25 15:00:29.54596+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:00:30.000Z", "contentLength": 104345, "httpStatusCode": 200}	05c3b4f5-b00b-485d-91ca-4dfeca27e168	\N	{}
+931c9f2c-da56-4389-b6fc-64e0cd657b8c	preinscriptions	c987bf84-3214-472f-b7b1-ab08af993dee/c987bf84-3214-472f-b7b1-ab08af993dee_acte_1781943543521.jpg	\N	2026-06-20 08:19:06.615537+00	2026-06-20 08:19:06.615537+00	2026-06-20 08:19:06.615537+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T08:19:07.000Z", "contentLength": 414566, "httpStatusCode": 200}	7f1e637c-85a8-4d39-861e-12f2b682dbf8	\N	{}
+4f92236d-9861-442d-a753-dd41462d3b73	preinscriptions	c987bf84-3214-472f-b7b1-ab08af993dee/c987bf84-3214-472f-b7b1-ab08af993dee_photo_1781943545253.jpg	\N	2026-06-20 08:19:07.382477+00	2026-06-20 08:19:07.382477+00	2026-06-20 08:19:07.382477+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T08:19:08.000Z", "contentLength": 414566, "httpStatusCode": 200}	543eed06-667d-4876-af90-a76f91852020	\N	{}
+6228c638-4e02-4084-b9ea-d5c662587497	preinscriptions	273a9505-f9af-4bb7-8dc0-5c29426dae0a/273a9505-f9af-4bb7-8dc0-5c29426dae0a_photo_1782399628810.jpg	\N	2026-06-25 15:00:31.504806+00	2026-06-25 15:00:31.504806+00	2026-06-25 15:00:31.504806+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:00:32.000Z", "contentLength": 414566, "httpStatusCode": 200}	4f66d4b3-4918-40dc-814a-141032bd4ac6	\N	{}
+48238b8c-89ea-4b19-91dc-1a6829176cc4	preinscriptions	c987bf84-3214-472f-b7b1-ab08af993dee/c987bf84-3214-472f-b7b1-ab08af993dee_acte_1781943715874.jpg	\N	2026-06-20 08:21:59.186968+00	2026-06-20 08:21:59.186968+00	2026-06-20 08:21:59.186968+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T08:22:00.000Z", "contentLength": 414566, "httpStatusCode": 200}	b34d943d-560e-4231-b505-0cdd2417f7f0	\N	{}
+aadf71f6-f0aa-4226-b8e0-fa6197fa322e	preinscriptions	c987bf84-3214-472f-b7b1-ab08af993dee/c987bf84-3214-472f-b7b1-ab08af993dee_photo_1781943717803.jpg	\N	2026-06-20 08:21:59.800497+00	2026-06-20 08:21:59.800497+00	2026-06-20 08:21:59.800497+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-20T08:22:00.000Z", "contentLength": 414566, "httpStatusCode": 200}	3a2842e5-5b82-4bb6-83b4-d131ad03e495	\N	{}
+a0f6fa6a-8ca0-471d-bea5-4f9b30338945	preinscriptions	7c2ff1bb-6419-46ac-9058-3b9267eeecbb/7c2ff1bb-6419-46ac-9058-3b9267eeecbb_acte_1782077732900.jpg	\N	2026-06-21 21:35:34.783165+00	2026-06-21 21:35:34.783165+00	2026-06-21 21:35:34.783165+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-21T21:35:35.000Z", "contentLength": 414566, "httpStatusCode": 200}	b5c3f267-65d3-42d4-8bf0-910ceaec66bd	\N	{}
+521e26bf-cc58-4816-8ac2-a8eb3a6a32bc	preinscriptions	7c2ff1bb-6419-46ac-9058-3b9267eeecbb/7c2ff1bb-6419-46ac-9058-3b9267eeecbb_photo_1782077734859.jpg	\N	2026-06-21 21:35:35.669817+00	2026-06-21 21:35:35.669817+00	2026-06-21 21:35:35.669817+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-21T21:35:36.000Z", "contentLength": 414566, "httpStatusCode": 200}	8272d508-d75b-43dd-9762-17b02bfa04cd	\N	{}
+161ed3da-d146-4f2b-98cb-75fb3065b9da	preinscriptions	dfcc2af1-e96e-425b-bd59-86be3ae31942/dfcc2af1-e96e-425b-bd59-86be3ae31942_acte_1782399710084.jpg	\N	2026-06-25 15:01:53.950105+00	2026-06-25 15:01:53.950105+00	2026-06-25 15:01:53.950105+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:01:54.000Z", "contentLength": 414566, "httpStatusCode": 200}	19f823e6-0eba-4afd-b545-b694995121f6	\N	{}
+f9f28fd2-0aec-4342-b46b-847f78d9b02d	preinscriptions	76d51a03-9b5b-4877-86f5-d51f9f7a3482/76d51a03-9b5b-4877-86f5-d51f9f7a3482_acte_1782124714615.png	\N	2026-06-22 10:38:38.003597+00	2026-06-22 10:38:38.003597+00	2026-06-22 10:38:38.003597+00	{"eTag": "\\"f0b8df8a2a802f6674803b5a0633778e\\"", "size": 509674, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-22T10:38:38.000Z", "contentLength": 509674, "httpStatusCode": 200}	0aed1daa-dee2-4979-879c-a93a15082e16	\N	{}
+c6928384-f7c7-4b7f-a13f-a2856e95ddd4	preinscriptions	31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a/31dc10c6-fa26-4ab1-8a4f-9f0aa0aaec5a_photo_1782659589810.jpeg	\N	2026-06-28 15:13:11.577975+00	2026-06-28 15:13:11.577975+00	2026-06-28 15:13:11.577975+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T15:13:12.000Z", "contentLength": 104543, "httpStatusCode": 200}	4a4e9d53-cd54-4d30-bf65-c39042a9170e	\N	{}
+5fc42ba1-5825-401f-83e8-70963f08ab0e	preinscriptions	76d51a03-9b5b-4877-86f5-d51f9f7a3482/76d51a03-9b5b-4877-86f5-d51f9f7a3482_photo_1782124717885.png	\N	2026-06-22 10:38:39.494395+00	2026-06-22 10:38:39.494395+00	2026-06-22 10:38:39.494395+00	{"eTag": "\\"f0b8df8a2a802f6674803b5a0633778e\\"", "size": 509674, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-22T10:38:40.000Z", "contentLength": 509674, "httpStatusCode": 200}	955ca70e-b268-41d2-9a46-18f1492a452d	\N	{}
+74daf75d-4982-4e80-8107-4bbd600775fa	preinscriptions	dfcc2af1-e96e-425b-bd59-86be3ae31942/dfcc2af1-e96e-425b-bd59-86be3ae31942_photo_1782399713121.jpg	\N	2026-06-25 15:01:54.688441+00	2026-06-25 15:01:54.688441+00	2026-06-25 15:01:54.688441+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:01:55.000Z", "contentLength": 105874, "httpStatusCode": 200}	a8211d6c-348d-44ca-9b46-fd10760cc3f9	\N	{}
+b3cc9c6b-4b74-4140-aa12-c55db7db9e8d	preinscriptions	f19e8168-f4bb-4601-ae33-0b45c2c2686c/f19e8168-f4bb-4601-ae33-0b45c2c2686c_acte_1782131671209.jpg	\N	2026-06-22 12:34:33.474255+00	2026-06-22 12:34:33.474255+00	2026-06-22 12:34:33.474255+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-22T12:34:34.000Z", "contentLength": 414566, "httpStatusCode": 200}	ab5a4900-ebb9-43e6-8083-7c1b763c5b8f	\N	{}
+e1a44294-5c07-40f0-9e94-aa3aa41ea327	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_acte_1783773252030.png	\N	2026-07-11 12:34:13.128787+00	2026-07-11 12:34:13.128787+00	2026-07-11 12:34:13.128787+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:34:14.000Z", "contentLength": 880465, "httpStatusCode": 200}	4e422f04-93e5-42c4-bc92-8782bc90fa75	\N	{}
+591fdc22-8850-4bf6-bfee-718366150b74	preinscriptions	f19e8168-f4bb-4601-ae33-0b45c2c2686c/f19e8168-f4bb-4601-ae33-0b45c2c2686c_photo_1782131673235.jpg	\N	2026-06-22 12:34:34.985405+00	2026-06-22 12:34:34.985405+00	2026-06-22 12:34:34.985405+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-22T12:34:35.000Z", "contentLength": 414566, "httpStatusCode": 200}	94cd99f4-f508-42e3-874a-5821594bd00d	\N	{}
+2127cb98-903e-4ac5-a906-37df206265a7	preinscriptions	28ed72de-5245-455b-a64f-3278924c32a6/28ed72de-5245-455b-a64f-3278924c32a6_acte_1782400420345.jpg	\N	2026-06-25 15:13:43.420615+00	2026-06-25 15:13:43.420615+00	2026-06-25 15:13:43.420615+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:13:44.000Z", "contentLength": 414566, "httpStatusCode": 200}	95ce13e9-8f2d-4d57-b7ee-91e321f51b04	\N	{}
+a6e50f46-3d5c-435a-8c06-2e3db6778114	preinscriptions	b94f4884-4a3f-4d0d-9350-6d25602d7761/b94f4884-4a3f-4d0d-9350-6d25602d7761_acte_1782208551226.jpg	\N	2026-06-23 09:55:56.857563+00	2026-06-23 09:55:56.857563+00	2026-06-23 09:55:56.857563+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T09:55:57.000Z", "contentLength": 414566, "httpStatusCode": 200}	52a57337-3a1d-41d3-90d3-b0ad42cb2d0e	\N	{}
+c4b1a214-e70a-4e10-81e0-2d0898995d31	preinscriptions	b94f4884-4a3f-4d0d-9350-6d25602d7761/b94f4884-4a3f-4d0d-9350-6d25602d7761_photo_1782208555867.jpg	\N	2026-06-23 09:55:59.480539+00	2026-06-23 09:55:59.480539+00	2026-06-23 09:55:59.480539+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T09:56:00.000Z", "contentLength": 414566, "httpStatusCode": 200}	50ff0e90-01fb-4074-bed8-80113f85dfd6	\N	{}
+351cf7c4-be12-46c0-bce9-3d233b8836ac	preinscriptions	fec2d60e-e585-45ce-afb0-8e8015b00329/fec2d60e-e585-45ce-afb0-8e8015b00329_acte_1782208881212.jpg	\N	2026-06-23 10:01:24.951499+00	2026-06-23 10:01:24.951499+00	2026-06-23 10:01:24.951499+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T10:01:25.000Z", "contentLength": 414566, "httpStatusCode": 200}	1799defa-a768-4883-949a-98b1bca3a42c	\N	{}
+defde915-4aa6-4620-9c57-b325e131513b	preinscriptions	fec2d60e-e585-45ce-afb0-8e8015b00329/fec2d60e-e585-45ce-afb0-8e8015b00329_photo_1782208884129.jpg	\N	2026-06-23 10:01:26.940534+00	2026-06-23 10:01:26.940534+00	2026-06-23 10:01:26.940534+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T10:01:27.000Z", "contentLength": 414566, "httpStatusCode": 200}	eb6e7ee0-79e9-488f-8173-66e7f4224d9a	\N	{}
+076bf30d-cee7-4b80-8189-2cb420fa2eb8	preinscriptions	28ed72de-5245-455b-a64f-3278924c32a6/28ed72de-5245-455b-a64f-3278924c32a6_photo_1782400422412.jpg	\N	2026-06-25 15:13:43.971493+00	2026-06-25 15:13:43.971493+00	2026-06-25 15:13:43.971493+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:13:44.000Z", "contentLength": 110734, "httpStatusCode": 200}	bf5524e4-614f-43bd-a7ac-cb6df628473d	\N	{}
+98b35c0f-df8b-4aee-93f2-db53a424ca19	preinscriptions	f031e93a-8ab3-4de8-b9c4-82dc3fbb98df/f031e93a-8ab3-4de8-b9c4-82dc3fbb98df_acte_1782210393418.jpg	\N	2026-06-23 10:26:36.449767+00	2026-06-23 10:26:36.449767+00	2026-06-23 10:26:36.449767+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T10:26:37.000Z", "contentLength": 105874, "httpStatusCode": 200}	decc90a0-dfc2-49d2-b5d5-1e08cdd3cee9	\N	{}
+3ea62552-3480-432c-8465-4efa97afa42a	preinscriptions	f031e93a-8ab3-4de8-b9c4-82dc3fbb98df/f031e93a-8ab3-4de8-b9c4-82dc3fbb98df_photo_1782210395484.jpg	\N	2026-06-23 10:26:37.855974+00	2026-06-23 10:26:37.855974+00	2026-06-23 10:26:37.855974+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T10:26:38.000Z", "contentLength": 414566, "httpStatusCode": 200}	2304584a-36fb-438f-823c-ec0d14a5d887	\N	{}
+14a68187-f5b7-48de-bb72-32ac966be084	preinscriptions	b5d7fef4-8317-4f80-bb96-112466ecf528/b5d7fef4-8317-4f80-bb96-112466ecf528_acte_1782400595980.jpeg	\N	2026-06-25 15:16:38.712955+00	2026-06-25 15:16:38.712955+00	2026-06-25 15:16:38.712955+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:16:39.000Z", "contentLength": 104345, "httpStatusCode": 200}	f10d9b83-317e-4ba5-8348-1af4f38b262f	\N	{}
+22efc647-8881-4abc-bbdb-28e86b2faf66	preinscriptions	1640854c-2d8c-46ec-84a3-4a41ff638f03/1640854c-2d8c-46ec-84a3-4a41ff638f03_acte_1782219676242.jpg	\N	2026-06-23 13:01:19.441491+00	2026-06-23 13:01:19.441491+00	2026-06-23 13:01:19.441491+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T13:01:20.000Z", "contentLength": 105874, "httpStatusCode": 200}	c87e17f3-a4c3-4054-811e-baa50ff0e62c	\N	{}
+bafe9817-7e80-4fb9-b3df-a0d3c62e17b3	preinscriptions	1640854c-2d8c-46ec-84a3-4a41ff638f03/1640854c-2d8c-46ec-84a3-4a41ff638f03_photo_1782219680190.jpg	\N	2026-06-23 13:01:21.711158+00	2026-06-23 13:01:21.711158+00	2026-06-23 13:01:21.711158+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T13:01:22.000Z", "contentLength": 105874, "httpStatusCode": 200}	dacf8ca0-2fa1-4841-b499-2ac90d105cdd	\N	{}
+cfda60ee-2c3b-4faf-abaf-ca6c2f190ade	preinscriptions	b5d7fef4-8317-4f80-bb96-112466ecf528/b5d7fef4-8317-4f80-bb96-112466ecf528_photo_1782400597712.png	\N	2026-06-25 15:16:39.117359+00	2026-06-25 15:16:39.117359+00	2026-06-25 15:16:39.117359+00	{"eTag": "\\"4f190178f9025efedbe9f5c2c51b8070\\"", "size": 10582, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:16:40.000Z", "contentLength": 10582, "httpStatusCode": 200}	ae2f24e5-97bd-4d94-a1f2-3fd37e79d829	\N	{}
+016305f0-afca-4d26-8409-723d1d498b81	preinscriptions	11a355a4-c3f1-4043-8460-c7b8ec63ab53/11a355a4-c3f1-4043-8460-c7b8ec63ab53_acte_1782220886523.jpg	\N	2026-06-23 13:21:30.914803+00	2026-06-23 13:21:30.914803+00	2026-06-23 13:21:30.914803+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T13:21:31.000Z", "contentLength": 414566, "httpStatusCode": 200}	c99854e6-616a-4f77-a595-f830f09da795	\N	{}
+16cd93b2-6fab-45fb-90fd-386feb14a028	preinscriptions	34322304-6d08-4a93-8497-87477bf186e5/34322304-6d08-4a93-8497-87477bf186e5_acte_1782404737924.jpg	\N	2026-06-25 16:25:41.889457+00	2026-06-25 16:25:41.889457+00	2026-06-25 16:25:41.889457+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:25:42.000Z", "contentLength": 414566, "httpStatusCode": 200}	4f76bd5e-f6f2-4727-82f5-2d4cb433f3cc	\N	{}
+1819341c-2d5b-48aa-82d7-d52a6f489624	preinscriptions	11a355a4-c3f1-4043-8460-c7b8ec63ab53/11a355a4-c3f1-4043-8460-c7b8ec63ab53_photo_1782220889962.jpg	\N	2026-06-23 13:21:33.007207+00	2026-06-23 13:21:33.007207+00	2026-06-23 13:21:33.007207+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T13:21:33.000Z", "contentLength": 414566, "httpStatusCode": 200}	bdef701f-279e-4b62-943d-55c88588f25a	\N	{}
+1a68c328-6a42-45b5-a612-57b54d9bfe08	preinscriptions	87ffe44e-0367-4827-a85b-02cd40fce118/87ffe44e-0367-4827-a85b-02cd40fce118_acte_1782221917513.jpg	\N	2026-06-23 13:38:40.716065+00	2026-06-23 13:38:40.716065+00	2026-06-23 13:38:40.716065+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T13:38:41.000Z", "contentLength": 414566, "httpStatusCode": 200}	321c2408-49d2-4d6f-a872-ad4f1266cceb	\N	{}
+da6926ab-bd9a-4ad4-9a47-3af45e0471dc	preinscriptions	87ffe44e-0367-4827-a85b-02cd40fce118/87ffe44e-0367-4827-a85b-02cd40fce118_photo_1782221919721.jpg	\N	2026-06-23 13:38:42.31931+00	2026-06-23 13:38:42.31931+00	2026-06-23 13:38:42.31931+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T13:38:43.000Z", "contentLength": 414566, "httpStatusCode": 200}	29d227dd-4a79-479a-9545-d2964f407db7	\N	{}
+1b4db58a-30b8-4e6f-a468-26b9f3b9f2cd	preinscriptions	17f42397-2ba3-472d-b605-9694d92ce7f8/17f42397-2ba3-472d-b605-9694d92ce7f8_acte_1782662369850.jpeg	\N	2026-06-28 15:59:32.924231+00	2026-06-28 15:59:32.924231+00	2026-06-28 15:59:32.924231+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T15:59:33.000Z", "contentLength": 104543, "httpStatusCode": 200}	e87fd657-e7af-4f87-81d6-96c962f2a93a	\N	{}
+3f996300-fc62-4717-89c8-bdadbfe820f2	preinscriptions	f31e64c2-936b-4c69-b663-11d6124bf18c/f31e64c2-936b-4c69-b663-11d6124bf18c_acte_1782223212033.jpg	\N	2026-06-23 14:00:15.894187+00	2026-06-23 14:00:15.894187+00	2026-06-23 14:00:15.894187+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T14:00:16.000Z", "contentLength": 414566, "httpStatusCode": 200}	cf7e69d4-175e-4be9-8dda-45c24e0910f4	\N	{}
+a72eb0f9-6eb4-4cb2-9d26-327f24df6304	preinscriptions	65dcb64c-9e27-476f-a6b2-d7dddee372bd/65dcb64c-9e27-476f-a6b2-d7dddee372bd_acte_1782401579121.jpeg	\N	2026-06-25 15:33:01.888103+00	2026-06-25 15:33:01.888103+00	2026-06-25 15:33:01.888103+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:33:02.000Z", "contentLength": 104345, "httpStatusCode": 200}	644829cd-048f-4156-8af8-6e8f3f3fbab3	\N	{}
+a26a32b2-20ba-4152-9224-045c32b3976b	preinscriptions	f31e64c2-936b-4c69-b663-11d6124bf18c/f31e64c2-936b-4c69-b663-11d6124bf18c_photo_1782223214999.jpg	\N	2026-06-23 14:00:17.733096+00	2026-06-23 14:00:17.733096+00	2026-06-23 14:00:17.733096+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-23T14:00:18.000Z", "contentLength": 414566, "httpStatusCode": 200}	5ac11b94-ab98-432d-88cb-cecd17883d77	\N	{}
+babe320f-5297-4a3d-8b44-5854c93f2e68	preinscriptions	65dcb64c-9e27-476f-a6b2-d7dddee372bd/65dcb64c-9e27-476f-a6b2-d7dddee372bd_photo_1782401580913.JPG	\N	2026-06-25 15:33:03.367244+00	2026-06-25 15:33:03.367244+00	2026-06-25 15:33:03.367244+00	{"eTag": "\\"d029bfd362567eb8e1714d2da82f4634\\"", "size": 20246, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:33:04.000Z", "contentLength": 20246, "httpStatusCode": 200}	c7c7e753-0972-4081-bd61-47366f2bc16a	\N	{}
+93ad3668-526c-411c-b70b-9dcef496db6f	preinscriptions	17f42397-2ba3-472d-b605-9694d92ce7f8/17f42397-2ba3-472d-b605-9694d92ce7f8_photo_1782662371594.jpeg	\N	2026-06-28 15:59:33.351129+00	2026-06-28 15:59:33.351129+00	2026-06-28 15:59:33.351129+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T15:59:34.000Z", "contentLength": 104543, "httpStatusCode": 200}	c9a2bf2a-68fd-41c9-8a1d-18b1c7d3e0af	\N	{}
+e4b9e42d-88e7-487d-96aa-c523221b5003	preinscriptions	389df535-6d8f-4bc6-9447-eaaed711b0f6/389df535-6d8f-4bc6-9447-eaaed711b0f6_acte_1782401797258.jpg	\N	2026-06-25 15:36:40.748202+00	2026-06-25 15:36:40.748202+00	2026-06-25 15:36:40.748202+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:36:41.000Z", "contentLength": 414566, "httpStatusCode": 200}	e30d3d98-8eb7-4836-9c41-3c415664b992	\N	{}
+5cda937f-029f-4773-b254-c2061fd3d94a	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_photo_1783773259118.png	\N	2026-07-11 12:34:19.413556+00	2026-07-11 12:34:19.413556+00	2026-07-11 12:34:19.413556+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:34:20.000Z", "contentLength": 828452, "httpStatusCode": 200}	351f8cd5-3ce8-48e2-aa4a-5ca744c37960	\N	{}
+9bab2fb6-717d-4881-9e9e-ce115f57e7db	preinscriptions	389df535-6d8f-4bc6-9447-eaaed711b0f6/389df535-6d8f-4bc6-9447-eaaed711b0f6_photo_1782401799756.png	\N	2026-06-25 15:36:42.733068+00	2026-06-25 15:36:42.733068+00	2026-06-25 15:36:42.733068+00	{"eTag": "\\"f0b8df8a2a802f6674803b5a0633778e\\"", "size": 509674, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:36:43.000Z", "contentLength": 509674, "httpStatusCode": 200}	4c8fb38e-037c-4904-9896-69c2207985dd	\N	{}
+857ff991-2d3c-4a46-9415-0c970ed931ec	preinscriptions	389df535-6d8f-4bc6-9447-eaaed711b0f6/389df535-6d8f-4bc6-9447-eaaed711b0f6_bulletin_1782401801763.pdf	\N	2026-06-25 15:36:52.757401+00	2026-06-25 15:36:52.757401+00	2026-06-25 15:36:52.757401+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T15:36:53.000Z", "contentLength": 1419276, "httpStatusCode": 200}	9e94fcd3-f143-4025-a1fc-9ea402da44a9	\N	{}
+141b3252-1e18-45be-8a2b-2f9a43a43607	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_acte_1783773409072.png	\N	2026-07-11 12:36:50.070391+00	2026-07-11 12:36:50.070391+00	2026-07-11 12:36:50.070391+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:36:51.000Z", "contentLength": 880465, "httpStatusCode": 200}	55a197e6-da89-4965-8113-cebe0b61047f	\N	{}
+668dc7bd-0f4d-4920-a409-e76069f0e06f	preinscriptions	34322304-6d08-4a93-8497-87477bf186e5/34322304-6d08-4a93-8497-87477bf186e5_photo_1782404740923.jpg	\N	2026-06-25 16:25:43.437416+00	2026-06-25 16:25:43.437416+00	2026-06-25 16:25:43.437416+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:25:44.000Z", "contentLength": 414566, "httpStatusCode": 200}	9449cf2b-3e98-42bd-9b0f-69a7792000e6	\N	{}
+94fee4cb-f94c-4ef2-9bc6-0a57d878ca0c	preinscriptions	9d0c09d9-36f5-4feb-bb5a-1af511b84c39/9d0c09d9-36f5-4feb-bb5a-1af511b84c39_photo_1782405691201.jpeg	\N	2026-06-25 16:41:32.994961+00	2026-06-25 16:41:32.994961+00	2026-06-25 16:41:32.994961+00	{"eTag": "\\"e266bb14220d66fbeaa4644dda2a2afa\\"", "size": 169898, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:41:33.000Z", "contentLength": 169898, "httpStatusCode": 200}	359dcd9c-8a41-4b06-8a6f-d9db36743cb8	\N	{}
+a8882cbe-6cc7-4f83-94bd-861f88d82c61	preinscriptions	9d0c09d9-36f5-4feb-bb5a-1af511b84c39/9d0c09d9-36f5-4feb-bb5a-1af511b84c39_bulletin_1782405692171.pdf	\N	2026-06-25 16:41:44.588884+00	2026-06-25 16:41:44.588884+00	2026-06-25 16:41:44.588884+00	{"eTag": "\\"793b027b0dc3249cdc1faa44083e6397\\"", "size": 1419276, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T16:41:45.000Z", "contentLength": 1419276, "httpStatusCode": 200}	ab4e89d7-6724-43a8-8426-f70b7aab8d8b	\N	{}
+b924e489-0e86-499f-94ef-b3c398ffebd3	preinscriptions	48f04329-5901-4045-86b1-c007a67a9471/48f04329-5901-4045-86b1-c007a67a9471_acte_1782663331589.png	\N	2026-06-28 16:15:35.757623+00	2026-06-28 16:15:35.757623+00	2026-06-28 16:15:35.757623+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T16:15:36.000Z", "contentLength": 1818598, "httpStatusCode": 200}	ad805d0f-974f-47c1-b3fa-bedf789221e5	\N	{}
+5e96d7da-7892-4753-91db-740a966d944d	preinscriptions	48f04329-5901-4045-86b1-c007a67a9471/48f04329-5901-4045-86b1-c007a67a9471_photo_1782663334464.jpeg	\N	2026-06-28 16:15:36.23553+00	2026-06-28 16:15:36.23553+00	2026-06-28 16:15:36.23553+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T16:15:37.000Z", "contentLength": 104543, "httpStatusCode": 200}	74f108fa-5081-4d41-870e-75235c275c13	\N	{}
+b0547a8e-6818-47b0-b7a8-7a44812b57c6	preinscriptions	8d98a1d9-a1b9-4f96-b82a-2b9c3a7eb09f/8d98a1d9-a1b9-4f96-b82a-2b9c3a7eb09f_acte_1782663749028.png	\N	2026-06-28 16:22:33.391742+00	2026-06-28 16:22:33.391742+00	2026-06-28 16:22:33.391742+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T16:22:34.000Z", "contentLength": 1818598, "httpStatusCode": 200}	79412c9d-f168-40d3-b3cc-6c58ff30562e	\N	{}
+e3918234-fb7a-4ade-94fe-91d47d0838e3	preinscriptions	8d98a1d9-a1b9-4f96-b82a-2b9c3a7eb09f/8d98a1d9-a1b9-4f96-b82a-2b9c3a7eb09f_photo_1782663752089.png	\N	2026-06-28 16:22:36.045475+00	2026-06-28 16:22:36.045475+00	2026-06-28 16:22:36.045475+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T16:22:36.000Z", "contentLength": 1818598, "httpStatusCode": 200}	822928d8-f0e5-4471-b55f-628a134f60c9	\N	{}
+0501570a-0977-4fa6-ad04-e5c0384e822d	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_photo_1783773414247.png	\N	2026-07-11 12:36:54.524802+00	2026-07-11 12:36:54.524802+00	2026-07-11 12:36:54.524802+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:36:55.000Z", "contentLength": 828452, "httpStatusCode": 200}	158311a8-1da2-44d5-83a4-8a82b83fde09	\N	{}
+4d012782-5c9a-452a-89a4-87a66742873f	preinscriptions	6ded3244-1d5c-4fbe-a28a-af5bfa27df77/6ded3244-1d5c-4fbe-a28a-af5bfa27df77_acte_1783876840395.jpg	\N	2026-07-12 17:20:43.552605+00	2026-07-12 17:20:43.552605+00	2026-07-12 17:20:43.552605+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-12T17:20:44.000Z", "contentLength": 414566, "httpStatusCode": 200}	266ab4f3-ec59-4f00-8cdb-34cebb5e69d5	\N	{}
+50bcf6ba-8e08-472d-a980-b328d7d37dae	preinscriptions	6ded3244-1d5c-4fbe-a28a-af5bfa27df77/6ded3244-1d5c-4fbe-a28a-af5bfa27df77_photo_1783876843916.jpg	\N	2026-07-12 17:20:44.70893+00	2026-07-12 17:20:44.70893+00	2026-07-12 17:20:44.70893+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-12T17:20:45.000Z", "contentLength": 414566, "httpStatusCode": 200}	ed639a16-fb94-4def-87cc-5999ffcd1363	\N	{}
+f5fb4f20-c1a6-4a5c-b444-760e1459124f	preinscriptions	72605f34-78b3-4133-b9de-4485ca472878/72605f34-78b3-4133-b9de-4485ca472878_acte_1782422657910.jpg	\N	2026-06-25 21:24:21.271831+00	2026-06-25 21:24:21.271831+00	2026-06-25 21:24:21.271831+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T21:24:22.000Z", "contentLength": 414566, "httpStatusCode": 200}	cb150387-ff05-4e0d-b0d6-6c21b402bd58	\N	{}
+ec60c9b7-24b1-4ebc-b149-6af3c26a564e	preinscriptions	72605f34-78b3-4133-b9de-4485ca472878/72605f34-78b3-4133-b9de-4485ca472878_photo_1782422660121.png	\N	2026-06-25 21:24:21.800711+00	2026-06-25 21:24:21.800711+00	2026-06-25 21:24:21.800711+00	{"eTag": "\\"4f190178f9025efedbe9f5c2c51b8070\\"", "size": 10582, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-25T21:24:22.000Z", "contentLength": 10582, "httpStatusCode": 200}	19c38c6e-a668-4519-b764-8aa12c0a7c81	\N	{}
+2aa6718d-d31c-40bc-9f9e-3d7002528dae	preinscriptions	4d9b5a7f-b53a-49c1-85a1-37f8c11b09ed/4d9b5a7f-b53a-49c1-85a1-37f8c11b09ed_acte_1782664553422.jpeg	\N	2026-06-28 16:35:56.134756+00	2026-06-28 16:35:56.134756+00	2026-06-28 16:35:56.134756+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T16:35:57.000Z", "contentLength": 104543, "httpStatusCode": 200}	280fb0dd-65ca-4f4e-a550-40b5acfeb015	\N	{}
+c2fc8c1b-a534-43a2-b6b5-ba104f08e732	preinscriptions	4d9b5a7f-b53a-49c1-85a1-37f8c11b09ed/4d9b5a7f-b53a-49c1-85a1-37f8c11b09ed_photo_1782664555089.png	\N	2026-06-28 16:35:59.921674+00	2026-06-28 16:35:59.921674+00	2026-06-28 16:35:59.921674+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T16:36:00.000Z", "contentLength": 2662850, "httpStatusCode": 200}	fa6f624a-d930-4326-8160-375de7047538	\N	{}
+ad015c3f-532b-4927-a7e1-d0a3d888ce99	preinscriptions	librairie/librairie_1783776236197_6015.jpg	\N	2026-07-11 13:23:56.786216+00	2026-07-11 13:23:56.786216+00	2026-07-11 13:23:56.786216+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:23:57.000Z", "contentLength": 414566, "httpStatusCode": 200}	20b52bb7-441f-46e9-a856-2091975eb9a6	\N	{}
+9b2e31d1-8cbc-4248-9adb-45f249287974	preinscriptions	98175953-8800-4578-a033-0e323602adb0/98175953-8800-4578-a033-0e323602adb0_acte_1783776532882.jpg	\N	2026-07-11 13:28:53.262687+00	2026-07-11 13:28:53.262687+00	2026-07-11 13:28:53.262687+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:28:54.000Z", "contentLength": 414566, "httpStatusCode": 200}	18655bb0-cda8-496f-b8d3-36519bb672a0	\N	{}
+c05bc924-5206-40f5-954c-c4b56cc4b1bd	preinscriptions	98175953-8800-4578-a033-0e323602adb0/98175953-8800-4578-a033-0e323602adb0_photo_1783776535727.jpg	\N	2026-07-11 13:28:56.453828+00	2026-07-11 13:28:56.453828+00	2026-07-11 13:28:56.453828+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:28:57.000Z", "contentLength": 414566, "httpStatusCode": 200}	042021ef-a945-4f7d-820c-8ea5bc162710	\N	{}
+9497598b-6312-49d8-8f42-78ea89ff6c38	preinscriptions	98175953-8800-4578-a033-0e323602adb0/98175953-8800-4578-a033-0e323602adb0_acte_1783776547918.jpg	\N	2026-07-11 13:29:08.192119+00	2026-07-11 13:29:08.192119+00	2026-07-11 13:29:08.192119+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:29:09.000Z", "contentLength": 414566, "httpStatusCode": 200}	dd31bdea-217d-4a10-bfde-a34776e0ce06	\N	{}
+113bef92-1627-4ff3-9acb-55b2c2b0dfc5	preinscriptions	98175953-8800-4578-a033-0e323602adb0/98175953-8800-4578-a033-0e323602adb0_photo_1783776550478.jpg	\N	2026-07-11 13:29:10.733898+00	2026-07-11 13:29:10.733898+00	2026-07-11 13:29:10.733898+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:29:11.000Z", "contentLength": 414566, "httpStatusCode": 200}	1b937b67-6fb2-44e4-8d70-df591c45b1a4	\N	{}
+c869365e-6e6a-413e-924f-42fb8fa63934	preinscriptions	e9a130f9-aa90-48a8-961a-8f855c86efb9/e9a130f9-aa90-48a8-961a-8f855c86efb9_acte_1782471145316.jpeg	\N	2026-06-26 10:52:27.03293+00	2026-06-26 10:52:27.03293+00	2026-06-26 10:52:27.03293+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T10:52:27.000Z", "contentLength": 104345, "httpStatusCode": 200}	e710722a-5c95-4129-9536-0af8fa66d15a	\N	{}
+516621f7-c2d5-4de5-bb1f-fda564823457	preinscriptions	70a8132a-15db-42b2-b965-a2c9dc6bab62/70a8132a-15db-42b2-b965-a2c9dc6bab62_acte_1782471145367.jpg	\N	2026-06-26 10:52:28.110282+00	2026-06-26 10:52:28.110282+00	2026-06-26 10:52:28.110282+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T10:52:29.000Z", "contentLength": 414566, "httpStatusCode": 200}	060c2f04-06ac-4845-8b09-79a4f509b74f	\N	{}
+24b40e17-1167-427d-8b37-4632f0420f0e	preinscriptions	devoir/devoir_devoir_1783120866470.jpeg	\N	2026-07-03 23:21:09.842696+00	2026-07-03 23:21:09.842696+00	2026-07-03 23:21:09.842696+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-03T23:21:10.000Z", "contentLength": 104345, "httpStatusCode": 200}	7e51c4b4-c913-4cc2-a6e2-e0d0319ef747	\N	{}
+fa9b974c-9ed5-4660-949a-233ca291256b	preinscriptions	e9a130f9-aa90-48a8-961a-8f855c86efb9/e9a130f9-aa90-48a8-961a-8f855c86efb9_photo_1782471147196.jpg	\N	2026-06-26 10:52:31.596239+00	2026-06-26 10:52:31.596239+00	2026-06-26 10:52:31.596239+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T10:52:32.000Z", "contentLength": 414566, "httpStatusCode": 200}	9ef1c62d-017e-406f-9ab6-52fc649c20fc	\N	{}
+d627e811-9043-4a04-a392-fc85ca9169f5	preinscriptions	70a8132a-15db-42b2-b965-a2c9dc6bab62/70a8132a-15db-42b2-b965-a2c9dc6bab62_photo_1782471148449.jpg	\N	2026-06-26 10:52:31.618068+00	2026-06-26 10:52:31.618068+00	2026-06-26 10:52:31.618068+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T10:52:32.000Z", "contentLength": 414566, "httpStatusCode": 200}	5013844b-3374-471c-97de-60f8737d502a	\N	{}
+d9f13bc9-7863-4b71-b969-4afef4f9d094	preinscriptions	devoir/devoir_devoir_1783121129813.jpg	\N	2026-07-03 23:25:33.581268+00	2026-07-03 23:25:33.581268+00	2026-07-03 23:25:33.581268+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-03T23:25:34.000Z", "contentLength": 414566, "httpStatusCode": 200}	707e98d3-9332-4624-8d13-4b3a2d07ad96	\N	{}
+967fdfb7-6993-4b93-a187-f930a52efee3	preinscriptions	f5a91307-a093-4cf5-b3d9-b1cbd8cbcbb5/f5a91307-a093-4cf5-b3d9-b1cbd8cbcbb5_acte_1782484062283.png	\N	2026-06-26 14:27:55.376332+00	2026-06-26 14:27:55.376332+00	2026-06-26 14:27:55.376332+00	{"eTag": "\\"35c3e1a93f218a1840573d668ac974c7\\"", "size": 2178348, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T14:27:56.000Z", "contentLength": 2178348, "httpStatusCode": 200}	a8900ce6-3935-4a02-a07f-38fb0c636bb9	\N	{}
+413ed8e4-4782-4bd1-85a6-52fbd3adbbfa	preinscriptions	f5a91307-a093-4cf5-b3d9-b1cbd8cbcbb5/f5a91307-a093-4cf5-b3d9-b1cbd8cbcbb5_photo_1782484075540.jpg	\N	2026-06-26 14:27:58.166121+00	2026-06-26 14:27:58.166121+00	2026-06-26 14:27:58.166121+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T14:27:59.000Z", "contentLength": 414566, "httpStatusCode": 200}	390fa98b-f3a4-456b-b460-8861525b3597	\N	{}
+4ff9f86b-fc67-43e4-8676-e8823d2febe4	preinscriptions	devoir/devoir_devoir_1783121414615.jpg	\N	2026-07-03 23:30:18.525111+00	2026-07-03 23:30:18.525111+00	2026-07-03 23:30:18.525111+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-03T23:30:19.000Z", "contentLength": 414566, "httpStatusCode": 200}	12efb185-1d22-4807-a090-89275bbc04db	\N	{}
+698cadb9-0a0f-4003-b39d-bfe91bfc9444	preinscriptions	0d765b3b-3fda-4f5a-a2d3-0f7cdce737e9/0d765b3b-3fda-4f5a-a2d3-0f7cdce737e9_acte_1782484175629.png	\N	2026-06-26 14:29:50.163184+00	2026-06-26 14:29:50.163184+00	2026-06-26 14:29:50.163184+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T14:29:51.000Z", "contentLength": 2662850, "httpStatusCode": 200}	32c6249f-a027-41c2-a5d7-75806c4b6911	\N	{}
+45593b50-e405-456a-9c17-7e2400b2eb0d	preinscriptions	0d765b3b-3fda-4f5a-a2d3-0f7cdce737e9/0d765b3b-3fda-4f5a-a2d3-0f7cdce737e9_photo_1782484190244.jpg	\N	2026-06-26 14:29:51.65218+00	2026-06-26 14:29:51.65218+00	2026-06-26 14:29:51.65218+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-26T14:29:52.000Z", "contentLength": 414566, "httpStatusCode": 200}	f7a878de-be59-40af-b176-df8ef24df199	\N	{}
+1f26d305-721b-491a-aa17-1e3a128c4657	preinscriptions	c0451628-7322-469d-80f5-be02232062c6/c0451628-7322-469d-80f5-be02232062c6_acte_1782583325869.jpeg	\N	2026-06-27 18:02:07.513654+00	2026-06-27 18:02:07.513654+00	2026-06-27 18:02:07.513654+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T18:02:08.000Z", "contentLength": 104345, "httpStatusCode": 200}	f6516fa2-b47a-417a-8bef-52158e646ff2	\N	{}
+fd138fa0-4aad-4185-9f9f-0556f28a54df	preinscriptions	c0451628-7322-469d-80f5-be02232062c6/c0451628-7322-469d-80f5-be02232062c6_photo_1782583327774.jpg	\N	2026-06-27 18:02:08.752945+00	2026-06-27 18:02:08.752945+00	2026-06-27 18:02:08.752945+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T18:02:09.000Z", "contentLength": 414566, "httpStatusCode": 200}	487e7cab-9800-4e9f-bb13-2f57d0bf540d	\N	{}
+623b4dc8-d0ec-40d2-965e-4c8d91f04626	preinscriptions	devoir/devoir_devoir_1783122245208.jpg	\N	2026-07-03 23:44:08.541633+00	2026-07-03 23:44:08.541633+00	2026-07-03 23:44:08.541633+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-03T23:44:09.000Z", "contentLength": 414566, "httpStatusCode": 200}	fafbbfa9-12a3-4a8a-a337-d09ad6407fc6	\N	{}
+96ffd253-648a-4bb3-af74-28a49812138a	preinscriptions	5ee92754-d6fb-4f27-81de-5fc762144598/5ee92754-d6fb-4f27-81de-5fc762144598_acte_1782584015026.png	\N	2026-06-27 18:13:37.739232+00	2026-06-27 18:13:37.739232+00	2026-06-27 18:13:37.739232+00	{"eTag": "\\"35c3e1a93f218a1840573d668ac974c7\\"", "size": 2178348, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T18:13:38.000Z", "contentLength": 2178348, "httpStatusCode": 200}	8a4898a4-6488-427c-aa8b-6b13d34a9095	\N	{}
+badd9a95-dae1-423a-9c8a-b4e199943254	preinscriptions	12c32ffc-acee-4c78-b250-b4479b71d4e5/12c32ffc-acee-4c78-b250-b4479b71d4e5_acte_1783776877545.jpg	\N	2026-07-11 13:34:38.605821+00	2026-07-11 13:34:38.605821+00	2026-07-11 13:34:38.605821+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:34:39.000Z", "contentLength": 414566, "httpStatusCode": 200}	4fbe319e-8e20-4472-95bf-3dbd3bef0997	\N	{}
+3a69f915-1c63-4c09-8625-47fab6a7b519	preinscriptions	5ee92754-d6fb-4f27-81de-5fc762144598/5ee92754-d6fb-4f27-81de-5fc762144598_photo_1782584018517.jpg	\N	2026-06-27 18:13:38.817555+00	2026-06-27 18:13:38.817555+00	2026-06-27 18:13:38.817555+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T18:13:39.000Z", "contentLength": 105874, "httpStatusCode": 200}	9571f23b-ba51-4358-9e5c-8f4b939c366b	\N	{}
+fbd84a73-bc3d-456c-bf91-9b01f1d20110	preinscriptions	1d3f29a0-8fb9-4d89-9298-efbdadcca4af/1d3f29a0-8fb9-4d89-9298-efbdadcca4af_acte_1782600193736.png	\N	2026-06-27 22:43:16.236807+00	2026-06-27 22:43:16.236807+00	2026-06-27 22:43:16.236807+00	{"eTag": "\\"1503fb13aa0f3ee3f6dc1a1b0eebd619\\"", "size": 1860455, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T22:43:17.000Z", "contentLength": 1860455, "httpStatusCode": 200}	4eafb8ad-8754-4c4d-97d7-c2ccc7f7c5b1	\N	{}
+0698293c-7ed2-446a-870b-4ac8b43316fa	preinscriptions	12c32ffc-acee-4c78-b250-b4479b71d4e5/12c32ffc-acee-4c78-b250-b4479b71d4e5_photo_1783776880872.jpg	\N	2026-07-11 13:34:41.543938+00	2026-07-11 13:34:41.543938+00	2026-07-11 13:34:41.543938+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T13:34:42.000Z", "contentLength": 414566, "httpStatusCode": 200}	d0d89cce-119d-4cac-baf5-b79004c1c7d6	\N	{}
+03d9d171-140c-43cd-a1c1-125fb856fadc	preinscriptions	1d3f29a0-8fb9-4d89-9298-efbdadcca4af/1d3f29a0-8fb9-4d89-9298-efbdadcca4af_photo_1782600196023.jpeg	\N	2026-06-27 22:43:16.595197+00	2026-06-27 22:43:16.595197+00	2026-06-27 22:43:16.595197+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T22:43:17.000Z", "contentLength": 104543, "httpStatusCode": 200}	aa941d58-44df-4957-a43f-be74301af65a	\N	{}
+ca76f387-fc7e-4183-a761-350b7fa53f6a	preinscriptions	4f49e70d-7c9b-4826-8797-ce06eca37ad6/4f49e70d-7c9b-4826-8797-ce06eca37ad6_acte_1784044025582.pdf	\N	2026-07-14 15:47:08.761472+00	2026-07-14 15:47:08.761472+00	2026-07-14 15:47:08.761472+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-14T15:47:09.000Z", "contentLength": 225984, "httpStatusCode": 200}	c1420f2e-41bb-4a7a-9c34-75c54edf3c03	\N	{}
+c09a6ea9-9654-4003-8b2b-f25b131c2a55	preinscriptions	6ab17c00-d9b4-41e8-b38a-33f5555189dc/6ab17c00-d9b4-41e8-b38a-33f5555189dc_acte_1782600393159.png	\N	2026-06-27 22:46:35.865086+00	2026-06-27 22:46:35.865086+00	2026-06-27 22:46:35.865086+00	{"eTag": "\\"ebd7742d32d05b851baa9484df7f62ca\\"", "size": 2249030, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T22:46:36.000Z", "contentLength": 2249030, "httpStatusCode": 200}	a108cd1c-c641-46bb-8549-81749ada616c	\N	{}
+48c8b8e6-7ecd-485f-9c18-5937be8728b7	preinscriptions	6ab17c00-d9b4-41e8-b38a-33f5555189dc/6ab17c00-d9b4-41e8-b38a-33f5555189dc_photo_1782600395640.jpeg	\N	2026-06-27 22:46:36.233855+00	2026-06-27 22:46:36.233855+00	2026-06-27 22:46:36.233855+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-27T22:46:37.000Z", "contentLength": 104543, "httpStatusCode": 200}	e740e743-3c6a-475e-ace1-69cc55e066cf	\N	{}
+e23fd0b0-9ee1-4b30-a8ae-a6d2fa85b86c	preinscriptions	d6e412ed-7127-43c1-9019-f1791c89cc8a/d6e412ed-7127-43c1-9019-f1791c89cc8a_acte_1782605827058.png	\N	2026-06-28 00:17:11.240661+00	2026-06-28 00:17:11.240661+00	2026-06-28 00:17:11.240661+00	{"eTag": "\\"35c3e1a93f218a1840573d668ac974c7\\"", "size": 2178348, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T00:17:12.000Z", "contentLength": 2178348, "httpStatusCode": 200}	cc0ff167-baa2-4cf6-9c09-95f2fdb9dfd3	\N	{}
+6b71df84-e637-4a34-a580-d8b69659a6e9	preinscriptions	d6e412ed-7127-43c1-9019-f1791c89cc8a/d6e412ed-7127-43c1-9019-f1791c89cc8a_photo_1782605831130.png	\N	2026-06-28 00:17:14.459365+00	2026-06-28 00:17:14.459365+00	2026-06-28 00:17:14.459365+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T00:17:15.000Z", "contentLength": 2662850, "httpStatusCode": 200}	39b33c6c-657b-4eda-a73a-360af18c4a0e	\N	{}
+16b2110d-a1f3-4ca7-b15f-bba1b6ce7513	preinscriptions	soumission_1/soumission_1_soumission_1783124059877.jpeg	\N	2026-07-04 00:14:23.450541+00	2026-07-04 00:14:23.450541+00	2026-07-04 00:14:23.450541+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-04T00:14:24.000Z", "contentLength": 104345, "httpStatusCode": 200}	ffeec679-cf58-491e-adaa-9a63ffad2171	\N	{}
+ceae949d-e815-4c3b-852c-e44cb5f9c538	preinscriptions	2df3747e-1c75-4962-9e12-9d4f0d7e62c5/2df3747e-1c75-4962-9e12-9d4f0d7e62c5_acte_1782607516228.jpeg	\N	2026-06-28 00:45:17.869061+00	2026-06-28 00:45:17.869061+00	2026-06-28 00:45:17.869061+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T00:45:18.000Z", "contentLength": 104543, "httpStatusCode": 200}	c4ca01c3-ea8b-4c06-943a-c3b6ff3a4b86	\N	{}
+8a5cb0ec-174a-470b-a11c-fb5089feb473	preinscriptions	2df3747e-1c75-4962-9e12-9d4f0d7e62c5/2df3747e-1c75-4962-9e12-9d4f0d7e62c5_photo_1782607517739.png	\N	2026-06-28 00:45:21.894493+00	2026-06-28 00:45:21.894493+00	2026-06-28 00:45:21.894493+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T00:45:22.000Z", "contentLength": 2662850, "httpStatusCode": 200}	231adb6a-b212-4626-9bdf-4fa10faf8395	\N	{}
+a4a78255-3506-4fb2-85bb-b401857998a9	preinscriptions	soumission_1/soumission_1_soumission_1783124634138.jpeg	\N	2026-07-04 00:23:57.228358+00	2026-07-04 00:23:57.228358+00	2026-07-04 00:23:57.228358+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-04T00:23:58.000Z", "contentLength": 104345, "httpStatusCode": 200}	98028e24-a26a-476c-8c7f-7f417586b1de	\N	{}
+b747cf65-ea71-43ee-acdb-317259adafdc	preinscriptions	2df3747e-1c75-4962-9e12-9d4f0d7e62c5/2df3747e-1c75-4962-9e12-9d4f0d7e62c5_acte_1782607906443.jpeg	\N	2026-06-28 00:51:47.992809+00	2026-06-28 00:51:47.992809+00	2026-06-28 00:51:47.992809+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T00:51:48.000Z", "contentLength": 104543, "httpStatusCode": 200}	3db681c7-71f9-42f9-9c90-126b9870ca70	\N	{}
+72eca425-d8d7-4348-a3f9-1c639bfeebb4	preinscriptions	2df3747e-1c75-4962-9e12-9d4f0d7e62c5/2df3747e-1c75-4962-9e12-9d4f0d7e62c5_photo_1782607907892.png	\N	2026-06-28 00:51:49.737501+00	2026-06-28 00:51:49.737501+00	2026-06-28 00:51:49.737501+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T00:51:50.000Z", "contentLength": 2662850, "httpStatusCode": 200}	1f56c42a-f458-4ed6-b603-eb6d7878b2d2	\N	{}
+64243454-f27c-43dc-85a1-b5e4c2876f1a	preinscriptions	2fc30823-933c-41bd-bd68-9edb9db7c239/2fc30823-933c-41bd-bd68-9edb9db7c239_acte_1783794522978.jpg	\N	2026-07-11 18:28:46.254452+00	2026-07-11 18:28:46.254452+00	2026-07-11 18:28:46.254452+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T18:28:47.000Z", "contentLength": 414566, "httpStatusCode": 200}	d1adbfa4-6d4c-4037-ad3e-81d6c5717594	\N	{}
+382e70dd-b8ac-4cce-b04c-2ee5a21477b3	preinscriptions	02950e18-3e88-4b35-9522-a7ec0898be62/02950e18-3e88-4b35-9522-a7ec0898be62_acte_1782643909957.jpeg	\N	2026-06-28 10:51:52.414004+00	2026-06-28 10:51:52.414004+00	2026-06-28 10:51:52.414004+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T10:51:53.000Z", "contentLength": 104543, "httpStatusCode": 200}	7185654a-6fb1-4675-b3b1-9710136d9e72	\N	{}
+9f44f0dd-6354-417b-a52d-2bde5433b861	preinscriptions	02950e18-3e88-4b35-9522-a7ec0898be62/02950e18-3e88-4b35-9522-a7ec0898be62_photo_1782643911831.jpeg	\N	2026-06-28 10:51:52.89361+00	2026-06-28 10:51:52.89361+00	2026-06-28 10:51:52.89361+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T10:51:53.000Z", "contentLength": 104543, "httpStatusCode": 200}	7b7a38a9-a110-4858-aed7-78a87a2ccf05	\N	{}
+a1cadfab-8d27-41e5-9a54-bff309570907	preinscriptions	b99c5da0-aa5f-4fc5-8c1a-f7cdae2f22f4/b99c5da0-aa5f-4fc5-8c1a-f7cdae2f22f4_acte_1782647311299.png	\N	2026-06-28 11:48:36.518572+00	2026-06-28 11:48:36.518572+00	2026-06-28 11:48:36.518572+00	{"eTag": "\\"35c3e1a93f218a1840573d668ac974c7\\"", "size": 2178348, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T11:48:37.000Z", "contentLength": 2178348, "httpStatusCode": 200}	bc0125f9-d610-46b8-b81d-d58cce5b123b	\N	{}
+eb8bde2b-89e4-4dfb-80df-be317da4bf4b	preinscriptions	b99c5da0-aa5f-4fc5-8c1a-f7cdae2f22f4/b99c5da0-aa5f-4fc5-8c1a-f7cdae2f22f4_photo_1782647315922.jpeg	\N	2026-06-28 11:48:37.183727+00	2026-06-28 11:48:37.183727+00	2026-06-28 11:48:37.183727+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T11:48:38.000Z", "contentLength": 104543, "httpStatusCode": 200}	3de9d4c2-41a6-4e9f-a666-f5b638f2e389	\N	{}
+ac398be1-81aa-4952-92f9-83fd53c41c24	preinscriptions	examens/examen_1783135556263_hl19vq.jpeg	\N	2026-07-04 03:25:57.492726+00	2026-07-04 03:25:57.492726+00	2026-07-04 03:25:57.492726+00	{"eTag": "\\"afc3ada8c5164210a2e31d3729733085\\"", "size": 104345, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-04T03:25:58.000Z", "contentLength": 104345, "httpStatusCode": 200}	79aac206-679b-4d16-8490-3c721963484e	\N	{}
+d8b5a916-6cd5-4b74-8e33-a01967202d19	preinscriptions	b2a3213f-758b-478b-be4e-9ec170b74ab1/b2a3213f-758b-478b-be4e-9ec170b74ab1_acte_1782647761342.png	\N	2026-06-28 11:56:04.944176+00	2026-06-28 11:56:04.944176+00	2026-06-28 11:56:04.944176+00	{"eTag": "\\"1af940b8b2a22e0bd78bd7b188a420b9\\"", "size": 1696262, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T11:56:05.000Z", "contentLength": 1696262, "httpStatusCode": 200}	9070ac48-a434-4fdf-890c-ee4c6ab9d320	\N	{}
+c88a2865-3d66-4044-bd7e-aed9fa2cf656	preinscriptions	2fc30823-933c-41bd-bd68-9edb9db7c239/2fc30823-933c-41bd-bd68-9edb9db7c239_photo_1783794525716.jpg	\N	2026-07-11 18:28:47.276149+00	2026-07-11 18:28:47.276149+00	2026-07-11 18:28:47.276149+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T18:28:48.000Z", "contentLength": 414566, "httpStatusCode": 200}	5a257fbe-b6c0-41e9-9c11-eb740f84a68e	\N	{}
+8719e649-e2e1-4a8a-902e-25d39b9341dd	preinscriptions	b2a3213f-758b-478b-be4e-9ec170b74ab1/b2a3213f-758b-478b-be4e-9ec170b74ab1_photo_1782647764356.jpeg	\N	2026-06-28 11:56:05.51461+00	2026-06-28 11:56:05.51461+00	2026-06-28 11:56:05.51461+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T11:56:06.000Z", "contentLength": 104543, "httpStatusCode": 200}	b843ac37-bc07-476f-96a5-2e177790cd0d	\N	{}
+50cf7a8b-92f4-444f-a4d1-00d0ba4fcf67	preinscriptions	4db3ca2b-a4f0-4a1a-8f8f-3bc134b5ee0e/4db3ca2b-a4f0-4a1a-8f8f-3bc134b5ee0e_acte_1782650543702.png	\N	2026-06-28 12:42:36.798088+00	2026-06-28 12:42:36.798088+00	2026-06-28 12:42:36.798088+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T12:42:37.000Z", "contentLength": 1818598, "httpStatusCode": 200}	39aaad1a-9020-4d84-99fe-7690ada999cf	\N	{}
+bac14091-545e-482d-99ee-6a1b346af5f3	preinscriptions	4f49e70d-7c9b-4826-8797-ce06eca37ad6/4f49e70d-7c9b-4826-8797-ce06eca37ad6_photo_1784044028061.jpg	\N	2026-07-14 15:47:10.160667+00	2026-07-14 15:47:10.160667+00	2026-07-14 15:47:10.160667+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-14T15:47:11.000Z", "contentLength": 414566, "httpStatusCode": 200}	0e43ec60-6fc7-4ea1-a765-11f01abed2f0	\N	{}
+c696011d-5a42-4c52-afe6-81558822daa4	preinscriptions	4db3ca2b-a4f0-4a1a-8f8f-3bc134b5ee0e/4db3ca2b-a4f0-4a1a-8f8f-3bc134b5ee0e_photo_1782650556309.png	\N	2026-06-28 12:42:40.875477+00	2026-06-28 12:42:40.875477+00	2026-06-28 12:42:40.875477+00	{"eTag": "\\"6a410410e797829599d9e30b2540b171\\"", "size": 2662850, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T12:42:41.000Z", "contentLength": 2662850, "httpStatusCode": 200}	12da7283-4f6a-4722-9004-ebba69d952a8	\N	{}
+79f513de-1397-4847-9551-1229467bec92	preinscriptions	41543b85-3c36-4aa1-be0d-dcbddcd060d5/41543b85-3c36-4aa1-be0d-dcbddcd060d5_acte_1782652420897.png	\N	2026-06-28 13:13:45.467892+00	2026-06-28 13:13:45.467892+00	2026-06-28 13:13:45.467892+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T13:13:46.000Z", "contentLength": 1818598, "httpStatusCode": 200}	e59bdbba-cd51-4b21-bddd-b0cac3334c2c	\N	{}
+0d9022d4-97e8-43b4-9ef9-d1c47521e10c	preinscriptions	41543b85-3c36-4aa1-be0d-dcbddcd060d5/41543b85-3c36-4aa1-be0d-dcbddcd060d5_photo_1782652424279.png	\N	2026-06-28 13:13:46.781093+00	2026-06-28 13:13:46.781093+00	2026-06-28 13:13:46.781093+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T13:13:47.000Z", "contentLength": 1818598, "httpStatusCode": 200}	2ae058e1-7424-41fc-9e47-01f958ea6c57	\N	{}
+3f99cacd-1ac1-44bb-a52a-e7d367ef9808	preinscriptions	b095c811-45c2-4b85-9c9d-42a4fd83d9b7/b095c811-45c2-4b85-9c9d-42a4fd83d9b7_acte_1782654460517.png	\N	2026-06-28 13:47:43.950186+00	2026-06-28 13:47:43.950186+00	2026-06-28 13:47:43.950186+00	{"eTag": "\\"19fc0acb0ef5b22de10152dccde68b0f\\"", "size": 1818598, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T13:47:44.000Z", "contentLength": 1818598, "httpStatusCode": 200}	927a8973-922c-43eb-b4f4-969402ff8a3c	\N	{}
+c744398a-d906-4757-a50c-9dcece8f3564	preinscriptions	b095c811-45c2-4b85-9c9d-42a4fd83d9b7/b095c811-45c2-4b85-9c9d-42a4fd83d9b7_photo_1782654462706.jpeg	\N	2026-06-28 13:47:44.332717+00	2026-06-28 13:47:44.332717+00	2026-06-28 13:47:44.332717+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T13:47:45.000Z", "contentLength": 104543, "httpStatusCode": 200}	b4acd905-923d-46f8-b6de-be4050a014c8	\N	{}
+2a81166a-3619-4a97-9d06-386065d5f6f7	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_acte_1783773129419.png	\N	2026-07-11 12:32:10.61309+00	2026-07-11 12:32:10.61309+00	2026-07-11 12:32:10.61309+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:32:11.000Z", "contentLength": 880465, "httpStatusCode": 200}	4f2599f2-559f-4e30-8cbf-33dac9c800be	\N	{}
+03a66882-938f-4d6c-850e-f9705a012e80	preinscriptions	11f6bce8-cd50-49fc-b916-ef4b7b7e41cd/11f6bce8-cd50-49fc-b916-ef4b7b7e41cd_acte_1782655246520.jpeg	\N	2026-06-28 14:00:49.147472+00	2026-06-28 14:00:49.147472+00	2026-06-28 14:00:49.147472+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:00:50.000Z", "contentLength": 104543, "httpStatusCode": 200}	3874c880-168b-4198-b128-95de3b902c50	\N	{}
+4a36b494-2950-4ceb-8e3f-41b7d8accf78	preinscriptions	11f6bce8-cd50-49fc-b916-ef4b7b7e41cd/11f6bce8-cd50-49fc-b916-ef4b7b7e41cd_photo_1782655247904.jpeg	\N	2026-06-28 14:00:49.537347+00	2026-06-28 14:00:49.537347+00	2026-06-28 14:00:49.537347+00	{"eTag": "\\"3b7ba4e67b45ac22b5cc687cda2ff39c\\"", "size": 104543, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-06-28T14:00:50.000Z", "contentLength": 104543, "httpStatusCode": 200}	09132d70-57b7-4d7f-b5c1-e093185d8ebb	\N	{}
+e77c5538-f50a-454e-b5db-39134cf230c9	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_photo_1783773136168.png	\N	2026-07-11 12:32:17.09834+00	2026-07-11 12:32:17.09834+00	2026-07-11 12:32:17.09834+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:32:18.000Z", "contentLength": 828452, "httpStatusCode": 200}	ccbf4131-0e95-4ef1-af1a-43862206775e	\N	{}
+caa5dc87-1158-45d0-ad7c-84041211308b	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_acte_1783773147759.png	\N	2026-07-11 12:32:28.611104+00	2026-07-11 12:32:28.611104+00	2026-07-11 12:32:28.611104+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:32:29.000Z", "contentLength": 880465, "httpStatusCode": 200}	9e59e515-3f81-44e6-822e-ff88da472246	\N	{}
+0d3f9c4c-156d-46f9-8278-3c112eb33c85	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_photo_1783773154597.png	\N	2026-07-11 12:32:35.452759+00	2026-07-11 12:32:35.452759+00	2026-07-11 12:32:35.452759+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:32:36.000Z", "contentLength": 828452, "httpStatusCode": 200}	72ef66fb-b873-431f-ab06-1b8eb5c750ac	\N	{}
+97817b0d-1415-47b6-b941-a5c7a62c47bf	preinscriptions	b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd/b2c40a87-59a8-4e1e-ba51-3a1bde41a8cd_acte_1783773195939.png	\N	2026-07-11 12:33:16.875556+00	2026-07-11 12:33:16.875556+00	2026-07-11 12:33:16.875556+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-11T12:33:17.000Z", "contentLength": 880465, "httpStatusCode": 200}	c5a46488-e46d-4c74-b131-12a0f0a967e5	\N	{}
+cc019855-4461-41b4-b52d-b552987a639a	preinscriptions	d6229172-6757-4cf0-8cf2-8ecdd2a5fc32/d6229172-6757-4cf0-8cf2-8ecdd2a5fc32_acte_1784044412636.pdf	\N	2026-07-14 15:53:36.382534+00	2026-07-14 15:53:36.382534+00	2026-07-14 15:53:36.382534+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-14T15:53:37.000Z", "contentLength": 225984, "httpStatusCode": 200}	9af92643-e1e3-4bb3-9a7a-29ed3a9ecddc	\N	{}
+63e748c2-e369-42cf-b6fa-16950292c3aa	preinscriptions	d6229172-6757-4cf0-8cf2-8ecdd2a5fc32/d6229172-6757-4cf0-8cf2-8ecdd2a5fc32_photo_1784044415714.jpg	\N	2026-07-14 15:53:37.507674+00	2026-07-14 15:53:37.507674+00	2026-07-14 15:53:37.507674+00	{"eTag": "\\"4a2aebf7e802f88e20b4bf7a16a3f78e\\"", "size": 110734, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-14T15:53:38.000Z", "contentLength": 110734, "httpStatusCode": 200}	0c6e3a3b-f808-42ad-9232-a6c64424f524	\N	{}
+1eb6b922-ee8c-457b-9acd-dc13934d9a61	preinscriptions	48516d91-3c71-403d-bea1-949a6183aa34/48516d91-3c71-403d-bea1-949a6183aa34_photo_1784202250670.jpg	\N	2026-07-16 11:44:15.845724+00	2026-07-16 11:44:15.845724+00	2026-07-16 11:44:15.845724+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-16T11:44:16.000Z", "contentLength": 414566, "httpStatusCode": 200}	1397af07-5a5d-4a78-894e-fda6ad6d6409	\N	{}
+ee8908fb-e8fb-4308-b94a-1da14055b2bc	preinscriptions	b5929718-c004-446e-bdd1-febded1d2c23/b5929718-c004-446e-bdd1-febded1d2c23_acte_1784205013883.pdf	\N	2026-07-16 12:30:17.019771+00	2026-07-16 12:30:17.019771+00	2026-07-16 12:30:17.019771+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-16T12:30:17.000Z", "contentLength": 225984, "httpStatusCode": 200}	db97fb66-ebcf-4640-9562-3ecfdfc4c729	\N	{}
+8cd58ee2-093b-4195-b5f2-885b1da6803f	preinscriptions	b5929718-c004-446e-bdd1-febded1d2c23/b5929718-c004-446e-bdd1-febded1d2c23_photo_1784205017270.png	\N	2026-07-16 12:30:19.653765+00	2026-07-16 12:30:19.653765+00	2026-07-16 12:30:19.653765+00	{"eTag": "\\"f0b8df8a2a802f6674803b5a0633778e\\"", "size": 509674, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-16T12:30:20.000Z", "contentLength": 509674, "httpStatusCode": 200}	d04ae7c3-4ec3-4d74-b8e2-4e7d4663174f	\N	{}
+d01fbfad-fcbc-4807-b500-0cdc3c063101	preinscriptions	a77e85de-2009-49a8-b1e6-3b292c810f26/a77e85de-2009-49a8-b1e6-3b292c810f26_acte_1784217266271.pdf	\N	2026-07-16 15:54:29.614207+00	2026-07-16 15:54:29.614207+00	2026-07-16 15:54:29.614207+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-16T15:54:30.000Z", "contentLength": 225984, "httpStatusCode": 200}	1e72cd7c-f58e-46e9-a60d-0342533bc85e	\N	{}
+914b487c-0a67-45e1-b490-7b3385c50204	preinscriptions	a77e85de-2009-49a8-b1e6-3b292c810f26/a77e85de-2009-49a8-b1e6-3b292c810f26_photo_1784217269837.jpg	\N	2026-07-16 15:54:30.74923+00	2026-07-16 15:54:30.74923+00	2026-07-16 15:54:30.74923+00	{"eTag": "\\"a9e25a5017d3193f6b8e84506d304ebf\\"", "size": 105874, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-16T15:54:31.000Z", "contentLength": 105874, "httpStatusCode": 200}	4306ad55-6d05-4915-8f3d-93f83f3f05c4	\N	{}
+fc870b70-491d-45da-be00-04e9310dadf9	preinscriptions	e9d9aa62-0c6e-477d-9a80-97a98312e61c/e9d9aa62-0c6e-477d-9a80-97a98312e61c_acte_1784281045828.pdf	\N	2026-07-17 09:37:29.832889+00	2026-07-17 09:37:29.832889+00	2026-07-17 09:37:29.832889+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-17T09:37:30.000Z", "contentLength": 225984, "httpStatusCode": 200}	a27a2d2d-fe3c-4f41-87c8-b412f99f11ce	\N	{}
+98654d47-99f9-4f74-9fea-abeb9b3b3d76	preinscriptions	e9d9aa62-0c6e-477d-9a80-97a98312e61c/e9d9aa62-0c6e-477d-9a80-97a98312e61c_photo_1784281049632.png	\N	2026-07-17 09:37:30.863417+00	2026-07-17 09:37:30.863417+00	2026-07-17 09:37:30.863417+00	{"eTag": "\\"29e79bebdbde8427f74e8ff50d9cbe64\\"", "size": 216570, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-17T09:37:31.000Z", "contentLength": 216570, "httpStatusCode": 200}	7ddadd9d-a84a-477f-b0ae-d21b79a0387f	\N	{}
+6c508c23-59e1-469a-8e27-9fc0661621bc	preinscriptions	personnel_DIALLO/personnel_DIALLO_photo_url_1784555985125.png	\N	2026-07-20 13:59:51.213231+00	2026-07-20 13:59:51.213231+00	2026-07-20 13:59:51.213231+00	{"eTag": "\\"6fc087cd79ef40992f2c2abcf8e4075b\\"", "size": 828452, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-20T13:59:52.000Z", "contentLength": 828452, "httpStatusCode": 200}	7c3b3f87-9cbd-4c6f-8c9d-91fee2830717	\N	{}
+40acd5ad-ffef-4af6-8221-235da81b3a73	preinscriptions	personnel_DIALLO/personnel_DIALLO_carte_id_url_1784555990537.png	\N	2026-07-20 13:59:55.997583+00	2026-07-20 13:59:55.997583+00	2026-07-20 13:59:55.997583+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-20T13:59:56.000Z", "contentLength": 880465, "httpStatusCode": 200}	85255225-9111-440c-89a9-5faa64b065aa	\N	{}
+cee9e5dd-b02c-4171-966d-eadf51c08628	preinscriptions	personnel_DIALLO/personnel_DIALLO_photo_url_1784555987093.png	\N	2026-07-20 13:59:58.423209+00	2026-07-20 13:59:58.423209+00	2026-07-20 13:59:58.423209+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-20T13:59:59.000Z", "contentLength": 880465, "httpStatusCode": 200}	048ff68f-3f5e-4997-8470-688af720c0fe	\N	{}
+49e3a923-acb4-460c-acac-880d1ca36868	preinscriptions	personnel_DIALLO/personnel_DIALLO_cv_url_1784555997545.pdf	\N	2026-07-20 13:59:58.608513+00	2026-07-20 13:59:58.608513+00	2026-07-20 13:59:58.608513+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-20T13:59:59.000Z", "contentLength": 225984, "httpStatusCode": 200}	863d0db6-d71a-4904-b9e9-1a5258c5d72c	\N	{}
+9b799dcc-8d49-40a1-9d76-5b94dda06b29	preinscriptions	personnel_DIALLO/personnel_DIALLO_certificat_residence_url_1784556012329.pdf	\N	2026-07-20 14:00:13.563535+00	2026-07-20 14:00:13.563535+00	2026-07-20 14:00:13.563535+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-20T14:00:14.000Z", "contentLength": 225984, "httpStatusCode": 200}	0e0b17b4-74a5-4613-96fc-30cdf6037f77	\N	{}
+a32f6f27-e1de-43d3-a650-93b60eda6fc9	preinscriptions	personnel_Diallo/personnel_Diallo_photo_url_1784824120894.png	\N	2026-07-23 16:28:47.592434+00	2026-07-23 16:28:47.592434+00	2026-07-23 16:28:47.592434+00	{"eTag": "\\"0175edf869ac80cff7b9775dbf3fb44f\\"", "size": 880465, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-23T16:28:48.000Z", "contentLength": 880465, "httpStatusCode": 200}	952d0110-3483-4dc6-921f-ae1bd0d60645	\N	{}
+4d4ac7c8-bd7f-425c-b6a4-185938451967	preinscriptions	personnel_Diallo/personnel_Diallo_carte_id_url_1784824129283.png	\N	2026-07-23 16:28:57.634853+00	2026-07-23 16:28:57.634853+00	2026-07-23 16:28:57.634853+00	{"eTag": "\\"93ff83d86b0aca4e1e628baaa230ee8f\\"", "size": 1269209, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-23T16:28:58.000Z", "contentLength": 1269209, "httpStatusCode": 200}	e5e51565-b009-4058-b11e-838b88810713	\N	{}
+47f7b30f-6b28-43a1-a6aa-525a82498dcb	preinscriptions	personnel_Diallo/personnel_Diallo_cv_url_1784824142904.pdf	\N	2026-07-23 16:29:05.696016+00	2026-07-23 16:29:05.696016+00	2026-07-23 16:29:05.696016+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-23T16:29:06.000Z", "contentLength": 225984, "httpStatusCode": 200}	f098ddd0-047a-4e4c-b163-cbdf74cc8fcf	\N	{}
+64d29caa-9ffa-4aa4-96c9-f5399152c2c7	preinscriptions	personnel_Diallo/personnel_Diallo_certificat_residence_url_1784824151222.pdf	\N	2026-07-23 16:29:13.739578+00	2026-07-23 16:29:13.739578+00	2026-07-23 16:29:13.739578+00	{"eTag": "\\"b19241a91fced1689c1b8779e703db87\\"", "size": 195084, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-23T16:29:14.000Z", "contentLength": 195084, "httpStatusCode": 200}	96190d0d-6e83-42eb-9188-12cce7ecbe57	\N	{}
+ef0e2c98-eed6-4ca8-8afe-cc92f5c4ca6f	preinscriptions	4ccd727d-4dfa-42b3-957d-aba88d89c7d3/4ccd727d-4dfa-42b3-957d-aba88d89c7d3_acte_1785347261873.pdf	\N	2026-07-29 17:47:47.266335+00	2026-07-29 17:47:47.266335+00	2026-07-29 17:47:47.266335+00	{"eTag": "\\"0973664ae97f231060d376c0e5048af1\\"", "size": 225984, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-29T17:47:48.000Z", "contentLength": 225984, "httpStatusCode": 200}	cf2d13be-0a98-4b91-bbc2-bfa414daeb36	\N	{}
+1ce722a7-d4cd-4d4b-9e38-75dcc44ac637	preinscriptions	4ccd727d-4dfa-42b3-957d-aba88d89c7d3/4ccd727d-4dfa-42b3-957d-aba88d89c7d3_photo_1785347266632.jpg	\N	2026-07-29 17:47:49.502581+00	2026-07-29 17:47:49.502581+00	2026-07-29 17:47:49.502581+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-29T17:47:50.000Z", "contentLength": 414566, "httpStatusCode": 200}	5f5a8077-86c3-4afb-8147-72be9e7c31d7	\N	{}
+629a3a03-9e29-425d-a8ad-1ece8c505f5b	preinscriptions	personnel_DIALLO/personnel_DIALLO_cv_url_1785348049728.pdf	\N	2026-07-29 18:01:00.240845+00	2026-07-29 18:01:00.240845+00	2026-07-29 18:01:00.240845+00	{"eTag": "\\"b19241a91fced1689c1b8779e703db87\\"", "size": 195084, "mimetype": "application/pdf", "cacheControl": "max-age=3600", "lastModified": "2026-07-29T18:01:01.000Z", "contentLength": 195084, "httpStatusCode": 200}	066d5400-61a9-4772-bc49-37217902a057	\N	{}
+0cc33aad-84f2-4b07-ae65-630054b09c27	preinscriptions	personnel_DIALLO/personnel_DIALLO_photo_url_1785348049823.jpg	\N	2026-07-29 18:01:00.357445+00	2026-07-29 18:01:00.357445+00	2026-07-29 18:01:00.357445+00	{"eTag": "\\"ab98054d6beec1e96963ea0f9fa08986\\"", "size": 414566, "mimetype": "image/jpeg", "cacheControl": "max-age=3600", "lastModified": "2026-07-29T18:01:01.000Z", "contentLength": 414566, "httpStatusCode": 200}	06e9f0f8-6499-4c1b-b109-a6f704bc77a8	\N	{}
+c2e59e0c-8505-4dc0-8fc7-36844270d27c	preinscriptions	personnel_DIALLO/personnel_DIALLO_carte_id_url_1785348049912.png	\N	2026-07-29 18:01:01.434993+00	2026-07-29 18:01:01.434993+00	2026-07-29 18:01:01.434993+00	{"eTag": "\\"ad3369582f5299c57bab78e59f91a3ff\\"", "size": 1545523, "mimetype": "image/png", "cacheControl": "max-age=3600", "lastModified": "2026-07-29T18:01:02.000Z", "contentLength": 1545523, "httpStatusCode": 200}	e73d6055-43cf-47dc-b2c5-86c730a059d6	\N	{}
+\.
+
+
+--
+-- Data for Name: s3_multipart_uploads; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.s3_multipart_uploads (id, in_progress_size, upload_signature, bucket_id, key, version, owner_id, created_at, user_metadata, metadata) FROM stdin;
+\.
+
+
+--
+-- Data for Name: s3_multipart_uploads_parts; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.s3_multipart_uploads_parts (id, upload_id, size, part_number, bucket_id, key, etag, owner_id, version, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: vector_indexes; Type: TABLE DATA; Schema: storage; Owner: supabase_storage_admin
+--
+
+COPY storage.vector_indexes (id, name, bucket_id, data_type, dimension, distance_metric, metadata_configuration, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: secrets; Type: TABLE DATA; Schema: vault; Owner: supabase_admin
+--
+
+COPY vault.secrets (id, name, description, secret, key_id, nonce, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: auth; Owner: supabase_auth_admin
+--
+
+SELECT pg_catalog.setval('auth.refresh_tokens_id_seq', 1, false);
+
+
+--
+-- Name: annees_scolaires_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.annees_scolaires_id_seq', 3, true);
+
+
+--
+-- Name: annonces_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.annonces_id_seq', 1, false);
+
+
+--
+-- Name: articles_librairie_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.articles_librairie_id_seq', 1, true);
+
+
+--
+-- Name: avances_salaires_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.avances_salaires_id_seq', 1, false);
+
+
+--
+-- Name: budget_previsionnel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.budget_previsionnel_id_seq', 1, false);
+
+
+--
+-- Name: bus_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.bus_id_seq', 4, true);
+
+
+--
+-- Name: cantine_menus_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cantine_menus_id_seq', 2, true);
+
+
+--
+-- Name: categories_depenses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.categories_depenses_id_seq', 1, false);
+
+
+--
+-- Name: categories_quiz_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.categories_quiz_id_seq', 1, false);
+
+
+--
+-- Name: classes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.classes_id_seq', 4, true);
+
+
+--
+-- Name: commandes_fournitures_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.commandes_fournitures_id_seq', 6, true);
+
+
+--
+-- Name: commandes_librairie_articles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.commandes_librairie_articles_id_seq', 1, false);
+
+
+--
+-- Name: commandes_librairie_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.commandes_librairie_id_seq', 1, false);
+
+
+--
+-- Name: conges_personnel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.conges_personnel_id_seq', 1, false);
+
+
+--
+-- Name: contrats_personnel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.contrats_personnel_id_seq', 1, false);
+
+
+--
+-- Name: depenses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.depenses_id_seq', 1, false);
+
+
+--
+-- Name: devoirs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.devoirs_id_seq', 1, false);
+
+
+--
+-- Name: echeances_paiement_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.echeances_paiement_id_seq', 56, true);
+
+
+--
+-- Name: eleves_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.eleves_id_seq', 6, true);
+
+
+--
+-- Name: emprunts_bibliotheque_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.emprunts_bibliotheque_id_seq', 1, false);
+
+
+--
+-- Name: enseignements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.enseignements_id_seq', 10, true);
+
+
+--
+-- Name: examens_eleves_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.examens_eleves_id_seq', 1, false);
+
+
+--
+-- Name: examens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.examens_id_seq', 1, false);
+
+
+--
+-- Name: frais_scolaires_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.frais_scolaires_id_seq', 1, false);
+
+
+--
+-- Name: inscriptions_cantine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.inscriptions_cantine_id_seq', 1, false);
+
+
+--
+-- Name: inscriptions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.inscriptions_id_seq', 6, true);
+
+
+--
+-- Name: inscriptions_transport_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.inscriptions_transport_id_seq', 1, false);
+
+
+--
+-- Name: lecons_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.lecons_id_seq', 1, false);
+
+
+--
+-- Name: lignes_transport_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.lignes_transport_id_seq', 1, true);
+
+
+--
+-- Name: livres_bibliotheque_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.livres_bibliotheque_id_seq', 1, false);
+
+
+--
+-- Name: logs_activites_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.logs_activites_id_seq', 1, false);
+
+
+--
+-- Name: matieres_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.matieres_id_seq', 1, false);
+
+
+--
+-- Name: menus_cantine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.menus_cantine_id_seq', 1, false);
+
+
+--
+-- Name: messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.messages_id_seq', 1, false);
+
+
+--
+-- Name: mouvements_caisse_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.mouvements_caisse_id_seq', 1, false);
+
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.notes_id_seq', 1, false);
+
+
+--
+-- Name: options_qcm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.options_qcm_id_seq', 1, false);
+
+
+--
+-- Name: options_quiz_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.options_quiz_id_seq', 1, false);
+
+
+--
+-- Name: paiements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.paiements_id_seq', 16, true);
+
+
+--
+-- Name: paiements_salaires_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.paiements_salaires_id_seq', 6, true);
+
+
+--
+-- Name: parents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.parents_id_seq', 2, true);
+
+
+--
+-- Name: participations_quiz_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.participations_quiz_id_seq', 1, false);
+
+
+--
+-- Name: personnels_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.personnels_id_seq', 5, true);
+
+
+--
+-- Name: preinscription_cantine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.preinscription_cantine_id_seq', 1, true);
+
+
+--
+-- Name: preinscription_transport_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.preinscription_transport_id_seq', 1, false);
+
+
+--
+-- Name: preinscriptions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.preinscriptions_id_seq', 14, true);
+
+
+--
+-- Name: presences_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.presences_id_seq', 1, false);
+
+
+--
+-- Name: presences_transport_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.presences_transport_id_seq', 1, false);
+
+
+--
+-- Name: questions_qcm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.questions_qcm_id_seq', 1, false);
+
+
+--
+-- Name: questions_quiz_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.questions_quiz_id_seq', 1, false);
+
+
+--
+-- Name: quiz_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.quiz_id_seq', 1, false);
+
+
+--
+-- Name: quiz_questions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.quiz_questions_id_seq', 1, false);
+
+
+--
+-- Name: reinscriptions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reinscriptions_id_seq', 1, true);
+
+
+--
+-- Name: reponses_eleves_qcm_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reponses_eleves_qcm_id_seq', 1, false);
+
+
+--
+-- Name: reponses_quiz_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reponses_quiz_id_seq', 1, false);
+
+
+--
+-- Name: reservations_cantine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reservations_cantine_id_seq', 1, false);
+
+
+--
+-- Name: reserves_cantine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reserves_cantine_id_seq', 1, false);
+
+
+--
+-- Name: reset_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.reset_tokens_id_seq', 1, false);
+
+
+--
+-- Name: services_annexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.services_annexes_id_seq', 1, false);
+
+
+--
+-- Name: sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.sessions_id_seq', 1, false);
+
+
+--
+-- Name: soumissions_devoirs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.soumissions_devoirs_id_seq', 1, false);
+
+
+--
+-- Name: transactions_cantine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.transactions_cantine_id_seq', 1, false);
+
+
+--
+-- Name: utilisateurs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.utilisateurs_id_seq', 19, true);
+
+
+--
+-- Name: ventes_librairie_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.ventes_librairie_id_seq', 1, false);
+
+
+--
+-- Name: subscription_id_seq; Type: SEQUENCE SET; Schema: realtime; Owner: supabase_admin
+--
+
+SELECT pg_catalog.setval('realtime.subscription_id_seq', 1, false);
+
+
+--
+-- Name: mfa_amr_claims amr_id_pk; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_amr_claims
+    ADD CONSTRAINT amr_id_pk PRIMARY KEY (id);
+
+
+--
+-- Name: audit_log_entries audit_log_entries_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.audit_log_entries
+    ADD CONSTRAINT audit_log_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: custom_oauth_providers custom_oauth_providers_identifier_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.custom_oauth_providers
+    ADD CONSTRAINT custom_oauth_providers_identifier_key UNIQUE (identifier);
+
+
+--
+-- Name: custom_oauth_providers custom_oauth_providers_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.custom_oauth_providers
+    ADD CONSTRAINT custom_oauth_providers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: flow_state flow_state_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.flow_state
+    ADD CONSTRAINT flow_state_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: identities identities_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.identities
+    ADD CONSTRAINT identities_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: identities identities_provider_id_provider_unique; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.identities
+    ADD CONSTRAINT identities_provider_id_provider_unique UNIQUE (provider_id, provider);
+
+
+--
+-- Name: instances instances_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.instances
+    ADD CONSTRAINT instances_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mfa_amr_claims mfa_amr_claims_session_id_authentication_method_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_amr_claims
+    ADD CONSTRAINT mfa_amr_claims_session_id_authentication_method_pkey UNIQUE (session_id, authentication_method);
+
+
+--
+-- Name: mfa_challenges mfa_challenges_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_challenges
+    ADD CONSTRAINT mfa_challenges_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mfa_factors mfa_factors_last_challenged_at_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_factors
+    ADD CONSTRAINT mfa_factors_last_challenged_at_key UNIQUE (last_challenged_at);
+
+
+--
+-- Name: mfa_factors mfa_factors_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_factors
+    ADD CONSTRAINT mfa_factors_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_authorizations oauth_authorizations_authorization_code_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_authorizations
+    ADD CONSTRAINT oauth_authorizations_authorization_code_key UNIQUE (authorization_code);
+
+
+--
+-- Name: oauth_authorizations oauth_authorizations_authorization_id_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_authorizations
+    ADD CONSTRAINT oauth_authorizations_authorization_id_key UNIQUE (authorization_id);
+
+
+--
+-- Name: oauth_authorizations oauth_authorizations_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_authorizations
+    ADD CONSTRAINT oauth_authorizations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_client_states oauth_client_states_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_client_states
+    ADD CONSTRAINT oauth_client_states_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_clients oauth_clients_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_clients
+    ADD CONSTRAINT oauth_clients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_consents oauth_consents_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_consents
+    ADD CONSTRAINT oauth_consents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_consents oauth_consents_user_client_unique; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_consents
+    ADD CONSTRAINT oauth_consents_user_client_unique UNIQUE (user_id, client_id);
+
+
+--
+-- Name: one_time_tokens one_time_tokens_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.one_time_tokens
+    ADD CONSTRAINT one_time_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: refresh_tokens refresh_tokens_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: refresh_tokens refresh_tokens_token_unique; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_token_unique UNIQUE (token);
+
+
+--
+-- Name: saml_providers saml_providers_entity_id_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.saml_providers
+    ADD CONSTRAINT saml_providers_entity_id_key UNIQUE (entity_id);
+
+
+--
+-- Name: saml_providers saml_providers_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.saml_providers
+    ADD CONSTRAINT saml_providers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: saml_relay_states saml_relay_states_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.saml_relay_states
+    ADD CONSTRAINT saml_relay_states_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sso_domains sso_domains_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.sso_domains
+    ADD CONSTRAINT sso_domains_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sso_providers sso_providers_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.sso_providers
+    ADD CONSTRAINT sso_providers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_phone_key; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.users
+    ADD CONSTRAINT users_phone_key UNIQUE (phone);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: webauthn_challenges webauthn_challenges_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.webauthn_challenges
+    ADD CONSTRAINT webauthn_challenges_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: webauthn_credentials webauthn_credentials_pkey; Type: CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.webauthn_credentials
+    ADD CONSTRAINT webauthn_credentials_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: _prisma_migrations _prisma_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public._prisma_migrations
+    ADD CONSTRAINT _prisma_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: annees_scolaires annees_scolaires_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.annees_scolaires
+    ADD CONSTRAINT annees_scolaires_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: annonces annonces_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.annonces
+    ADD CONSTRAINT annonces_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: articles_librairie articles_librairie_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.articles_librairie
+    ADD CONSTRAINT articles_librairie_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: avances_salaires avances_salaires_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.avances_salaires
+    ADD CONSTRAINT avances_salaires_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: budget_previsionnel budget_previsionnel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.budget_previsionnel
+    ADD CONSTRAINT budget_previsionnel_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bus bus_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bus
+    ADD CONSTRAINT bus_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cantine_menus cantine_menus_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cantine_menus
+    ADD CONSTRAINT cantine_menus_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: categories_depenses categories_depenses_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.categories_depenses
+    ADD CONSTRAINT categories_depenses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: categories_quiz categories_quiz_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.categories_quiz
+    ADD CONSTRAINT categories_quiz_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: classes classes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.classes
+    ADD CONSTRAINT classes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: commandes_fournitures commandes_fournitures_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_fournitures
+    ADD CONSTRAINT commandes_fournitures_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: commandes_librairie_articles commandes_librairie_articles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie_articles
+    ADD CONSTRAINT commandes_librairie_articles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: commandes_librairie commandes_librairie_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie
+    ADD CONSTRAINT commandes_librairie_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: conges_personnel conges_personnel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conges_personnel
+    ADD CONSTRAINT conges_personnel_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: contrats_personnel contrats_personnel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrats_personnel
+    ADD CONSTRAINT contrats_personnel_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: depenses depenses_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.depenses
+    ADD CONSTRAINT depenses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: devoirs devoirs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.devoirs
+    ADD CONSTRAINT devoirs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: echeances_paiement echeances_paiement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.echeances_paiement
+    ADD CONSTRAINT echeances_paiement_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: eleves eleves_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.eleves
+    ADD CONSTRAINT eleves_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: emprunts_bibliotheque emprunts_bibliotheque_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.emprunts_bibliotheque
+    ADD CONSTRAINT emprunts_bibliotheque_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: enseignements enseignements_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.enseignements
+    ADD CONSTRAINT enseignements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: examens_eleves examens_eleves_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens_eleves
+    ADD CONSTRAINT examens_eleves_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: examens examens_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens
+    ADD CONSTRAINT examens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: frais_scolaires frais_scolaires_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.frais_scolaires
+    ADD CONSTRAINT frais_scolaires_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: inscriptions_cantine inscriptions_cantine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_cantine
+    ADD CONSTRAINT inscriptions_cantine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: inscriptions inscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions
+    ADD CONSTRAINT inscriptions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: inscriptions_transport inscriptions_transport_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_transport
+    ADD CONSTRAINT inscriptions_transport_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: lecons lecons_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lecons
+    ADD CONSTRAINT lecons_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: lien_parent_eleve lien_parent_eleve_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lien_parent_eleve
+    ADD CONSTRAINT lien_parent_eleve_pkey PRIMARY KEY (parent_id, eleve_id);
+
+
+--
+-- Name: lignes_transport lignes_transport_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lignes_transport
+    ADD CONSTRAINT lignes_transport_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: livres_bibliotheque livres_bibliotheque_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.livres_bibliotheque
+    ADD CONSTRAINT livres_bibliotheque_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: logs_activites logs_activites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.logs_activites
+    ADD CONSTRAINT logs_activites_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: matieres matieres_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.matieres
+    ADD CONSTRAINT matieres_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: menus_cantine menus_cantine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.menus_cantine
+    ADD CONSTRAINT menus_cantine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: messages messages_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mouvements_caisse mouvements_caisse_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mouvements_caisse
+    ADD CONSTRAINT mouvements_caisse_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notes notes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: options_qcm options_qcm_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.options_qcm
+    ADD CONSTRAINT options_qcm_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: options_quiz options_quiz_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.options_quiz
+    ADD CONSTRAINT options_quiz_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: paiements paiements_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements
+    ADD CONSTRAINT paiements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: paiements_salaires paiements_salaires_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements_salaires
+    ADD CONSTRAINT paiements_salaires_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: parents parents_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.parents
+    ADD CONSTRAINT parents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: participations_quiz participations_quiz_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.participations_quiz
+    ADD CONSTRAINT participations_quiz_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: personnels personnels_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personnels
+    ADD CONSTRAINT personnels_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: preinscription_cantine preinscription_cantine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_cantine
+    ADD CONSTRAINT preinscription_cantine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: preinscription_transport preinscription_transport_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_transport
+    ADD CONSTRAINT preinscription_transport_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: preinscriptions preinscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscriptions
+    ADD CONSTRAINT preinscriptions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: presences presences_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences
+    ADD CONSTRAINT presences_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: presences_transport presences_transport_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences_transport
+    ADD CONSTRAINT presences_transport_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: questions_qcm questions_qcm_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_qcm
+    ADD CONSTRAINT questions_qcm_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: questions_quiz questions_quiz_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_quiz
+    ADD CONSTRAINT questions_quiz_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: quiz quiz_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz
+    ADD CONSTRAINT quiz_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: quiz_questions quiz_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz_questions
+    ADD CONSTRAINT quiz_questions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reinscriptions reinscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions
+    ADD CONSTRAINT reinscriptions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reponses_eleves_qcm reponses_eleves_qcm_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_eleves_qcm
+    ADD CONSTRAINT reponses_eleves_qcm_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reponses_quiz reponses_quiz_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_quiz
+    ADD CONSTRAINT reponses_quiz_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reservations_cantine reservations_cantine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservations_cantine
+    ADD CONSTRAINT reservations_cantine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reserves_cantine reserves_cantine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reserves_cantine
+    ADD CONSTRAINT reserves_cantine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reset_tokens reset_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reset_tokens
+    ADD CONSTRAINT reset_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: services_annexes services_annexes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.services_annexes
+    ADD CONSTRAINT services_annexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: soumissions_devoirs soumissions_devoirs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.soumissions_devoirs
+    ADD CONSTRAINT soumissions_devoirs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transactions_cantine transactions_cantine_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions_cantine
+    ADD CONSTRAINT transactions_cantine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: utilisateurs utilisateurs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.utilisateurs
+    ADD CONSTRAINT utilisateurs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ventes_librairie ventes_librairie_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ventes_librairie
+    ADD CONSTRAINT ventes_librairie_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: messages messages_payload_exclusive; Type: CHECK CONSTRAINT; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+ALTER TABLE realtime.messages
+    ADD CONSTRAINT messages_payload_exclusive CHECK (((payload IS NULL) OR (binary_payload IS NULL))) NOT VALID;
+
+
+--
+-- Name: messages messages_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+ALTER TABLE ONLY realtime.messages
+    ADD CONSTRAINT messages_pkey PRIMARY KEY (id, inserted_at);
+
+
+--
+-- Name: subscription pk_subscription; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
+--
+
+ALTER TABLE ONLY realtime.subscription
+    ADD CONSTRAINT pk_subscription PRIMARY KEY (id);
+
+
+--
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: realtime; Owner: supabase_admin
+--
+
+ALTER TABLE ONLY realtime.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: buckets_analytics buckets_analytics_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.buckets_analytics
+    ADD CONSTRAINT buckets_analytics_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: buckets buckets_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.buckets
+    ADD CONSTRAINT buckets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: buckets_vectors buckets_vectors_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.buckets_vectors
+    ADD CONSTRAINT buckets_vectors_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: migrations migrations_name_key; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.migrations
+    ADD CONSTRAINT migrations_name_key UNIQUE (name);
+
+
+--
+-- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.migrations
+    ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: objects objects_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.objects
+    ADD CONSTRAINT objects_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: s3_multipart_uploads_parts s3_multipart_uploads_parts_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.s3_multipart_uploads_parts
+    ADD CONSTRAINT s3_multipart_uploads_parts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: s3_multipart_uploads s3_multipart_uploads_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.s3_multipart_uploads
+    ADD CONSTRAINT s3_multipart_uploads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vector_indexes vector_indexes_pkey; Type: CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.vector_indexes
+    ADD CONSTRAINT vector_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: audit_logs_instance_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX audit_logs_instance_id_idx ON auth.audit_log_entries USING btree (instance_id);
+
+
+--
+-- Name: confirmation_token_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX confirmation_token_idx ON auth.users USING btree (confirmation_token) WHERE ((confirmation_token)::text !~ '^[0-9 ]*$'::text);
+
+
+--
+-- Name: custom_oauth_providers_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX custom_oauth_providers_created_at_idx ON auth.custom_oauth_providers USING btree (created_at);
+
+
+--
+-- Name: custom_oauth_providers_enabled_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX custom_oauth_providers_enabled_idx ON auth.custom_oauth_providers USING btree (enabled);
+
+
+--
+-- Name: custom_oauth_providers_identifier_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX custom_oauth_providers_identifier_idx ON auth.custom_oauth_providers USING btree (identifier);
+
+
+--
+-- Name: custom_oauth_providers_provider_type_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX custom_oauth_providers_provider_type_idx ON auth.custom_oauth_providers USING btree (provider_type);
+
+
+--
+-- Name: email_change_token_current_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX email_change_token_current_idx ON auth.users USING btree (email_change_token_current) WHERE ((email_change_token_current)::text !~ '^[0-9 ]*$'::text);
+
+
+--
+-- Name: email_change_token_new_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX email_change_token_new_idx ON auth.users USING btree (email_change_token_new) WHERE ((email_change_token_new)::text !~ '^[0-9 ]*$'::text);
+
+
+--
+-- Name: factor_id_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX factor_id_created_at_idx ON auth.mfa_factors USING btree (user_id, created_at);
+
+
+--
+-- Name: flow_state_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX flow_state_created_at_idx ON auth.flow_state USING btree (created_at DESC);
+
+
+--
+-- Name: identities_email_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX identities_email_idx ON auth.identities USING btree (email text_pattern_ops);
+
+
+--
+-- Name: INDEX identities_email_idx; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON INDEX auth.identities_email_idx IS 'Auth: Ensures indexed queries on the email column';
+
+
+--
+-- Name: identities_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX identities_user_id_idx ON auth.identities USING btree (user_id);
+
+
+--
+-- Name: idx_auth_code; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_auth_code ON auth.flow_state USING btree (auth_code);
+
+
+--
+-- Name: idx_oauth_client_states_created_at; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_oauth_client_states_created_at ON auth.oauth_client_states USING btree (created_at);
+
+
+--
+-- Name: idx_user_id_auth_method; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_user_id_auth_method ON auth.flow_state USING btree (user_id, authentication_method);
+
+
+--
+-- Name: idx_users_created_at_desc; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_users_created_at_desc ON auth.users USING btree (created_at DESC);
+
+
+--
+-- Name: idx_users_email; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_users_email ON auth.users USING btree (email);
+
+
+--
+-- Name: idx_users_last_sign_in_at_desc; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_users_last_sign_in_at_desc ON auth.users USING btree (last_sign_in_at DESC);
+
+
+--
+-- Name: idx_users_name; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX idx_users_name ON auth.users USING btree (((raw_user_meta_data ->> 'name'::text))) WHERE ((raw_user_meta_data ->> 'name'::text) IS NOT NULL);
+
+
+--
+-- Name: mfa_challenge_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX mfa_challenge_created_at_idx ON auth.mfa_challenges USING btree (created_at DESC);
+
+
+--
+-- Name: mfa_factors_user_friendly_name_unique; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX mfa_factors_user_friendly_name_unique ON auth.mfa_factors USING btree (friendly_name, user_id) WHERE (TRIM(BOTH FROM friendly_name) <> ''::text);
+
+
+--
+-- Name: mfa_factors_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX mfa_factors_user_id_idx ON auth.mfa_factors USING btree (user_id);
+
+
+--
+-- Name: oauth_auth_pending_exp_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX oauth_auth_pending_exp_idx ON auth.oauth_authorizations USING btree (expires_at) WHERE (status = 'pending'::auth.oauth_authorization_status);
+
+
+--
+-- Name: oauth_clients_deleted_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX oauth_clients_deleted_at_idx ON auth.oauth_clients USING btree (deleted_at);
+
+
+--
+-- Name: oauth_consents_active_client_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX oauth_consents_active_client_idx ON auth.oauth_consents USING btree (client_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- Name: oauth_consents_active_user_client_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX oauth_consents_active_user_client_idx ON auth.oauth_consents USING btree (user_id, client_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- Name: oauth_consents_user_order_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX oauth_consents_user_order_idx ON auth.oauth_consents USING btree (user_id, granted_at DESC);
+
+
+--
+-- Name: one_time_tokens_relates_to_hash_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX one_time_tokens_relates_to_hash_idx ON auth.one_time_tokens USING hash (relates_to);
+
+
+--
+-- Name: one_time_tokens_token_hash_hash_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX one_time_tokens_token_hash_hash_idx ON auth.one_time_tokens USING hash (token_hash);
+
+
+--
+-- Name: one_time_tokens_user_id_token_type_key; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX one_time_tokens_user_id_token_type_key ON auth.one_time_tokens USING btree (user_id, token_type);
+
+
+--
+-- Name: reauthentication_token_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX reauthentication_token_idx ON auth.users USING btree (reauthentication_token) WHERE ((reauthentication_token)::text !~ '^[0-9 ]*$'::text);
+
+
+--
+-- Name: recovery_token_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX recovery_token_idx ON auth.users USING btree (recovery_token) WHERE ((recovery_token)::text !~ '^[0-9 ]*$'::text);
+
+
+--
+-- Name: refresh_tokens_instance_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX refresh_tokens_instance_id_idx ON auth.refresh_tokens USING btree (instance_id);
+
+
+--
+-- Name: refresh_tokens_instance_id_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX refresh_tokens_instance_id_user_id_idx ON auth.refresh_tokens USING btree (instance_id, user_id);
+
+
+--
+-- Name: refresh_tokens_parent_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX refresh_tokens_parent_idx ON auth.refresh_tokens USING btree (parent);
+
+
+--
+-- Name: refresh_tokens_session_id_revoked_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX refresh_tokens_session_id_revoked_idx ON auth.refresh_tokens USING btree (session_id, revoked);
+
+
+--
+-- Name: refresh_tokens_updated_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX refresh_tokens_updated_at_idx ON auth.refresh_tokens USING btree (updated_at DESC);
+
+
+--
+-- Name: saml_providers_sso_provider_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX saml_providers_sso_provider_id_idx ON auth.saml_providers USING btree (sso_provider_id);
+
+
+--
+-- Name: saml_relay_states_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX saml_relay_states_created_at_idx ON auth.saml_relay_states USING btree (created_at DESC);
+
+
+--
+-- Name: saml_relay_states_for_email_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX saml_relay_states_for_email_idx ON auth.saml_relay_states USING btree (for_email);
+
+
+--
+-- Name: saml_relay_states_sso_provider_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX saml_relay_states_sso_provider_id_idx ON auth.saml_relay_states USING btree (sso_provider_id);
+
+
+--
+-- Name: sessions_not_after_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX sessions_not_after_idx ON auth.sessions USING btree (not_after DESC);
+
+
+--
+-- Name: sessions_oauth_client_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX sessions_oauth_client_id_idx ON auth.sessions USING btree (oauth_client_id);
+
+
+--
+-- Name: sessions_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX sessions_user_id_idx ON auth.sessions USING btree (user_id);
+
+
+--
+-- Name: sso_domains_domain_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX sso_domains_domain_idx ON auth.sso_domains USING btree (lower(domain));
+
+
+--
+-- Name: sso_domains_sso_provider_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX sso_domains_sso_provider_id_idx ON auth.sso_domains USING btree (sso_provider_id);
+
+
+--
+-- Name: sso_providers_resource_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX sso_providers_resource_id_idx ON auth.sso_providers USING btree (lower(resource_id));
+
+
+--
+-- Name: sso_providers_resource_id_pattern_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX sso_providers_resource_id_pattern_idx ON auth.sso_providers USING btree (resource_id text_pattern_ops);
+
+
+--
+-- Name: unique_phone_factor_per_user; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX unique_phone_factor_per_user ON auth.mfa_factors USING btree (user_id, phone);
+
+
+--
+-- Name: user_id_created_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX user_id_created_at_idx ON auth.sessions USING btree (user_id, created_at);
+
+
+--
+-- Name: users_email_partial_key; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX users_email_partial_key ON auth.users USING btree (email) WHERE (is_sso_user = false);
+
+
+--
+-- Name: INDEX users_email_partial_key; Type: COMMENT; Schema: auth; Owner: supabase_auth_admin
+--
+
+COMMENT ON INDEX auth.users_email_partial_key IS 'Auth: A partial unique index that applies only when is_sso_user is false';
+
+
+--
+-- Name: users_instance_id_email_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX users_instance_id_email_idx ON auth.users USING btree (instance_id, lower((email)::text));
+
+
+--
+-- Name: users_instance_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX users_instance_id_idx ON auth.users USING btree (instance_id);
+
+
+--
+-- Name: users_is_anonymous_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX users_is_anonymous_idx ON auth.users USING btree (is_anonymous);
+
+
+--
+-- Name: webauthn_challenges_expires_at_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX webauthn_challenges_expires_at_idx ON auth.webauthn_challenges USING btree (expires_at);
+
+
+--
+-- Name: webauthn_challenges_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX webauthn_challenges_user_id_idx ON auth.webauthn_challenges USING btree (user_id);
+
+
+--
+-- Name: webauthn_credentials_credential_id_key; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE UNIQUE INDEX webauthn_credentials_credential_id_key ON auth.webauthn_credentials USING btree (credential_id);
+
+
+--
+-- Name: webauthn_credentials_user_id_idx; Type: INDEX; Schema: auth; Owner: supabase_auth_admin
+--
+
+CREATE INDEX webauthn_credentials_user_id_idx ON auth.webauthn_credentials USING btree (user_id);
+
+
+--
+-- Name: budget_previsionnel_annee_categorie_code_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX budget_previsionnel_annee_categorie_code_key ON public.budget_previsionnel USING btree (annee, categorie_code);
+
+
+--
+-- Name: bus_immatriculation_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX bus_immatriculation_key ON public.bus USING btree (immatriculation);
+
+
+--
+-- Name: categories_depenses_code_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX categories_depenses_code_key ON public.categories_depenses USING btree (code);
+
+
+--
+-- Name: categories_quiz_nom_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX categories_quiz_nom_key ON public.categories_quiz USING btree (nom);
+
+
+--
+-- Name: commandes_librairie_numero_commande_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX commandes_librairie_numero_commande_key ON public.commandes_librairie USING btree (numero_commande);
+
+
+--
+-- Name: eleves_matricule_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX eleves_matricule_key ON public.eleves USING btree (matricule);
+
+
+--
+-- Name: eleves_utilisateur_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX eleves_utilisateur_id_key ON public.eleves USING btree (utilisateur_id);
+
+
+--
+-- Name: examens_eleves_examen_id_eleve_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX examens_eleves_examen_id_eleve_id_key ON public.examens_eleves USING btree (examen_id, eleve_id);
+
+
+--
+-- Name: idx_depenses_annee_mois; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_depenses_annee_mois ON public.depenses USING btree (exercice_annee, exercice_mois);
+
+
+--
+-- Name: idx_depenses_categorie; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_depenses_categorie ON public.depenses USING btree (categorie);
+
+
+--
+-- Name: idx_depenses_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_depenses_date ON public.depenses USING btree (date_depense);
+
+
+--
+-- Name: idx_echeances_paiement_reinscription_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_echeances_paiement_reinscription_id ON public.echeances_paiement USING btree (reinscription_id);
+
+
+--
+-- Name: idx_eleves_classe; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_eleves_classe ON public.eleves USING btree (classe_id);
+
+
+--
+-- Name: idx_eleves_matricule; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_eleves_matricule ON public.eleves USING btree (matricule);
+
+
+--
+-- Name: idx_enseignements_classe; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_enseignements_classe ON public.enseignements USING btree (classe_id);
+
+
+--
+-- Name: idx_enseignements_enseignant; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_enseignements_enseignant ON public.enseignements USING btree (enseignant_id);
+
+
+--
+-- Name: idx_examens_eleves_eleve_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_examens_eleves_eleve_id ON public.examens_eleves USING btree (eleve_id);
+
+
+--
+-- Name: idx_examens_eleves_examen_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_examens_eleves_examen_id ON public.examens_eleves USING btree (examen_id);
+
+
+--
+-- Name: idx_inscriptions_eleve; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_inscriptions_eleve ON public.inscriptions USING btree (eleve_id);
+
+
+--
+-- Name: idx_inscriptions_parent; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_inscriptions_parent ON public.inscriptions USING btree (parent_id);
+
+
+--
+-- Name: idx_messages_destinataire; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_messages_destinataire ON public.messages USING btree (destinataire_id, est_lu);
+
+
+--
+-- Name: idx_mouvements_caisse_annee_mois; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mouvements_caisse_annee_mois ON public.mouvements_caisse USING btree (exercice_annee, exercice_mois);
+
+
+--
+-- Name: idx_mouvements_caisse_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mouvements_caisse_date ON public.mouvements_caisse USING btree (date_mouvement);
+
+
+--
+-- Name: idx_mouvements_caisse_type; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_mouvements_caisse_type ON public.mouvements_caisse USING btree (type);
+
+
+--
+-- Name: idx_notes_eleve; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_notes_eleve ON public.notes USING btree (eleve_id);
+
+
+--
+-- Name: idx_paiements_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_paiements_date ON public.paiements USING btree (date_paiement);
+
+
+--
+-- Name: idx_paiements_eleve; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_paiements_eleve ON public.paiements USING btree (eleve_id);
+
+
+--
+-- Name: idx_paiements_preinscription_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_paiements_preinscription_id ON public.paiements USING btree (preinscription_id);
+
+
+--
+-- Name: idx_paiements_salaires_mois_annee; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_paiements_salaires_mois_annee ON public.paiements_salaires USING btree (mois, annee);
+
+
+--
+-- Name: idx_preinscriptions_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_preinscriptions_date ON public.preinscriptions USING btree (date_preinscription);
+
+
+--
+-- Name: idx_preinscriptions_nom_enfant; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_preinscriptions_nom_enfant ON public.preinscriptions USING btree (enfant_nom, enfant_prenom);
+
+
+--
+-- Name: idx_preinscriptions_numero_dossier; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_preinscriptions_numero_dossier ON public.preinscriptions USING btree (numero_dossier);
+
+
+--
+-- Name: idx_preinscriptions_parent_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_preinscriptions_parent_id ON public.preinscriptions USING btree (parent_id);
+
+
+--
+-- Name: idx_preinscriptions_statut; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_preinscriptions_statut ON public.preinscriptions USING btree (statut);
+
+
+--
+-- Name: idx_presences_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_presences_date ON public.presences USING btree (date);
+
+
+--
+-- Name: idx_presences_transport_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_presences_transport_date ON public.presences_transport USING btree (date);
+
+
+--
+-- Name: idx_presences_transport_eleve; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_presences_transport_eleve ON public.presences_transport USING btree (eleve_id);
+
+
+--
+-- Name: idx_reinscriptions_annee; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reinscriptions_annee ON public.reinscriptions USING btree (annee_scolaire_id);
+
+
+--
+-- Name: idx_reinscriptions_eleve; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reinscriptions_eleve ON public.reinscriptions USING btree (eleve_id);
+
+
+--
+-- Name: idx_reinscriptions_statut; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reinscriptions_statut ON public.reinscriptions USING btree (statut);
+
+
+--
+-- Name: idx_reset_tokens_email; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reset_tokens_email ON public.reset_tokens USING btree (email);
+
+
+--
+-- Name: idx_reset_tokens_token; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reset_tokens_token ON public.reset_tokens USING btree (token);
+
+
+--
+-- Name: inscriptions_numero_matricule_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX inscriptions_numero_matricule_key ON public.inscriptions USING btree (numero_matricule);
+
+
+--
+-- Name: paiements_salaires_personnel_id_mois_annee_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX paiements_salaires_personnel_id_mois_annee_key ON public.paiements_salaires USING btree (personnel_id, mois, annee);
+
+
+--
+-- Name: parents_utilisateur_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX parents_utilisateur_id_key ON public.parents USING btree (utilisateur_id);
+
+
+--
+-- Name: participations_quiz_quiz_id_eleve_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX participations_quiz_quiz_id_eleve_id_key ON public.participations_quiz USING btree (quiz_id, eleve_id);
+
+
+--
+-- Name: personnels_matricule_personnel_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX personnels_matricule_personnel_key ON public.personnels USING btree (matricule_personnel);
+
+
+--
+-- Name: personnels_utilisateur_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX personnels_utilisateur_id_key ON public.personnels USING btree (utilisateur_id);
+
+
+--
+-- Name: preinscriptions_numero_dossier_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX preinscriptions_numero_dossier_key ON public.preinscriptions USING btree (numero_dossier);
+
+
+--
+-- Name: presences_transport_eleve_id_date_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX presences_transport_eleve_id_date_key ON public.presences_transport USING btree (eleve_id, date);
+
+
+--
+-- Name: quiz_questions_quiz_id_question_id_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX quiz_questions_quiz_id_question_id_key ON public.quiz_questions USING btree (quiz_id, question_id);
+
+
+--
+-- Name: reinscriptions_numero_dossier_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX reinscriptions_numero_dossier_key ON public.reinscriptions USING btree (numero_dossier);
+
+
+--
+-- Name: services_annexes_nom_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX services_annexes_nom_key ON public.services_annexes USING btree (nom);
+
+
+--
+-- Name: sessions_token_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX sessions_token_key ON public.sessions USING btree (token);
+
+
+--
+-- Name: unique_email_token; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX unique_email_token ON public.reset_tokens USING btree (email);
+
+
+--
+-- Name: utilisateurs_email_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX utilisateurs_email_key ON public.utilisateurs USING btree (email);
+
+
+--
+-- Name: ix_realtime_subscription_entity; Type: INDEX; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE INDEX ix_realtime_subscription_entity ON realtime.subscription USING btree (entity);
+
+
+--
+-- Name: messages_inserted_at_topic_index; Type: INDEX; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+CREATE INDEX messages_inserted_at_topic_index ON ONLY realtime.messages USING btree (inserted_at DESC, topic) WHERE ((extension = 'broadcast'::text) AND (private IS TRUE));
+
+
+--
+-- Name: subscription_subscription_id_entity_filters_action_filter_selec; Type: INDEX; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE UNIQUE INDEX subscription_subscription_id_entity_filters_action_filter_selec ON realtime.subscription USING btree (subscription_id, entity, filters, action_filter, COALESCE(selected_columns, '{}'::text[]));
+
+
+--
+-- Name: bname; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE UNIQUE INDEX bname ON storage.buckets USING btree (name);
+
+
+--
+-- Name: bucketid_objname; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE UNIQUE INDEX bucketid_objname ON storage.objects USING btree (bucket_id, name);
+
+
+--
+-- Name: buckets_analytics_unique_name_idx; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE UNIQUE INDEX buckets_analytics_unique_name_idx ON storage.buckets_analytics USING btree (name) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: idx_multipart_uploads_list; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE INDEX idx_multipart_uploads_list ON storage.s3_multipart_uploads USING btree (bucket_id, key, created_at);
+
+
+--
+-- Name: idx_objects_bucket_id_name; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE INDEX idx_objects_bucket_id_name ON storage.objects USING btree (bucket_id, name COLLATE "C");
+
+
+--
+-- Name: idx_objects_bucket_id_name_lower; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE INDEX idx_objects_bucket_id_name_lower ON storage.objects USING btree (bucket_id, lower(name) COLLATE "C");
+
+
+--
+-- Name: name_prefix_search; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE INDEX name_prefix_search ON storage.objects USING btree (name text_pattern_ops);
+
+
+--
+-- Name: vector_indexes_name_bucket_id_idx; Type: INDEX; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE UNIQUE INDEX vector_indexes_name_bucket_id_idx ON storage.vector_indexes USING btree (name, bucket_id);
+
+
+--
+-- Name: subscription tr_check_filters; Type: TRIGGER; Schema: realtime; Owner: supabase_admin
+--
+
+CREATE TRIGGER tr_check_filters BEFORE INSERT OR UPDATE ON realtime.subscription FOR EACH ROW EXECUTE FUNCTION realtime.subscription_check_filters();
+
+
+--
+-- Name: buckets enforce_bucket_name_length_trigger; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TRIGGER enforce_bucket_name_length_trigger BEFORE INSERT OR UPDATE OF name ON storage.buckets FOR EACH ROW EXECUTE FUNCTION storage.enforce_bucket_name_length();
+
+
+--
+-- Name: buckets protect_buckets_delete; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TRIGGER protect_buckets_delete BEFORE DELETE ON storage.buckets FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();
+
+
+--
+-- Name: objects protect_objects_delete; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TRIGGER protect_objects_delete BEFORE DELETE ON storage.objects FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();
+
+
+--
+-- Name: objects update_objects_updated_at; Type: TRIGGER; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE TRIGGER update_objects_updated_at BEFORE UPDATE ON storage.objects FOR EACH ROW EXECUTE FUNCTION storage.update_updated_at_column();
+
+
+--
+-- Name: identities identities_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.identities
+    ADD CONSTRAINT identities_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mfa_amr_claims mfa_amr_claims_session_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_amr_claims
+    ADD CONSTRAINT mfa_amr_claims_session_id_fkey FOREIGN KEY (session_id) REFERENCES auth.sessions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mfa_challenges mfa_challenges_auth_factor_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_challenges
+    ADD CONSTRAINT mfa_challenges_auth_factor_id_fkey FOREIGN KEY (factor_id) REFERENCES auth.mfa_factors(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mfa_factors mfa_factors_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.mfa_factors
+    ADD CONSTRAINT mfa_factors_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_authorizations oauth_authorizations_client_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_authorizations
+    ADD CONSTRAINT oauth_authorizations_client_id_fkey FOREIGN KEY (client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_authorizations oauth_authorizations_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_authorizations
+    ADD CONSTRAINT oauth_authorizations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_consents oauth_consents_client_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_consents
+    ADD CONSTRAINT oauth_consents_client_id_fkey FOREIGN KEY (client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_consents oauth_consents_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.oauth_consents
+    ADD CONSTRAINT oauth_consents_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: one_time_tokens one_time_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.one_time_tokens
+    ADD CONSTRAINT one_time_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: refresh_tokens refresh_tokens_session_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_session_id_fkey FOREIGN KEY (session_id) REFERENCES auth.sessions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: saml_providers saml_providers_sso_provider_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.saml_providers
+    ADD CONSTRAINT saml_providers_sso_provider_id_fkey FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: saml_relay_states saml_relay_states_flow_state_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.saml_relay_states
+    ADD CONSTRAINT saml_relay_states_flow_state_id_fkey FOREIGN KEY (flow_state_id) REFERENCES auth.flow_state(id) ON DELETE CASCADE;
+
+
+--
+-- Name: saml_relay_states saml_relay_states_sso_provider_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.saml_relay_states
+    ADD CONSTRAINT saml_relay_states_sso_provider_id_fkey FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sessions sessions_oauth_client_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.sessions
+    ADD CONSTRAINT sessions_oauth_client_id_fkey FOREIGN KEY (oauth_client_id) REFERENCES auth.oauth_clients(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.sessions
+    ADD CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sso_domains sso_domains_sso_provider_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.sso_domains
+    ADD CONSTRAINT sso_domains_sso_provider_id_fkey FOREIGN KEY (sso_provider_id) REFERENCES auth.sso_providers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: webauthn_challenges webauthn_challenges_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.webauthn_challenges
+    ADD CONSTRAINT webauthn_challenges_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: webauthn_credentials webauthn_credentials_user_id_fkey; Type: FK CONSTRAINT; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE ONLY auth.webauthn_credentials
+    ADD CONSTRAINT webauthn_credentials_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: annonces annonces_classe_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.annonces
+    ADD CONSTRAINT annonces_classe_id_fkey FOREIGN KEY (classe_id) REFERENCES public.classes(id);
+
+
+--
+-- Name: annonces annonces_publie_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.annonces
+    ADD CONSTRAINT annonces_publie_par_fkey FOREIGN KEY (publie_par) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: avances_salaires avances_salaires_accorde_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.avances_salaires
+    ADD CONSTRAINT avances_salaires_accorde_par_fkey FOREIGN KEY (accorde_par) REFERENCES public.utilisateurs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: avances_salaires avances_salaires_personnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.avances_salaires
+    ADD CONSTRAINT avances_salaires_personnel_id_fkey FOREIGN KEY (personnel_id) REFERENCES public.personnels(id) ON DELETE CASCADE;
+
+
+--
+-- Name: budget_previsionnel budget_previsionnel_categorie_code_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.budget_previsionnel
+    ADD CONSTRAINT budget_previsionnel_categorie_code_fkey FOREIGN KEY (categorie_code) REFERENCES public.categories_depenses(code);
+
+
+--
+-- Name: classes classes_annee_scolaire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.classes
+    ADD CONSTRAINT classes_annee_scolaire_id_fkey FOREIGN KEY (annee_scolaire_id) REFERENCES public.annees_scolaires(id);
+
+
+--
+-- Name: classes classes_titulaire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.classes
+    ADD CONSTRAINT classes_titulaire_id_fkey FOREIGN KEY (titulaire_id) REFERENCES public.personnels(id);
+
+
+--
+-- Name: commandes_fournitures commandes_fournitures_article_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_fournitures
+    ADD CONSTRAINT commandes_fournitures_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles_librairie(id);
+
+
+--
+-- Name: commandes_fournitures commandes_fournitures_preinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_fournitures
+    ADD CONSTRAINT commandes_fournitures_preinscription_id_fkey FOREIGN KEY (preinscription_id) REFERENCES public.preinscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: commandes_librairie_articles commandes_librairie_articles_article_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie_articles
+    ADD CONSTRAINT commandes_librairie_articles_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles_librairie(id);
+
+
+--
+-- Name: commandes_librairie_articles commandes_librairie_articles_commande_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie_articles
+    ADD CONSTRAINT commandes_librairie_articles_commande_id_fkey FOREIGN KEY (commande_id) REFERENCES public.commandes_librairie(id) ON DELETE CASCADE;
+
+
+--
+-- Name: commandes_librairie commandes_librairie_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.commandes_librairie
+    ADD CONSTRAINT commandes_librairie_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.parents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: conges_personnel conges_personnel_approuve_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conges_personnel
+    ADD CONSTRAINT conges_personnel_approuve_par_fkey FOREIGN KEY (approuve_par) REFERENCES public.utilisateurs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: conges_personnel conges_personnel_personnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conges_personnel
+    ADD CONSTRAINT conges_personnel_personnel_id_fkey FOREIGN KEY (personnel_id) REFERENCES public.personnels(id) ON DELETE CASCADE;
+
+
+--
+-- Name: contrats_personnel contrats_personnel_personnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrats_personnel
+    ADD CONSTRAINT contrats_personnel_personnel_id_fkey FOREIGN KEY (personnel_id) REFERENCES public.personnels(id) ON DELETE CASCADE;
+
+
+--
+-- Name: depenses depenses_saisi_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.depenses
+    ADD CONSTRAINT depenses_saisi_par_fkey FOREIGN KEY (saisi_par) REFERENCES public.utilisateurs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: depenses depenses_valide_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.depenses
+    ADD CONSTRAINT depenses_valide_par_fkey FOREIGN KEY (valide_par) REFERENCES public.utilisateurs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: devoirs devoirs_enseignement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.devoirs
+    ADD CONSTRAINT devoirs_enseignement_id_fkey FOREIGN KEY (enseignement_id) REFERENCES public.enseignements(id);
+
+
+--
+-- Name: echeances_paiement echeances_paiement_preinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.echeances_paiement
+    ADD CONSTRAINT echeances_paiement_preinscription_id_fkey FOREIGN KEY (preinscription_id) REFERENCES public.preinscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: echeances_paiement echeances_paiement_reinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.echeances_paiement
+    ADD CONSTRAINT echeances_paiement_reinscription_id_fkey FOREIGN KEY (reinscription_id) REFERENCES public.reinscriptions(id);
+
+
+--
+-- Name: eleves eleves_classe_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.eleves
+    ADD CONSTRAINT eleves_classe_id_fkey FOREIGN KEY (classe_id) REFERENCES public.classes(id);
+
+
+--
+-- Name: eleves eleves_utilisateur_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.eleves
+    ADD CONSTRAINT eleves_utilisateur_id_fkey FOREIGN KEY (utilisateur_id) REFERENCES public.utilisateurs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: emprunts_bibliotheque emprunts_bibliotheque_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.emprunts_bibliotheque
+    ADD CONSTRAINT emprunts_bibliotheque_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: emprunts_bibliotheque emprunts_bibliotheque_livre_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.emprunts_bibliotheque
+    ADD CONSTRAINT emprunts_bibliotheque_livre_id_fkey FOREIGN KEY (livre_id) REFERENCES public.livres_bibliotheque(id) ON DELETE CASCADE;
+
+
+--
+-- Name: enseignements enseignements_annee_scolaire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.enseignements
+    ADD CONSTRAINT enseignements_annee_scolaire_id_fkey FOREIGN KEY (annee_scolaire_id) REFERENCES public.annees_scolaires(id);
+
+
+--
+-- Name: enseignements enseignements_classe_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.enseignements
+    ADD CONSTRAINT enseignements_classe_id_fkey FOREIGN KEY (classe_id) REFERENCES public.classes(id);
+
+
+--
+-- Name: enseignements enseignements_enseignant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.enseignements
+    ADD CONSTRAINT enseignements_enseignant_id_fkey FOREIGN KEY (enseignant_id) REFERENCES public.personnels(id);
+
+
+--
+-- Name: enseignements enseignements_matiere_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.enseignements
+    ADD CONSTRAINT enseignements_matiere_id_fkey FOREIGN KEY (matiere_id) REFERENCES public.matieres(id);
+
+
+--
+-- Name: examens_eleves examens_eleves_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens_eleves
+    ADD CONSTRAINT examens_eleves_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: examens_eleves examens_eleves_examen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens_eleves
+    ADD CONSTRAINT examens_eleves_examen_id_fkey FOREIGN KEY (examen_id) REFERENCES public.examens(id) ON DELETE CASCADE;
+
+
+--
+-- Name: examens examens_enseignement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.examens
+    ADD CONSTRAINT examens_enseignement_id_fkey FOREIGN KEY (enseignement_id) REFERENCES public.enseignements(id);
+
+
+--
+-- Name: frais_scolaires frais_scolaires_annee_scolaire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.frais_scolaires
+    ADD CONSTRAINT frais_scolaires_annee_scolaire_id_fkey FOREIGN KEY (annee_scolaire_id) REFERENCES public.annees_scolaires(id);
+
+
+--
+-- Name: inscriptions inscriptions_annee_scolaire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions
+    ADD CONSTRAINT inscriptions_annee_scolaire_id_fkey FOREIGN KEY (annee_scolaire_id) REFERENCES public.annees_scolaires(id);
+
+
+--
+-- Name: inscriptions_cantine inscriptions_cantine_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_cantine
+    ADD CONSTRAINT inscriptions_cantine_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: inscriptions inscriptions_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions
+    ADD CONSTRAINT inscriptions_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: inscriptions inscriptions_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions
+    ADD CONSTRAINT inscriptions_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.parents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: inscriptions inscriptions_preinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions
+    ADD CONSTRAINT inscriptions_preinscription_id_fkey FOREIGN KEY (preinscription_id) REFERENCES public.preinscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: inscriptions_transport inscriptions_transport_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_transport
+    ADD CONSTRAINT inscriptions_transport_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: inscriptions_transport inscriptions_transport_ligne_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inscriptions_transport
+    ADD CONSTRAINT inscriptions_transport_ligne_id_fkey FOREIGN KEY (ligne_id) REFERENCES public.lignes_transport(id);
+
+
+--
+-- Name: lecons lecons_enseignement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lecons
+    ADD CONSTRAINT lecons_enseignement_id_fkey FOREIGN KEY (enseignement_id) REFERENCES public.enseignements(id);
+
+
+--
+-- Name: lien_parent_eleve lien_parent_eleve_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lien_parent_eleve
+    ADD CONSTRAINT lien_parent_eleve_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lien_parent_eleve lien_parent_eleve_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lien_parent_eleve
+    ADD CONSTRAINT lien_parent_eleve_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.parents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lignes_transport lignes_transport_bus_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lignes_transport
+    ADD CONSTRAINT lignes_transport_bus_id_fkey FOREIGN KEY (bus_id) REFERENCES public.bus(id);
+
+
+--
+-- Name: logs_activites logs_activites_utilisateur_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.logs_activites
+    ADD CONSTRAINT logs_activites_utilisateur_id_fkey FOREIGN KEY (utilisateur_id) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: messages messages_destinataire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_destinataire_id_fkey FOREIGN KEY (destinataire_id) REFERENCES public.utilisateurs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: messages messages_expediteur_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_expediteur_id_fkey FOREIGN KEY (expediteur_id) REFERENCES public.utilisateurs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mouvements_caisse mouvements_caisse_saisi_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mouvements_caisse
+    ADD CONSTRAINT mouvements_caisse_saisi_par_fkey FOREIGN KEY (saisi_par) REFERENCES public.utilisateurs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: mouvements_caisse mouvements_caisse_valide_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mouvements_caisse
+    ADD CONSTRAINT mouvements_caisse_valide_par_fkey FOREIGN KEY (valide_par) REFERENCES public.utilisateurs(id) ON DELETE SET NULL;
+
+
+--
+-- Name: notes notes_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: notes notes_enseignant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_enseignant_id_fkey FOREIGN KEY (enseignant_id) REFERENCES public.personnels(id);
+
+
+--
+-- Name: notes notes_enseignement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_enseignement_id_fkey FOREIGN KEY (enseignement_id) REFERENCES public.enseignements(id);
+
+
+--
+-- Name: options_qcm options_qcm_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.options_qcm
+    ADD CONSTRAINT options_qcm_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_qcm(id) ON DELETE CASCADE;
+
+
+--
+-- Name: options_quiz options_quiz_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.options_quiz
+    ADD CONSTRAINT options_quiz_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: paiements paiements_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements
+    ADD CONSTRAINT paiements_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: paiements paiements_preinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements
+    ADD CONSTRAINT paiements_preinscription_id_fkey FOREIGN KEY (preinscription_id) REFERENCES public.preinscriptions(id);
+
+
+--
+-- Name: paiements paiements_reinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements
+    ADD CONSTRAINT paiements_reinscription_id_fkey FOREIGN KEY (reinscription_id) REFERENCES public.reinscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: paiements paiements_saisie_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements
+    ADD CONSTRAINT paiements_saisie_par_fkey FOREIGN KEY (saisie_par) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: paiements_salaires paiements_salaires_personnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements_salaires
+    ADD CONSTRAINT paiements_salaires_personnel_id_fkey FOREIGN KEY (personnel_id) REFERENCES public.personnels(id) ON DELETE CASCADE;
+
+
+--
+-- Name: paiements_salaires paiements_salaires_saisie_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.paiements_salaires
+    ADD CONSTRAINT paiements_salaires_saisie_par_fkey FOREIGN KEY (saisie_par) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: parents parents_utilisateur_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.parents
+    ADD CONSTRAINT parents_utilisateur_id_fkey FOREIGN KEY (utilisateur_id) REFERENCES public.utilisateurs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: participations_quiz participations_quiz_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.participations_quiz
+    ADD CONSTRAINT participations_quiz_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: participations_quiz participations_quiz_quiz_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.participations_quiz
+    ADD CONSTRAINT participations_quiz_quiz_id_fkey FOREIGN KEY (quiz_id) REFERENCES public.quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: personnels personnels_utilisateur_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.personnels
+    ADD CONSTRAINT personnels_utilisateur_id_fkey FOREIGN KEY (utilisateur_id) REFERENCES public.utilisateurs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: preinscription_cantine preinscription_cantine_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_cantine
+    ADD CONSTRAINT preinscription_cantine_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.cantine_menus(id);
+
+
+--
+-- Name: preinscription_cantine preinscription_cantine_preinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_cantine
+    ADD CONSTRAINT preinscription_cantine_preinscription_id_fkey FOREIGN KEY (preinscription_id) REFERENCES public.preinscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: preinscription_transport preinscription_transport_ligne_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_transport
+    ADD CONSTRAINT preinscription_transport_ligne_id_fkey FOREIGN KEY (ligne_id) REFERENCES public.lignes_transport(id);
+
+
+--
+-- Name: preinscription_transport preinscription_transport_preinscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscription_transport
+    ADD CONSTRAINT preinscription_transport_preinscription_id_fkey FOREIGN KEY (preinscription_id) REFERENCES public.preinscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: preinscriptions preinscriptions_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscriptions
+    ADD CONSTRAINT preinscriptions_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.parents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: preinscriptions preinscriptions_traite_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.preinscriptions
+    ADD CONSTRAINT preinscriptions_traite_par_fkey FOREIGN KEY (traite_par) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: presences presences_classe_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences
+    ADD CONSTRAINT presences_classe_id_fkey FOREIGN KEY (classe_id) REFERENCES public.classes(id);
+
+
+--
+-- Name: presences presences_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences
+    ADD CONSTRAINT presences_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: presences presences_enseignant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences
+    ADD CONSTRAINT presences_enseignant_id_fkey FOREIGN KEY (enseignant_id) REFERENCES public.personnels(id);
+
+
+--
+-- Name: presences_transport presences_transport_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.presences_transport
+    ADD CONSTRAINT presences_transport_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: questions_qcm questions_qcm_examen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_qcm
+    ADD CONSTRAINT questions_qcm_examen_id_fkey FOREIGN KEY (examen_id) REFERENCES public.examens(id) ON DELETE CASCADE;
+
+
+--
+-- Name: questions_quiz questions_quiz_categorie_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_quiz
+    ADD CONSTRAINT questions_quiz_categorie_id_fkey FOREIGN KEY (categorie_id) REFERENCES public.categories_quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: questions_quiz questions_quiz_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_quiz
+    ADD CONSTRAINT questions_quiz_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: questions_quiz questions_quiz_enseignement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions_quiz
+    ADD CONSTRAINT questions_quiz_enseignement_id_fkey FOREIGN KEY (enseignement_id) REFERENCES public.enseignements(id) ON DELETE CASCADE;
+
+
+--
+-- Name: quiz quiz_enseignement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz
+    ADD CONSTRAINT quiz_enseignement_id_fkey FOREIGN KEY (enseignement_id) REFERENCES public.enseignements(id) ON DELETE CASCADE;
+
+
+--
+-- Name: quiz_questions quiz_questions_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz_questions
+    ADD CONSTRAINT quiz_questions_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: quiz_questions quiz_questions_quiz_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.quiz_questions
+    ADD CONSTRAINT quiz_questions_quiz_id_fkey FOREIGN KEY (quiz_id) REFERENCES public.quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reinscriptions reinscriptions_annee_scolaire_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions
+    ADD CONSTRAINT reinscriptions_annee_scolaire_id_fkey FOREIGN KEY (annee_scolaire_id) REFERENCES public.annees_scolaires(id);
+
+
+--
+-- Name: reinscriptions reinscriptions_classe_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions
+    ADD CONSTRAINT reinscriptions_classe_id_fkey FOREIGN KEY (classe_id) REFERENCES public.classes(id);
+
+
+--
+-- Name: reinscriptions reinscriptions_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions
+    ADD CONSTRAINT reinscriptions_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reinscriptions reinscriptions_inscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions
+    ADD CONSTRAINT reinscriptions_inscription_id_fkey FOREIGN KEY (inscription_id) REFERENCES public.inscriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reinscriptions reinscriptions_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reinscriptions
+    ADD CONSTRAINT reinscriptions_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.parents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reponses_eleves_qcm reponses_eleves_qcm_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_eleves_qcm
+    ADD CONSTRAINT reponses_eleves_qcm_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reponses_eleves_qcm reponses_eleves_qcm_examen_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_eleves_qcm
+    ADD CONSTRAINT reponses_eleves_qcm_examen_id_fkey FOREIGN KEY (examen_id) REFERENCES public.examens(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reponses_eleves_qcm reponses_eleves_qcm_option_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_eleves_qcm
+    ADD CONSTRAINT reponses_eleves_qcm_option_id_fkey FOREIGN KEY (option_id) REFERENCES public.options_qcm(id);
+
+
+--
+-- Name: reponses_eleves_qcm reponses_eleves_qcm_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_eleves_qcm
+    ADD CONSTRAINT reponses_eleves_qcm_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_qcm(id);
+
+
+--
+-- Name: reponses_quiz reponses_quiz_option_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_quiz
+    ADD CONSTRAINT reponses_quiz_option_id_fkey FOREIGN KEY (option_id) REFERENCES public.options_quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reponses_quiz reponses_quiz_participation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_quiz
+    ADD CONSTRAINT reponses_quiz_participation_id_fkey FOREIGN KEY (participation_id) REFERENCES public.participations_quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reponses_quiz reponses_quiz_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reponses_quiz
+    ADD CONSTRAINT reponses_quiz_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_quiz(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reservations_cantine reservations_cantine_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservations_cantine
+    ADD CONSTRAINT reservations_cantine_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reservations_cantine reservations_cantine_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reservations_cantine
+    ADD CONSTRAINT reservations_cantine_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.menus_cantine(id);
+
+
+--
+-- Name: reserves_cantine reserves_cantine_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.reserves_cantine
+    ADD CONSTRAINT reserves_cantine_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: sessions sessions_utilisateur_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_utilisateur_id_fkey FOREIGN KEY (utilisateur_id) REFERENCES public.utilisateurs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: soumissions_devoirs soumissions_devoirs_devoir_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.soumissions_devoirs
+    ADD CONSTRAINT soumissions_devoirs_devoir_id_fkey FOREIGN KEY (devoir_id) REFERENCES public.devoirs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: soumissions_devoirs soumissions_devoirs_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.soumissions_devoirs
+    ADD CONSTRAINT soumissions_devoirs_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: transactions_cantine transactions_cantine_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions_cantine
+    ADD CONSTRAINT transactions_cantine_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ventes_librairie ventes_librairie_article_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ventes_librairie
+    ADD CONSTRAINT ventes_librairie_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles_librairie(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ventes_librairie ventes_librairie_eleve_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ventes_librairie
+    ADD CONSTRAINT ventes_librairie_eleve_id_fkey FOREIGN KEY (eleve_id) REFERENCES public.eleves(id);
+
+
+--
+-- Name: ventes_librairie ventes_librairie_vendu_par_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ventes_librairie
+    ADD CONSTRAINT ventes_librairie_vendu_par_fkey FOREIGN KEY (vendu_par) REFERENCES public.utilisateurs(id);
+
+
+--
+-- Name: objects objects_bucketId_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.objects
+    ADD CONSTRAINT "objects_bucketId_fkey" FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id);
+
+
+--
+-- Name: s3_multipart_uploads s3_multipart_uploads_bucket_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.s3_multipart_uploads
+    ADD CONSTRAINT s3_multipart_uploads_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id);
+
+
+--
+-- Name: s3_multipart_uploads_parts s3_multipart_uploads_parts_bucket_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.s3_multipart_uploads_parts
+    ADD CONSTRAINT s3_multipart_uploads_parts_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id);
+
+
+--
+-- Name: s3_multipart_uploads_parts s3_multipart_uploads_parts_upload_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.s3_multipart_uploads_parts
+    ADD CONSTRAINT s3_multipart_uploads_parts_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES storage.s3_multipart_uploads(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vector_indexes vector_indexes_bucket_id_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE ONLY storage.vector_indexes
+    ADD CONSTRAINT vector_indexes_bucket_id_fkey FOREIGN KEY (bucket_id) REFERENCES storage.buckets_vectors(id);
+
+
+--
+-- Name: audit_log_entries; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.audit_log_entries ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: flow_state; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.flow_state ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: identities; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.identities ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: instances; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.instances ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: mfa_amr_claims; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.mfa_amr_claims ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: mfa_challenges; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.mfa_challenges ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: mfa_factors; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.mfa_factors ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: one_time_tokens; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.one_time_tokens ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: refresh_tokens; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.refresh_tokens ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: saml_providers; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.saml_providers ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: saml_relay_states; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.saml_relay_states ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: schema_migrations; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.schema_migrations ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: sessions; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.sessions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: sso_domains; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.sso_domains ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: sso_providers; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.sso_providers ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: users; Type: ROW SECURITY; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: messages; Type: ROW SECURITY; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: objects Permettre l'upload des fichiers; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE POLICY "Permettre l'upload des fichiers" ON storage.objects FOR INSERT TO authenticated, anon WITH CHECK ((bucket_id = 'preinscriptions'::text));
+
+
+--
+-- Name: objects Permettre la lecture des fichiers; Type: POLICY; Schema: storage; Owner: supabase_storage_admin
+--
+
+CREATE POLICY "Permettre la lecture des fichiers" ON storage.objects FOR SELECT TO authenticated, anon USING ((bucket_id = 'preinscriptions'::text));
+
+
+--
+-- Name: buckets; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: buckets_analytics; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.buckets_analytics ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: buckets_vectors; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.buckets_vectors ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: migrations; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.migrations ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: objects; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: s3_multipart_uploads; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.s3_multipart_uploads ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: s3_multipart_uploads_parts; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.s3_multipart_uploads_parts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: vector_indexes; Type: ROW SECURITY; Schema: storage; Owner: supabase_storage_admin
+--
+
+ALTER TABLE storage.vector_indexes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: supabase_realtime; Type: PUBLICATION; Schema: -; Owner: postgres
+--
+
+CREATE PUBLICATION supabase_realtime WITH (publish = 'insert, update, delete, truncate');
+
+
+ALTER PUBLICATION supabase_realtime OWNER TO postgres;
+
+--
+-- Name: SCHEMA auth; Type: ACL; Schema: -; Owner: supabase_admin
+--
+
+GRANT USAGE ON SCHEMA auth TO anon;
+GRANT USAGE ON SCHEMA auth TO authenticated;
+GRANT USAGE ON SCHEMA auth TO service_role;
+GRANT ALL ON SCHEMA auth TO supabase_auth_admin;
+GRANT ALL ON SCHEMA auth TO dashboard_user;
+GRANT USAGE ON SCHEMA auth TO postgres;
+
+
+--
+-- Name: SCHEMA extensions; Type: ACL; Schema: -; Owner: postgres
+--
+
+GRANT USAGE ON SCHEMA extensions TO anon;
+GRANT USAGE ON SCHEMA extensions TO authenticated;
+GRANT USAGE ON SCHEMA extensions TO service_role;
+GRANT ALL ON SCHEMA extensions TO dashboard_user;
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+
+
+--
+-- Name: SCHEMA realtime; Type: ACL; Schema: -; Owner: supabase_admin
+--
+
+GRANT USAGE ON SCHEMA realtime TO postgres;
+GRANT USAGE ON SCHEMA realtime TO anon;
+GRANT USAGE ON SCHEMA realtime TO authenticated;
+GRANT USAGE ON SCHEMA realtime TO service_role;
+GRANT ALL ON SCHEMA realtime TO supabase_realtime_admin;
+
+
+--
+-- Name: SCHEMA storage; Type: ACL; Schema: -; Owner: supabase_admin
+--
+
+GRANT USAGE ON SCHEMA storage TO postgres WITH GRANT OPTION;
+GRANT USAGE ON SCHEMA storage TO anon;
+GRANT USAGE ON SCHEMA storage TO authenticated;
+GRANT USAGE ON SCHEMA storage TO service_role;
+GRANT ALL ON SCHEMA storage TO supabase_storage_admin WITH GRANT OPTION;
+GRANT ALL ON SCHEMA storage TO dashboard_user;
+
+
+--
+-- Name: SCHEMA vault; Type: ACL; Schema: -; Owner: supabase_admin
+--
+
+GRANT USAGE ON SCHEMA vault TO postgres WITH GRANT OPTION;
+GRANT USAGE ON SCHEMA vault TO service_role;
+
+
+--
+-- Name: FUNCTION email(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON FUNCTION auth.email() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION jwt(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON FUNCTION auth.jwt() TO postgres;
+GRANT ALL ON FUNCTION auth.jwt() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION role(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON FUNCTION auth.role() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uid(); Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON FUNCTION auth.uid() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION armor(bytea); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.armor(bytea) FROM postgres;
+GRANT ALL ON FUNCTION extensions.armor(bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.armor(bytea) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION armor(bytea, text[], text[]); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.armor(bytea, text[], text[]) FROM postgres;
+GRANT ALL ON FUNCTION extensions.armor(bytea, text[], text[]) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.armor(bytea, text[], text[]) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION crypt(text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.crypt(text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.crypt(text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.crypt(text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION dearmor(text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.dearmor(text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.dearmor(text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.dearmor(text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION decrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION decrypt_iv(bytea, bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION digest(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.digest(bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.digest(bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.digest(bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION digest(text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.digest(text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.digest(text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.digest(text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION encrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION encrypt_iv(bytea, bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION gen_random_bytes(integer); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.gen_random_bytes(integer) FROM postgres;
+GRANT ALL ON FUNCTION extensions.gen_random_bytes(integer) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.gen_random_bytes(integer) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION gen_random_uuid(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.gen_random_uuid() FROM postgres;
+GRANT ALL ON FUNCTION extensions.gen_random_uuid() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.gen_random_uuid() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION gen_salt(text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.gen_salt(text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.gen_salt(text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.gen_salt(text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION gen_salt(text, integer); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.gen_salt(text, integer) FROM postgres;
+GRANT ALL ON FUNCTION extensions.gen_salt(text, integer) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.gen_salt(text, integer) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION grant_pg_cron_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
+--
+
+REVOKE ALL ON FUNCTION extensions.grant_pg_cron_access() FROM supabase_admin;
+GRANT ALL ON FUNCTION extensions.grant_pg_cron_access() TO supabase_admin WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.grant_pg_cron_access() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION grant_pg_graphql_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION extensions.grant_pg_graphql_access() TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: FUNCTION grant_pg_net_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
+--
+
+REVOKE ALL ON FUNCTION extensions.grant_pg_net_access() FROM supabase_admin;
+GRANT ALL ON FUNCTION extensions.grant_pg_net_access() TO supabase_admin WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.grant_pg_net_access() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION hmac(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.hmac(bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.hmac(bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.hmac(bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION hmac(text, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.hmac(text, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.hmac(text, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.hmac(text, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_armor_headers(text, OUT key text, OUT value text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_key_id(bytea); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_key_id(bytea) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_key_id(bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_key_id(bytea) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_decrypt(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_decrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_decrypt(bytea, bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_encrypt(text, bytea); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_encrypt(text, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_encrypt_bytea(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_pub_encrypt_bytea(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_decrypt(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_decrypt(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_decrypt_bytea(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_decrypt_bytea(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_encrypt(text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_encrypt(text, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_encrypt_bytea(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgp_sym_encrypt_bytea(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION pgrst_ddl_watch(); Type: ACL; Schema: extensions; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION extensions.pgrst_ddl_watch() TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: FUNCTION pgrst_drop_watch(); Type: ACL; Schema: extensions; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION extensions.pgrst_drop_watch() TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: FUNCTION set_graphql_placeholder(); Type: ACL; Schema: extensions; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION extensions.set_graphql_placeholder() TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: FUNCTION uuid_generate_v1(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_generate_v1() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v1() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v1() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_generate_v1mc(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_generate_v1mc() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v1mc() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v1mc() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_generate_v3(namespace uuid, name text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_generate_v4(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_generate_v4() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v4() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v4() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_generate_v5(namespace uuid, name text); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_nil(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_nil() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_nil() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_nil() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_ns_dns(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_ns_dns() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_ns_dns() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_ns_dns() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_ns_oid(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_ns_oid() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_ns_oid() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_ns_oid() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_ns_url(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_ns_url() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_ns_url() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_ns_url() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION uuid_ns_x500(); Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION extensions.uuid_ns_x500() FROM postgres;
+GRANT ALL ON FUNCTION extensions.uuid_ns_x500() TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION extensions.uuid_ns_x500() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION graphql("operationName" text, query text, variables jsonb, extensions jsonb); Type: ACL; Schema: graphql_public; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION graphql_public.graphql("operationName" text, query text, variables jsonb, extensions jsonb) TO postgres;
+GRANT ALL ON FUNCTION graphql_public.graphql("operationName" text, query text, variables jsonb, extensions jsonb) TO anon;
+GRANT ALL ON FUNCTION graphql_public.graphql("operationName" text, query text, variables jsonb, extensions jsonb) TO authenticated;
+GRANT ALL ON FUNCTION graphql_public.graphql("operationName" text, query text, variables jsonb, extensions jsonb) TO service_role;
+
+
+--
+-- Name: FUNCTION pg_reload_conf(); Type: ACL; Schema: pg_catalog; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION pg_catalog.pg_reload_conf() TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: FUNCTION get_auth(p_usename text); Type: ACL; Schema: pgbouncer; Owner: supabase_admin
+--
+
+REVOKE ALL ON FUNCTION pgbouncer.get_auth(p_usename text) FROM PUBLIC;
+GRANT ALL ON FUNCTION pgbouncer.get_auth(p_usename text) TO pgbouncer;
+
+
+--
+-- Name: FUNCTION apply_rls(wal jsonb, max_record_bytes integer); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO postgres;
+GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO anon;
+GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO authenticated;
+GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO service_role;
+GRANT ALL ON FUNCTION realtime.apply_rls(wal jsonb, max_record_bytes integer) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text) TO postgres;
+GRANT ALL ON FUNCTION realtime.broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) TO postgres;
+GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) TO anon;
+GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) TO authenticated;
+GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) TO service_role;
+GRANT ALL ON FUNCTION realtime.build_prepared_statement_sql(prepared_statement_name text, entity regclass, columns realtime.wal_column[]) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION "cast"(val text, type_ regtype); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO postgres;
+GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO anon;
+GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO authenticated;
+GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO service_role;
+GRANT ALL ON FUNCTION realtime."cast"(val text, type_ regtype) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) TO postgres;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) TO anon;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) TO authenticated;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) TO service_role;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) TO postgres;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) TO anon;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) TO authenticated;
+GRANT ALL ON FUNCTION realtime.check_equality_op(op realtime.equality_op, type_ regtype, val_1 text, val_2 text, negate boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) TO postgres;
+GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) TO anon;
+GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) TO authenticated;
+GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) TO service_role;
+GRANT ALL ON FUNCTION realtime.is_visible_through_filters(columns realtime.wal_column[], filters realtime.user_defined_filter[]) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer) TO postgres;
+GRANT ALL ON FUNCTION realtime.list_changes(publication name, slot_name name, max_changes integer, max_record_bytes integer) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION quote_wal2json(entity regclass); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO postgres;
+GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO anon;
+GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO authenticated;
+GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO service_role;
+GRANT ALL ON FUNCTION realtime.quote_wal2json(entity regclass) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION send(payload jsonb, event text, topic text, private boolean); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.send(payload jsonb, event text, topic text, private boolean) TO postgres;
+GRANT ALL ON FUNCTION realtime.send(payload jsonb, event text, topic text, private boolean) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION send_binary(payload bytea, event text, topic text, private boolean); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.send_binary(payload bytea, event text, topic text, private boolean) TO postgres;
+GRANT ALL ON FUNCTION realtime.send_binary(payload bytea, event text, topic text, private boolean) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION subscription_check_filters(); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO postgres;
+GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO anon;
+GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO authenticated;
+GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO service_role;
+GRANT ALL ON FUNCTION realtime.subscription_check_filters() TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION to_regrole(role_name text); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO postgres;
+GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO dashboard_user;
+GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO anon;
+GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO authenticated;
+GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO service_role;
+GRANT ALL ON FUNCTION realtime.to_regrole(role_name text) TO supabase_realtime_admin;
+
+
+--
+-- Name: FUNCTION topic(); Type: ACL; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+GRANT ALL ON FUNCTION realtime.topic() TO postgres;
+GRANT ALL ON FUNCTION realtime.topic() TO dashboard_user;
+
+
+--
+-- Name: FUNCTION wal2json_escape_identifier(name text); Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION realtime.wal2json_escape_identifier(name text) TO postgres;
+GRANT ALL ON FUNCTION realtime.wal2json_escape_identifier(name text) TO dashboard_user;
+
+
+--
+-- Name: FUNCTION _crypto_aead_det_decrypt(message bytea, additional bytea, key_id bigint, context bytea, nonce bytea); Type: ACL; Schema: vault; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION vault._crypto_aead_det_decrypt(message bytea, additional bytea, key_id bigint, context bytea, nonce bytea) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION vault._crypto_aead_det_decrypt(message bytea, additional bytea, key_id bigint, context bytea, nonce bytea) TO service_role;
+
+
+--
+-- Name: FUNCTION create_secret(new_secret text, new_name text, new_description text, new_key_id uuid); Type: ACL; Schema: vault; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION vault.create_secret(new_secret text, new_name text, new_description text, new_key_id uuid) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION vault.create_secret(new_secret text, new_name text, new_description text, new_key_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION update_secret(secret_id uuid, new_secret text, new_name text, new_description text, new_key_id uuid); Type: ACL; Schema: vault; Owner: supabase_admin
+--
+
+GRANT ALL ON FUNCTION vault.update_secret(secret_id uuid, new_secret text, new_name text, new_description text, new_key_id uuid) TO postgres WITH GRANT OPTION;
+GRANT ALL ON FUNCTION vault.update_secret(secret_id uuid, new_secret text, new_name text, new_description text, new_key_id uuid) TO service_role;
+
+
+--
+-- Name: TABLE audit_log_entries; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.audit_log_entries TO dashboard_user;
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.audit_log_entries TO postgres;
+GRANT SELECT ON TABLE auth.audit_log_entries TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: TABLE custom_oauth_providers; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.custom_oauth_providers TO postgres;
+GRANT ALL ON TABLE auth.custom_oauth_providers TO dashboard_user;
+
+
+--
+-- Name: TABLE flow_state; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.flow_state TO postgres;
+GRANT SELECT ON TABLE auth.flow_state TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.flow_state TO dashboard_user;
+
+
+--
+-- Name: TABLE identities; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.identities TO postgres;
+GRANT SELECT ON TABLE auth.identities TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.identities TO dashboard_user;
+
+
+--
+-- Name: TABLE instances; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.instances TO dashboard_user;
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.instances TO postgres;
+GRANT SELECT ON TABLE auth.instances TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: TABLE mfa_amr_claims; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.mfa_amr_claims TO postgres;
+GRANT SELECT ON TABLE auth.mfa_amr_claims TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.mfa_amr_claims TO dashboard_user;
+
+
+--
+-- Name: TABLE mfa_challenges; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.mfa_challenges TO postgres;
+GRANT SELECT ON TABLE auth.mfa_challenges TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.mfa_challenges TO dashboard_user;
+
+
+--
+-- Name: TABLE mfa_factors; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.mfa_factors TO postgres;
+GRANT SELECT ON TABLE auth.mfa_factors TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.mfa_factors TO dashboard_user;
+
+
+--
+-- Name: TABLE oauth_authorizations; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.oauth_authorizations TO postgres;
+GRANT ALL ON TABLE auth.oauth_authorizations TO dashboard_user;
+
+
+--
+-- Name: TABLE oauth_client_states; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.oauth_client_states TO postgres;
+GRANT ALL ON TABLE auth.oauth_client_states TO dashboard_user;
+
+
+--
+-- Name: TABLE oauth_clients; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.oauth_clients TO postgres;
+GRANT ALL ON TABLE auth.oauth_clients TO dashboard_user;
+
+
+--
+-- Name: TABLE oauth_consents; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.oauth_consents TO postgres;
+GRANT ALL ON TABLE auth.oauth_consents TO dashboard_user;
+
+
+--
+-- Name: TABLE one_time_tokens; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.one_time_tokens TO postgres;
+GRANT SELECT ON TABLE auth.one_time_tokens TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.one_time_tokens TO dashboard_user;
+
+
+--
+-- Name: TABLE refresh_tokens; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.refresh_tokens TO dashboard_user;
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.refresh_tokens TO postgres;
+GRANT SELECT ON TABLE auth.refresh_tokens TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: SEQUENCE refresh_tokens_id_seq; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON SEQUENCE auth.refresh_tokens_id_seq TO dashboard_user;
+GRANT ALL ON SEQUENCE auth.refresh_tokens_id_seq TO postgres;
+
+
+--
+-- Name: TABLE saml_providers; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.saml_providers TO postgres;
+GRANT SELECT ON TABLE auth.saml_providers TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.saml_providers TO dashboard_user;
+
+
+--
+-- Name: TABLE saml_relay_states; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.saml_relay_states TO postgres;
+GRANT SELECT ON TABLE auth.saml_relay_states TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.saml_relay_states TO dashboard_user;
+
+
+--
+-- Name: TABLE schema_migrations; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT SELECT ON TABLE auth.schema_migrations TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: TABLE sessions; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.sessions TO postgres;
+GRANT SELECT ON TABLE auth.sessions TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.sessions TO dashboard_user;
+
+
+--
+-- Name: TABLE sso_domains; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.sso_domains TO postgres;
+GRANT SELECT ON TABLE auth.sso_domains TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.sso_domains TO dashboard_user;
+
+
+--
+-- Name: TABLE sso_providers; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.sso_providers TO postgres;
+GRANT SELECT ON TABLE auth.sso_providers TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE auth.sso_providers TO dashboard_user;
+
+
+--
+-- Name: TABLE users; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.users TO dashboard_user;
+GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,MAINTAIN,UPDATE ON TABLE auth.users TO postgres;
+GRANT SELECT ON TABLE auth.users TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: TABLE webauthn_challenges; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.webauthn_challenges TO postgres;
+GRANT ALL ON TABLE auth.webauthn_challenges TO dashboard_user;
+
+
+--
+-- Name: TABLE webauthn_credentials; Type: ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+GRANT ALL ON TABLE auth.webauthn_credentials TO postgres;
+GRANT ALL ON TABLE auth.webauthn_credentials TO dashboard_user;
+
+
+--
+-- Name: TABLE pg_stat_statements; Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON TABLE extensions.pg_stat_statements FROM postgres;
+GRANT ALL ON TABLE extensions.pg_stat_statements TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE extensions.pg_stat_statements TO dashboard_user;
+
+
+--
+-- Name: TABLE pg_stat_statements_info; Type: ACL; Schema: extensions; Owner: postgres
+--
+
+REVOKE ALL ON TABLE extensions.pg_stat_statements_info FROM postgres;
+GRANT ALL ON TABLE extensions.pg_stat_statements_info TO postgres WITH GRANT OPTION;
+GRANT ALL ON TABLE extensions.pg_stat_statements_info TO dashboard_user;
+
+
+--
+-- Name: TABLE messages; Type: ACL; Schema: realtime; Owner: supabase_realtime_admin
+--
+
+GRANT ALL ON TABLE realtime.messages TO postgres;
+GRANT ALL ON TABLE realtime.messages TO dashboard_user;
+GRANT SELECT,INSERT,UPDATE ON TABLE realtime.messages TO anon;
+GRANT SELECT,INSERT,UPDATE ON TABLE realtime.messages TO authenticated;
+GRANT SELECT,INSERT,UPDATE ON TABLE realtime.messages TO service_role;
+
+
+--
+-- Name: TABLE schema_migrations; Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON TABLE realtime.schema_migrations TO postgres;
+GRANT ALL ON TABLE realtime.schema_migrations TO dashboard_user;
+GRANT SELECT ON TABLE realtime.schema_migrations TO anon;
+GRANT SELECT ON TABLE realtime.schema_migrations TO authenticated;
+GRANT SELECT ON TABLE realtime.schema_migrations TO service_role;
+GRANT ALL ON TABLE realtime.schema_migrations TO supabase_realtime_admin;
+
+
+--
+-- Name: TABLE subscription; Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON TABLE realtime.subscription TO postgres;
+GRANT ALL ON TABLE realtime.subscription TO dashboard_user;
+GRANT SELECT ON TABLE realtime.subscription TO anon;
+GRANT SELECT ON TABLE realtime.subscription TO authenticated;
+GRANT SELECT ON TABLE realtime.subscription TO service_role;
+GRANT ALL ON TABLE realtime.subscription TO supabase_realtime_admin;
+
+
+--
+-- Name: SEQUENCE subscription_id_seq; Type: ACL; Schema: realtime; Owner: supabase_admin
+--
+
+GRANT ALL ON SEQUENCE realtime.subscription_id_seq TO postgres;
+GRANT ALL ON SEQUENCE realtime.subscription_id_seq TO dashboard_user;
+GRANT USAGE ON SEQUENCE realtime.subscription_id_seq TO anon;
+GRANT USAGE ON SEQUENCE realtime.subscription_id_seq TO authenticated;
+GRANT USAGE ON SEQUENCE realtime.subscription_id_seq TO service_role;
+GRANT ALL ON SEQUENCE realtime.subscription_id_seq TO supabase_realtime_admin;
+
+
+--
+-- Name: TABLE buckets; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+REVOKE ALL ON TABLE storage.buckets FROM supabase_storage_admin;
+GRANT ALL ON TABLE storage.buckets TO supabase_storage_admin WITH GRANT OPTION;
+GRANT ALL ON TABLE storage.buckets TO service_role;
+GRANT ALL ON TABLE storage.buckets TO authenticated;
+GRANT ALL ON TABLE storage.buckets TO anon;
+GRANT ALL ON TABLE storage.buckets TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: TABLE buckets_analytics; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT ALL ON TABLE storage.buckets_analytics TO service_role;
+GRANT ALL ON TABLE storage.buckets_analytics TO authenticated;
+GRANT ALL ON TABLE storage.buckets_analytics TO anon;
+
+
+--
+-- Name: TABLE buckets_vectors; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT SELECT ON TABLE storage.buckets_vectors TO service_role;
+GRANT SELECT ON TABLE storage.buckets_vectors TO authenticated;
+GRANT SELECT ON TABLE storage.buckets_vectors TO anon;
+
+
+--
+-- Name: TABLE objects; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+REVOKE ALL ON TABLE storage.objects FROM supabase_storage_admin;
+GRANT ALL ON TABLE storage.objects TO supabase_storage_admin WITH GRANT OPTION;
+GRANT ALL ON TABLE storage.objects TO service_role;
+GRANT ALL ON TABLE storage.objects TO authenticated;
+GRANT ALL ON TABLE storage.objects TO anon;
+GRANT ALL ON TABLE storage.objects TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: TABLE s3_multipart_uploads; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT ALL ON TABLE storage.s3_multipart_uploads TO service_role;
+GRANT SELECT ON TABLE storage.s3_multipart_uploads TO authenticated;
+GRANT SELECT ON TABLE storage.s3_multipart_uploads TO anon;
+
+
+--
+-- Name: TABLE s3_multipart_uploads_parts; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT ALL ON TABLE storage.s3_multipart_uploads_parts TO service_role;
+GRANT SELECT ON TABLE storage.s3_multipart_uploads_parts TO authenticated;
+GRANT SELECT ON TABLE storage.s3_multipart_uploads_parts TO anon;
+
+
+--
+-- Name: TABLE vector_indexes; Type: ACL; Schema: storage; Owner: supabase_storage_admin
+--
+
+GRANT SELECT ON TABLE storage.vector_indexes TO service_role;
+GRANT SELECT ON TABLE storage.vector_indexes TO authenticated;
+GRANT SELECT ON TABLE storage.vector_indexes TO anon;
+
+
+--
+-- Name: TABLE secrets; Type: ACL; Schema: vault; Owner: supabase_admin
+--
+
+GRANT SELECT,REFERENCES,DELETE,TRUNCATE ON TABLE vault.secrets TO postgres WITH GRANT OPTION;
+GRANT SELECT,DELETE ON TABLE vault.secrets TO service_role;
+
+
+--
+-- Name: TABLE decrypted_secrets; Type: ACL; Schema: vault; Owner: supabase_admin
+--
+
+GRANT SELECT,REFERENCES,DELETE,TRUNCATE ON TABLE vault.decrypted_secrets TO postgres WITH GRANT OPTION;
+GRANT SELECT,DELETE ON TABLE vault.decrypted_secrets TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON SEQUENCES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON SEQUENCES TO dashboard_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON FUNCTIONS TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON FUNCTIONS TO dashboard_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: auth; Owner: supabase_auth_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON TABLES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON TABLES TO dashboard_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL ON SEQUENCES TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL ON FUNCTIONS TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL ON TABLES TO postgres WITH GRANT OPTION;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON SEQUENCES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON SEQUENCES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON SEQUENCES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON SEQUENCES TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON FUNCTIONS TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON FUNCTIONS TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON FUNCTIONS TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON FUNCTIONS TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON TABLES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON TABLES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql GRANT ALL ON TABLES TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: graphql_public; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON SEQUENCES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON SEQUENCES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON SEQUENCES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON SEQUENCES TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: graphql_public; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON FUNCTIONS TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON FUNCTIONS TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON FUNCTIONS TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON FUNCTIONS TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: graphql_public; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON TABLES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON TABLES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT ALL ON TABLES TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON SEQUENCES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON SEQUENCES TO dashboard_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON FUNCTIONS TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON FUNCTIONS TO dashboard_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON TABLES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA realtime GRANT ALL ON TABLES TO dashboard_user;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: storage; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: storage; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO service_role;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: storage; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES TO postgres;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES TO anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES TO service_role;
+
+
+--
+-- Name: issue_graphql_placeholder; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
+--
+
+CREATE EVENT TRIGGER issue_graphql_placeholder ON sql_drop
+         WHEN TAG IN ('DROP EXTENSION')
+   EXECUTE FUNCTION extensions.set_graphql_placeholder();
+
+
+ALTER EVENT TRIGGER issue_graphql_placeholder OWNER TO supabase_admin;
+
+--
+-- Name: issue_pg_cron_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
+--
+
+CREATE EVENT TRIGGER issue_pg_cron_access ON ddl_command_end
+         WHEN TAG IN ('CREATE EXTENSION')
+   EXECUTE FUNCTION extensions.grant_pg_cron_access();
+
+
+ALTER EVENT TRIGGER issue_pg_cron_access OWNER TO supabase_admin;
+
+--
+-- Name: issue_pg_graphql_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
+--
+
+CREATE EVENT TRIGGER issue_pg_graphql_access ON ddl_command_end
+         WHEN TAG IN ('CREATE EXTENSION')
+   EXECUTE FUNCTION extensions.grant_pg_graphql_access();
+
+
+ALTER EVENT TRIGGER issue_pg_graphql_access OWNER TO supabase_admin;
+
+--
+-- Name: issue_pg_net_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
+--
+
+CREATE EVENT TRIGGER issue_pg_net_access ON ddl_command_end
+         WHEN TAG IN ('CREATE EXTENSION')
+   EXECUTE FUNCTION extensions.grant_pg_net_access();
+
+
+ALTER EVENT TRIGGER issue_pg_net_access OWNER TO supabase_admin;
+
+--
+-- Name: pgrst_ddl_watch; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
+--
+
+CREATE EVENT TRIGGER pgrst_ddl_watch ON ddl_command_end
+   EXECUTE FUNCTION extensions.pgrst_ddl_watch();
+
+
+ALTER EVENT TRIGGER pgrst_ddl_watch OWNER TO supabase_admin;
+
+--
+-- Name: pgrst_drop_watch; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
+--
+
+CREATE EVENT TRIGGER pgrst_drop_watch ON sql_drop
+   EXECUTE FUNCTION extensions.pgrst_drop_watch();
+
+
+ALTER EVENT TRIGGER pgrst_drop_watch OWNER TO supabase_admin;
+
+--
+-- PostgreSQL database dump complete
+--
+

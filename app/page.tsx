@@ -41,26 +41,38 @@ export default function HomePage() {
     students: 0,
     teachers: 0,
     classes: 0,
-    success: 0
+    success: 100  // ← 100% par défaut
   });
 
   const [targetStats, setTargetStats] = useState({
     students: 1250,
     teachers: 85,
     classes: 32,
-    success: 100
+    success: 100  // ← 100% par défaut
   });
 
   // Charger les statistiques réelles depuis l'API publique
   useEffect(() => {
-    fetch("/api/public-stats")
-      .then(res => res.json())
-      .then(data => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/public-stats");
+        const data = await res.json();
+        console.log("Stats reçues:", data);
+        
         if (data && typeof data.students === "number") {
-          setTargetStats(data);
+          setTargetStats({
+            students: data.students || 0,
+            teachers: data.teachers || 0,
+            classes: data.classes || 0,
+            success: 100  // ← Toujours 100%
+          });
         }
-      })
-      .catch(err => console.error("Erreur chargement public stats:", err));
+      } catch (err) {
+        console.error("Erreur chargement public stats:", err);
+      }
+    }
+    
+    fetchStats();
   }, []);
 
   // Capture événement beforeinstallprompt (Android/Chrome)
@@ -146,21 +158,21 @@ export default function HomePage() {
       title: "Inscriptions ouvertes",
       description: "Rejoignez une communauté éducative d'exception",
       image: "/img/slide3.jpg",
-      cta: "Pré-inscrire mon enfant",
+      cta: "Inscrire mon enfant",
       link: "/register"
     },
     {
       title: "Notre école du futur",
       description: "Une éducation d'excellence pour former les leaders",
       image: "/img/slide2.jpg",
-      cta: "Pré-inscrire mon enfant",
+      cta: "Reinscrire mon enfant",
       link: "/register"
     },
     {
       title: "Innovation & Digital",
       description: "Suivez la scolarité de vos enfants en temps réel",
       image: "/img/slide5.jpg",
-      cta: "Pré-inscrire mon enfant",
+      cta: "Inscrire mon enfant",
       link: "/register"
     }
   ];
@@ -191,7 +203,7 @@ export default function HomePage() {
 
   // Features
   const features = [
-    { icon: GraduationCap, title: "Excellence académique", description: "Un enseignement de qualité reconnu", link: "/programmes" },
+    { icon: GraduationCap, title: "Excellence académique", description: "Un enseignement de qualité", link: "/programmes" },
     { icon: Users, title: "Encadrement", description: "Suivi individuel de chaque élève", link: "/encadrement" },
     { icon: Trophy, title: "Activités extrascolaires", description: "Sport, arts, robotique et plus", link: "/activites" },
     { icon: Smartphone, title: "Application mobile", description: "Suivez la scolarité partout", link: "/mobile-app" },
@@ -219,7 +231,6 @@ export default function HomePage() {
             className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? "opacity-100" : "opacity-0"
               }`}
           >
-            {/* Image avec Next.js Image et priority pour le premier slide */}
             <div className="absolute inset-0">
               <Image
                 src={slide.image}
@@ -244,12 +255,20 @@ export default function HomePage() {
                   <p className="text-lg md:text-xl mb-8 text-gray-200">
                     {slide.description}
                   </p>
-                  <Link href={slide.link}>
-                    <button className="bg-white text-blue-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2">
-                      {slide.cta}
-                      <ArrowRight className="w-5 h-5" />
-                    </button>
-                  </Link>
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    <Link href="/register">
+                      <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2 shadow-lg">
+                        Inscrire mon enfant
+                        <ArrowRight className="w-5 h-5" />
+                      </button>
+                    </Link>
+                    <Link href="/reinscription">
+                      <button className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2 shadow-lg">
+                        Réinscrire mon enfant
+                        <ArrowRight className="w-5 h-5" />
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -283,19 +302,27 @@ export default function HomePage() {
           <br />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2 text-gray-200">{stats.students}+</div>
+              <div className="text-4xl font-bold mb-2 text-gray-200">
+                {stats.students > 0 ? `${stats.students}+` : stats.students}
+              </div>
               <div className="text-blue-100">Élèves</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2 text-gray-200">{stats.teachers}+</div>
+              <div className="text-4xl font-bold mb-2 text-gray-200">
+                {stats.teachers > 0 ? `${stats.teachers}+` : stats.teachers}
+              </div>
               <div className="text-blue-100">Enseignants & Personnels</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2 text-gray-200">{stats.classes}</div>
+              <div className="text-4xl font-bold mb-2 text-gray-200">
+                {stats.classes > 0 ? stats.classes : stats.classes}
+              </div>
               <div className="text-blue-100">Classes</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold mb-2 text-gray-200">{stats.success}%</div>
+              <div className="text-4xl font-bold mb-2 text-gray-200">
+                {stats.success}%  {/* ← Toujours 100% */}
+              </div>
               <div className="text-blue-100">Taux de réussite</div>
             </div>
           </div>
@@ -305,7 +332,6 @@ export default function HomePage() {
       {/* ========== PLATEFORME MODULES - 6 SUR UNE LIGNE ========== */}
       <section className="py-10">
         <div className="container mx-auto px-4">
-          {/* Grille responsive : 3 sur mobile, 6 sur desktop */}
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
             {modules.map((module, index) => (
               <Link href={module.link} key={index}>
@@ -326,7 +352,6 @@ export default function HomePage() {
       {/* ========== SECTION MODERNITÉ & INNOVATION ========== */}
       <section className="py-5 bg-white">
         <div className="container mx-auto px-4">
-          {/* Titre de section */}
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Une école tournée vers l'avenir
@@ -334,12 +359,9 @@ export default function HomePage() {
             <div className="w-20 h-1 bg-blue-600 mx-auto mb-6"></div>
           </div>
 
-          {/* Deux colonnes : Texte à gauche + Grille images à droite */}
           <div className="flex flex-col md:flex-row gap-12 items-start mb-16">
-            {/* Colonne gauche - Texte */}
             <div className="flex-1">
               <div className="space-y-8">
-                {/* Préinscriptions & Inscriptions */}
                 <div className="border-l-4 border-blue-600 pl-6">
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">
                     Préinscriptions & Inscriptions
@@ -367,17 +389,15 @@ export default function HomePage() {
 
                   <Link href="/register">
                     <button className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition">
-                      Faire une préinscription
+                      Faire une inscription
                     </button>
                   </Link>
                 </div>
               </div>
             </div>
 
-            {/* Colonne droite - Images 2 par ligne avec effet de superposition */}
             <div className="flex-1">
               <div className="grid grid-cols-2 gap-4 gap-y-6">
-                {/* Image 1 */}
                 <div className="relative group">
                   <div className="relative z-10 bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
                     <div className="relative w-full h-40">
@@ -393,7 +413,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Image 2 - avec décalage vers le bas */}
                 <div className="relative group mt-6">
                   <div className="relative z-10 bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
                     <div className="relative w-full h-40">
@@ -409,7 +428,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Image 3 */}
                 <div className="relative group -mt-4">
                   <div className="relative z-10 bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
                     <div className="relative w-full h-40">
@@ -425,7 +443,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Image 4 - avec décalage */}
                 <div className="relative group mt-2">
                   <div className="relative z-10 bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-all duration-300">
                     <div className="relative w-full h-40">
@@ -471,6 +488,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       {/* Témoignages */}
       <div className="container mx-auto px-4 mt-10 mb-10">
         <div className="text-center mb-10">
@@ -515,7 +533,7 @@ export default function HomePage() {
               href="/register"
               className="bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
             >
-              Pré-inscription
+              Inscription
             </Link>
             <Link
               href="/contact"

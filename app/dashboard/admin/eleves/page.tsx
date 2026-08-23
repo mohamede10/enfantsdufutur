@@ -25,7 +25,10 @@ import {
   X,
   Bus,
   Utensils,
-  Library
+  Library,
+  Mail,
+  Phone,
+  RefreshCw
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 
@@ -33,6 +36,7 @@ interface Eleve {
   id: number;
   numero_dossier: string;
   matricule: string;
+  enfant_email: string;  // ⭐ AJOUTÉ
   parent_nom: string;
   parent_prenom: string;
   parent_email: string;
@@ -82,6 +86,11 @@ export default function GestionElevesPage() {
   const [eleveToDelete, setEleveToDelete] = useState<{ id: number; nom: string; prenom: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // ⭐ États pour la mise à jour du statut
+  const [showStatutModal, setShowStatutModal] = useState(false);
+  const [newStatut, setNewStatut] = useState<"actif" | "inactif" | "suspendu">("actif");
+  const [updatingStatut, setUpdatingStatut] = useState(false);
+
   // État pour les notifications
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -119,6 +128,37 @@ export default function GestionElevesPage() {
       addNotification("error", "Erreur lors du chargement des élèves");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ⭐ Fonction pour mettre à jour le statut
+  const handleUpdateStatut = async (eleveId: number, statut: "actif" | "inactif" | "suspendu") => {
+    setUpdatingStatut(true);
+    try {
+      const response = await fetch(`/api/admin/eleves/${eleveId}/statut`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statut }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        addNotification("success", `Statut mis à jour avec succès`);
+        await fetchEleves();
+        setShowStatutModal(false);
+        // Mettre à jour l'élève sélectionné
+        if (selectedEleve) {
+          setSelectedEleve({ ...selectedEleve, statut });
+        }
+      } else {
+        addNotification("error", data.error || "Erreur lors de la mise à jour du statut");
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      addNotification("error", "Erreur lors de la mise à jour du statut");
+    } finally {
+      setUpdatingStatut(false);
     }
   };
 
@@ -172,6 +212,7 @@ export default function GestionElevesPage() {
         'Numéro dossier': e.numero_dossier,
         'Enfant Nom': e.enfant_nom,
         'Enfant Prénom': e.enfant_prenom,
+        'Email Enfant': e.enfant_email || '-',
         'Date naissance': new Date(e.date_naissance).toLocaleDateString('fr-FR'),
         'Lieu naissance': e.lieu_naissance || '-',
         'Sexe': e.sexe === 'M' ? 'Garçon' : 'Fille',
@@ -186,7 +227,6 @@ export default function GestionElevesPage() {
         'Montant frais': `${e.frais_montant?.toLocaleString() || 0} GNF`,
         'Statut paiement': e.frais_statut === 'paye' ? 'Payé' : 'Non payé',
         'Mode paiement': e.frais_mode_paiement ? e.frais_mode_paiement.replace('_', ' ') : '-',
-        // ⭐ Nouveaux champs
         'Transport': e.transport_inscrit ? e.transport_statut : 'Non inscrit',
         'Transport Montant': e.transport_montant || 0,
         'Cantine': e.cantine_inscrit ? e.cantine_statut : 'Non inscrit',
@@ -276,7 +316,8 @@ export default function GestionElevesPage() {
       e.enfant_prenom?.toLowerCase().includes(searchLower) ||
       e.matricule?.toLowerCase().includes(searchLower) ||
       e.numero_dossier?.toLowerCase().includes(searchLower) ||
-      e.parent_nom?.toLowerCase().includes(searchLower)
+      e.parent_nom?.toLowerCase().includes(searchLower) ||
+      e.enfant_email?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -438,7 +479,7 @@ export default function GestionElevesPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900" />
               <input
                 type="text"
-                placeholder="Rechercher par nom, prénom, matricule ou dossier..."
+                placeholder="Rechercher par nom, prénom, matricule, dossier ou email..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -481,18 +522,20 @@ export default function GestionElevesPage() {
         <>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1200px]">
+              <table className="w-full min-w-[1400px]">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Dossier</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Matricule</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Photo</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Enfant</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Email Enfant</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Parent</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Classe</th>
-                    {/* ⭐ Nouvelles colonnes */}
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Transport</th>
+                    {/* ⭐ Nouvelles colonnes - COMMENTÉES */}
+                    {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Transport</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Cantine</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Frais</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Frais</th> */}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Statut</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase">Actions</th>
                   </tr>
@@ -502,6 +545,9 @@ export default function GestionElevesPage() {
                     <tr key={e.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4">
                         <span className="font-mono text-sm text-blue-600">{e.numero_dossier || e.matricule}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="font-mono text-sm font-medium text-gray-800">{e.matricule}</span>
                       </td>
                       <td className="px-4 py-4">
                         {e.photo_url ? (
@@ -515,7 +561,13 @@ export default function GestionElevesPage() {
                       <td className="px-4 py-4">
                         <span className="font-medium">{e.enfant_prenom} {e.enfant_nom}</span>
                         <p className="text-xs text-gray-900">{e.sexe === "M" ? "Garçon" : "Fille"} - {new Date(e.date_naissance).toLocaleDateString()}</p>
-                        <p className="text-xs text-gray-900">Matricule: {e.matricule}</p>
+                        {e.lieu_naissance && <p className="text-xs text-gray-900">{e.lieu_naissance}</p>}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-1">
+                          <Mail className="w-3 h-3 text-gray-400" />
+                          <span className="text-sm text-blue-600">{e.enfant_email || '-'}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <p className="text-sm">{e.parent_prenom} {e.parent_nom}</p>
@@ -527,8 +579,10 @@ export default function GestionElevesPage() {
                           <GraduationCap className="w-4 h-4 text-gray-900" />
                           <span>{e.classe_nom}</span>
                         </div>
+                        <p className="text-xs text-gray-900">{e.niveau}</p>
                       </td>
-                      {/* ⭐ Transport */}
+                      {/* ⭐ Colonnes commentées - Transport, Cantine, Frais */}
+                      {/* 
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1">
@@ -542,7 +596,6 @@ export default function GestionElevesPage() {
                           )}
                         </div>
                       </td>
-                      {/* ⭐ Cantine */}
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1">
@@ -562,6 +615,7 @@ export default function GestionElevesPage() {
                           {(e.frais_montant || 0).toLocaleString()} GNF
                         </p>
                       </td>
+                      */}
                       <td className="px-4 py-4">{getStatutBadge(e.statut)}</td>
                       <td className="px-4 py-4">
                         <div className="flex gap-2">
@@ -690,7 +744,7 @@ export default function GestionElevesPage() {
         </div>
       )}
 
-      {/* Modal Détail avec Transport et Cantine */}
+      {/* ⭐ Modal Détail avec modification du statut et email de l'enfant */}
       {showDetailModal && selectedEleve && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -713,18 +767,34 @@ export default function GestionElevesPage() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="bg-gray-50 p-3 rounded-lg mb-3">
-                    <p className="text-sm text-gray-500">Matricule</p>
-                    <p className="font-mono text-xl font-bold text-blue-600">{selectedEleve.matricule}</p>
-                  </div>
-                  <div className="flex gap-4 flex-wrap">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-xs text-gray-500">Statut</p>
-                      {getStatutBadge(selectedEleve.statut)}
+                  <h3 className="text-2xl font-bold text-black">{selectedEleve.enfant_prenom} {selectedEleve.enfant_nom}</h3>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <p className="text-sm text-gray-500">Matricule</p>
+                      <p className="font-mono font-medium text-blue-600">{selectedEleve.matricule}</p>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-xs text-gray-500">Paiement</p>
-                      {getFraisBadge(selectedEleve.frais_statut)}
+                    <div>
+                      <p className="text-sm text-gray-500">Numéro dossier</p>
+                      <p className="font-mono font-medium text-blue-600">{selectedEleve.numero_dossier || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium text-black">{selectedEleve.enfant_email || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Statut</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getStatutBadge(selectedEleve.statut)}
+                        <button
+                          onClick={() => {
+                            setNewStatut(selectedEleve.statut);
+                            setShowStatutModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-xs underline"
+                        >
+                          Modifier
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -759,14 +829,14 @@ export default function GestionElevesPage() {
                 </div>
               </div>
 
-              {/* ⭐ Services (Transport, Cantine) */}
+              {/* ⭐ Services (Transport, Cantine) - COMMENTÉ */}
+              {/*
               <div>
                 <h3 className="font-semibold text-black mb-3 flex items-center gap-2">
                   <Wallet className="w-5 h-5 text-purple-600" />
                   Services annexes
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                  {/* Transport */}
                   <div className="bg-white p-3 rounded-lg shadow-sm border">
                     <div className="flex items-center gap-2 mb-2">
                       <Bus className="w-5 h-5 text-green-600" />
@@ -784,8 +854,6 @@ export default function GestionElevesPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Cantine */}
                   <div className="bg-white p-3 rounded-lg shadow-sm border">
                     <div className="flex items-center gap-2 mb-2">
                       <Utensils className="w-5 h-5 text-orange-600" />
@@ -805,12 +873,13 @@ export default function GestionElevesPage() {
                   </div>
                 </div>
               </div>
+              */}
 
               {/* Paiement */}
               <div>
                 <h3 className="font-semibold text-black mb-3 flex items-center gap-2">
                   <CreditCard className="w-5 h-5 text-purple-600" />
-                  Informations de paiement
+                  Informations de paiements
                 </h3>
                 <div className="grid md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
                   <div>
@@ -820,8 +889,6 @@ export default function GestionElevesPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Statut paiement</p>
-                    {getFraisBadge(selectedEleve.frais_statut)}
                   </div>
                   {selectedEleve.frais_mode_paiement && (
                     <div>
@@ -834,17 +901,123 @@ export default function GestionElevesPage() {
             </div>
             <div className="p-6 border-t bg-gray-50 flex justify-between gap-3">
               <button
-                onClick={() => openConfirmModal(selectedEleve.id, selectedEleve.enfant_nom, selectedEleve.enfant_prenom)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                onClick={() => {
+                  setNewStatut(selectedEleve.statut);
+                  setShowStatutModal(true);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
               >
-                <Trash2 className="w-4 h-4" />
-                Supprimer l'élève
+                <RefreshCw className="w-4 h-4" />
+                Modifier le statut
               </button>
               <button
                 onClick={() => setShowDetailModal(false)}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50 text-black transition"
               >
                 Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ Modal de modification du statut */}
+      {showStatutModal && selectedEleve && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">Modifier le statut</h2>
+                <button
+                  onClick={() => setShowStatutModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <p className="text-sm text-gray-500">Élève</p>
+                <p className="font-medium text-lg">{selectedEleve.enfant_prenom} {selectedEleve.enfant_nom}</p>
+                <p className="text-sm text-gray-500">Matricule: {selectedEleve.matricule}</p>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nouveau statut</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'actif', label: 'Actif', color: 'green' },
+                    { value: 'suspendu', label: 'Suspendu', color: 'orange' },
+                    { value: 'inactif', label: 'Inactif', color: 'red' }
+                  ].map(({ value, label, color }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setNewStatut(value as "actif" | "inactif" | "suspendu")}
+                      className={`p-3 border-2 rounded-lg text-center transition ${
+                        newStatut === value
+                          ? `border-${color}-500 bg-${color}-50`
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${
+                        value === 'actif' ? 'bg-green-500' :
+                        value === 'suspendu' ? 'bg-orange-500' :
+                        'bg-red-500'
+                      }`} />
+                      <span className={`text-sm font-medium ${
+                        value === 'actif' ? 'text-green-700' :
+                        value === 'suspendu' ? 'text-orange-700' :
+                        'text-red-700'
+                      }`}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Statut actuel:</span>{' '}
+                  {getStatutBadge(selectedEleve.statut)}
+                </p>
+                {newStatut !== selectedEleve.statut && (
+                  <p className="text-sm text-blue-600 mt-1">
+                    → Nouveau statut: {newStatut === 'actif' ? 'Actif' : newStatut === 'suspendu' ? 'Suspendu' : 'Inactif'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setShowStatutModal(false)}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-100 transition text-gray-700"
+                disabled={updatingStatut}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleUpdateStatut(selectedEleve.id, newStatut)}
+                disabled={updatingStatut || newStatut === selectedEleve.statut}
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                  updatingStatut || newStatut === selectedEleve.statut
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {updatingStatut ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Mise à jour...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Mettre à jour
+                  </>
+                )}
               </button>
             </div>
           </div>

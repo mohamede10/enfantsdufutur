@@ -16,8 +16,6 @@ import {
   AlertTriangle,
   X,
   CreditCard,
-  Wallet,
-  Smartphone,
   User,
   Bus,
   Utensils,
@@ -38,7 +36,8 @@ interface Enfant {
   niveau: string;
   frais_inscription_classe: number;
   photo_url: string | null;
-  frais_reinscription_classe: number; 
+  frais_reinscription_classe: number;
+  quantite_stock?: number;
 }
 
 interface Classe {
@@ -51,6 +50,7 @@ interface Fourniture {
   id: number;
   nom: string;
   prix_unitaire: number;
+  quantite_stock: number;
   selectedQty: number;
 }
 
@@ -143,30 +143,30 @@ export default function ReinscriptionParentPage() {
   const [totalFournitures, setTotalFournitures] = useState(0);
   const [loadingServices, setLoadingServices] = useState(false);
 
-  // ⭐ États pour le modal de paiement
+  // États pour le modal de paiement
   const [showPaiementModal, setShowPaiementModal] = useState(false);
   const [selectedReinscription, setSelectedReinscription] = useState<Reinscription | null>(null);
 
-  // ⭐ États pour le modal de confirmation d'annulation
+  // États pour le modal de confirmation d'annulation
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReinscriptionId, setCancelReinscriptionId] = useState<number | null>(null);
   const [cancelEnfantNom, setCancelEnfantNom] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // ⭐ Fonction pour ouvrir le modal de paiement
+  // Fonction pour ouvrir le modal de paiement
   const handleOpenPaiement = (reinscription: Reinscription) => {
     setSelectedReinscription(reinscription);
     setShowPaiementModal(true);
   };
 
-  // ⭐ Fonction pour ouvrir le modal de confirmation d'annulation
+  // Fonction pour ouvrir le modal de confirmation d'annulation
   const handleCancelClick = (reinscriptionId: number, enfantNom: string) => {
     setCancelReinscriptionId(reinscriptionId);
     setCancelEnfantNom(enfantNom);
     setShowCancelModal(true);
   };
 
-  // ⭐ Fonction pour confirmer l'annulation
+  // Fonction pour confirmer l'annulation
   const confirmCancelReinscription = async () => {
     if (!cancelReinscriptionId) return;
 
@@ -207,29 +207,6 @@ export default function ReinscriptionParentPage() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const handleCancelReinscription = async (reinscriptionId: number, enfantNom: string) => {
-    if (!confirm(`Êtes-vous sûr de vouloir annuler la réinscription de ${enfantNom} ?\n\nCette action est irréversible.`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/parent/reinscriptions/${reinscriptionId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        addNotification("success", `Réinscription de ${enfantNom} annulée avec succès`);
-        fetchData(); // Rafraîchir la liste
-      } else {
-        addNotification("error", data.error || "Erreur lors de l'annulation");
-      }
-    } catch (error) {
-      console.error("Erreur annulation:", error);
-      addNotification("error", "Une erreur est survenue lors de l'annulation");
-    }
-  };
   useEffect(() => {
     fetchData();
   }, []);
@@ -242,6 +219,7 @@ export default function ReinscriptionParentPage() {
   }, [selectedEnfant]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [enfantsRes, classesRes, reinscriptionsRes] = await Promise.all([
         fetch("/api/parent/enfants"),
@@ -308,6 +286,7 @@ export default function ReinscriptionParentPage() {
           id: item.id,
           nom: item.nom || "Fourniture",
           prix_unitaire: item.prix || 0,
+          quantite_stock: item.stock || 0,
           selectedQty: 0
         })));
       }
@@ -365,9 +344,7 @@ export default function ReinscriptionParentPage() {
   };
 
   const handleSupplyChange = (index: number, delta: number) => {
-    // ⭐ Utiliser la forme fonctionnelle de setState avec calcul immédiat
     setSupplies(prev => {
-      // Créer le nouveau tableau
       const newSupplies = prev.map((item, i) => {
         if (i !== index) return item;
         return {
@@ -376,7 +353,6 @@ export default function ReinscriptionParentPage() {
         };
       });
 
-      // ⭐ Calculer le total à partir du nouveau tableau
       const total = newSupplies.reduce((sum, item) => sum + (item.prix_unitaire * item.selectedQty), 0);
       setTotalFournitures(total);
 
@@ -450,8 +426,6 @@ export default function ReinscriptionParentPage() {
         return null;
     }
   };
-
-  // app/dashboard/parent/reinscription/page.tsx
 
   const getFraisBadge = (fraisStatut: string) => {
     if (fraisStatut === "paye") {
@@ -836,44 +810,41 @@ export default function ReinscriptionParentPage() {
               )}
 
               {/* Récapitulatif */}
-              {/* Récapitulatif */}
-{/* Récapitulatif - CORRIGÉ */}
-{selectedClasseId && (
-  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-    <h4 className="font-semibold text-black mb-2">Récapitulatif</h4>
-    <div className="space-y-1 text-sm">
-      <div className="flex justify-between">
-        <span className="text-gray-900">Frais de réinscription</span>
-        <span className="font-medium text-black">
-          {/* ⭐ CORRECTION : Utiliser frais_reinscription_classe en priorité */}
-          {(selectedEnfant.frais_reinscription_classe || selectedEnfant.frais_inscription_classe || 500000).toLocaleString()} GNF
-        </span>
-      </div>
-      {totalTransport > 0 && (
-        <div className="flex justify-between">
-          <span className="text-green-600">Transport</span>
-          <span className="font-medium text-green-600">{totalTransport.toLocaleString()} GNF</span>
-        </div>
-      )}
-      {totalCantine > 0 && (
-        <div className="flex justify-between">
-          <span className="text-orange-600">Cantine</span>
-          <span className="font-medium text-orange-600">{totalCantine.toLocaleString()} GNF</span>
-        </div>
-      )}
-      {totalFournitures > 0 && (
-        <div className="flex justify-between">
-          <span className="text-purple-600">Fournitures</span>
-          <span className="font-medium text-purple-600">{totalFournitures.toLocaleString()} GNF</span>
-        </div>
-      )}
-      <div className="border-t pt-1 text-blue-700 flex justify-between font-bold text-lg">
-        <span>Total</span>
-        <span className="text-blue-700">{getMontantTotal().toLocaleString()} GNF</span>
-      </div>
-    </div>
-  </div>
-)}
+              {selectedClasseId && (
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-black mb-2">Récapitulatif</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-900">Frais de réinscription</span>
+                      <span className="font-medium text-black">
+                        {(selectedEnfant.frais_reinscription_classe || selectedEnfant.frais_inscription_classe || 500000).toLocaleString()} GNF
+                      </span>
+                    </div>
+                    {totalTransport > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-green-600">Transport</span>
+                        <span className="font-medium text-green-600">{totalTransport.toLocaleString()} GNF</span>
+                      </div>
+                    )}
+                    {totalCantine > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-orange-600">Cantine</span>
+                        <span className="font-medium text-orange-600">{totalCantine.toLocaleString()} GNF</span>
+                      </div>
+                    )}
+                    {totalFournitures > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-purple-600">Fournitures</span>
+                        <span className="font-medium text-purple-600">{totalFournitures.toLocaleString()} GNF</span>
+                      </div>
+                    )}
+                    <div className="border-t pt-1 text-blue-700 flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span className="text-blue-700">{getMontantTotal().toLocaleString()} GNF</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Boutons */}
               <div className="flex justify-between pt-4 border-t">
@@ -903,7 +874,6 @@ export default function ReinscriptionParentPage() {
         </div>
       )}
 
-      {/* Liste des réinscriptions - AVEC BOUTON ANNULER */}
       {/* Liste des réinscriptions */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b">
@@ -947,7 +917,7 @@ export default function ReinscriptionParentPage() {
                         </p>
                       </div>
 
-                      {/* ⭐ STATUT ET MONTANTS - CORRIGÉ */}
+                      {/* Statut et montants */}
                       <div className="flex flex-col items-end gap-1">
                         {getStatutBadge(r.statut)}
                         {getFraisBadge(r.frais_statut)}
@@ -955,16 +925,16 @@ export default function ReinscriptionParentPage() {
                         {/* Affichage des montants avec restant */}
                         {r.montant_total > 0 && (
                           <div className="text-right mt-1 space-y-0.5">
-                            <div className="text-xl text-gray-900">
+                            <div className="text-sm text-gray-900">
                               Total : <span className="font-semibold text-blue-600">{r.montant_total.toLocaleString()} GNF</span>
                             </div>
                             {r.montant_paye > 0 && (
-                              <div className="text-xl text-gray-900">
+                              <div className="text-sm text-gray-900">
                                 Payé : <span className="font-semibold text-green-600">{r.montant_paye.toLocaleString()} GNF</span>
                               </div>
                             )}
                             {r.montant_restant > 0 && (
-                              <div className="text-xl text-gray-900">
+                              <div className="text-sm text-gray-900">
                                 Restant : <span className="font-semibold text-red-600">{r.montant_restant.toLocaleString()} GNF</span>
                               </div>
                             )}
@@ -1123,6 +1093,26 @@ export default function ReinscriptionParentPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ⭐ MODAL DE PAIEMENT POUR RÉINSCRIPTION */}
+      {showPaiementModal && selectedReinscription && (
+        <ReinscriptionPaiementModal
+          isOpen={showPaiementModal}
+          onClose={() => {
+            setShowPaiementModal(false);
+            setSelectedReinscription(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+          }}
+          onPaymentComplete={() => {
+            fetchData();
+          }}
+          reinscriptionId={selectedReinscription.id}
+          enfantNom={`${selectedReinscription.enfant_prenom} ${selectedReinscription.enfant_nom}`}
+          niveau={selectedReinscription.classe_nom || selectedReinscription.niveau || "N/A"}
+        />
       )}
     </div>
   );
