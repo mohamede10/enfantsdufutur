@@ -163,7 +163,7 @@ export default function ReinscriptionForm() {
     fetchClasses();
   }, []);
 
-  // ⭐ Recalcul du total réinscription - AVEC LOGS DE DÉBOGAGE
+  // ⭐ Recalcul du total réinscription
   useEffect(() => {
     console.log('🔍 [DEBUG] Recalcul du total réinscription');
     console.log('📊 Enfants:', enfants.map(e => ({ nom: e.nom, prenom: e.prenom, classe: e.classe })));
@@ -702,8 +702,10 @@ export default function ReinscriptionForm() {
         enfant.nom && enfant.prenom && enfant.dateNaissance && enfant.niveau && enfant.classe
       );
     }
+    // ⭐ ÉTAPE 3 - DOCUMENTS : ACTE NAISSANCE ET PHOTO DEVENUS OPTIONNELS
     if (step === 3) {
-      return enfants.every(enfant => enfant.acteNaissance && enfant.photo);
+      // ✅ Ne plus exiger acteNaissance et photo
+      return true;
     }
     if (step === 4) {
       return isParentLoggedIn || (compteInfo.password && compteInfo.password === compteInfo.confirmPassword && compteInfo.password.length >= 6);
@@ -915,31 +917,40 @@ export default function ReinscriptionForm() {
           </div>
         )}
 
-        {/* Étape 3 - Documents (identique à RegisterForm) */}
+        {/* ⭐ Étape 3 - Documents (ACTE NAISSANCE ET PHOTO OPTIONNELS) */}
         {step === 3 && (
           <div className="space-y-6">
-            <div className="flex items-center gap-3"><Upload className="w-8 h-8 text-blue-600" /><h2 className="text-2xl font-bold text-gray-900">Documents requis</h2></div>
-            <p className="text-gray-900">Veuillez télécharger les documents pour chaque enfant</p>
+            <div className="flex items-center gap-3">
+              <Upload className="w-8 h-8 text-blue-600" />
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
+                <p className="text-sm text-gray-500">Téléchargez les documents pour chaque enfant <span className="text-gray-400">(optionnel)</span></p>
+              </div>
+            </div>
+            <p className="text-gray-900">Vous pouvez télécharger les documents pour chaque enfant (facultatif)</p>
             {enfants.map((enfant, idx) => (
               <div key={enfant.id} className="border rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-blue-800 mb-4">{enfant.prenom || "Enfant"} {enfant.nom || ""} - Documents</h3>
                 <div className="space-y-4">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="w-8 h-8 text-gray-900 mx-auto mb-2" /><label className="block text-gray-900 font-medium mb-2">Extrait d'acte de naissance *</label>
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <label className="block text-gray-700 font-medium mb-2">Extrait d'acte de naissance <span className="text-gray-400 text-sm">(optionnel)</span></label>
                     <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" id={`acte_${idx}`} onChange={(e) => handleFileChange(idx, 'acteNaissance', e.target.files?.[0] || null)} />
-                    <button type="button" onClick={() => document.getElementById(`acte_${idx}`)?.click()} className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition">Choisir un fichier</button>
+                    <button type="button" onClick={() => document.getElementById(`acte_${idx}`)?.click()} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition">Choisir un fichier</button>
                     {enfant.acteNaissance && <p className="text-sm text-green-600 mt-2">✓ {enfant.acteNaissance.name}</p>}
                   </div>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="w-8 h-8 text-gray-900 mx-auto mb-2" /><label className="block text-gray-900 font-medium mb-2">Photo d'identité *</label>
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <label className="block text-gray-700 font-medium mb-2">Photo d'identité <span className="text-gray-400 text-sm">(optionnel)</span></label>
                     <input type="file" accept=".jpg,.jpeg,.png" className="hidden" id={`photo_${idx}`} onChange={(e) => handleFileChange(idx, 'photo', e.target.files?.[0] || null)} />
-                    <button type="button" onClick={() => document.getElementById(`photo_${idx}`)?.click()} className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition">Choisir un fichier</button>
+                    <button type="button" onClick={() => document.getElementById(`photo_${idx}`)?.click()} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition">Choisir un fichier</button>
                     {enfant.photo && <p className="text-sm text-green-600 mt-2">✓ {enfant.photo.name}</p>}
                   </div>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="w-8 h-8 text-gray-900 mx-auto mb-2" /><label className="block text-gray-900 font-medium mb-2">Bulletin (optionnel)</label>
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <label className="block text-gray-700 font-medium mb-2">Bulletin scolaire <span className="text-gray-400 text-sm">(optionnel)</span></label>
                     <input type="file" accept=".pdf" className="hidden" id={`bulletin_${idx}`} onChange={(e) => handleFileChange(idx, 'bulletin', e.target.files?.[0] || null)} />
-                    <button type="button" onClick={() => document.getElementById(`bulletin_${idx}`)?.click()} className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-200 transition">Choisir un fichier</button>
+                    <button type="button" onClick={() => document.getElementById(`bulletin_${idx}`)?.click()} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition">Choisir un fichier</button>
                     {enfant.bulletin && <p className="text-sm text-green-600 mt-2">✓ {enfant.bulletin.name}</p>}
                   </div>
                 </div>

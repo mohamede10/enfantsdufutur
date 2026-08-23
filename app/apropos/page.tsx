@@ -158,15 +158,10 @@ export default function AproposPage() {
                 Depuis notre création, nous n'avons cessé d'innover et de nous développer,
                 pour aujourd'hui accueillir plus de 1200 élèves de la maternelle au lycée.
               </p>
-              <div className="flex items-center gap-2 text-blue-600 font-medium mt-4">
-                <Calendar className="w-4 h-4" />
-                <span>Ouverture en septembre 2010</span>
-              </div>
             </div>
           </div>
         </div>
       </section>
-
       {/* Notre équipe 
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
