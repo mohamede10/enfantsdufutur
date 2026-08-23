@@ -49,13 +49,13 @@ export async function GET() {
     const totalAutresDepenses = Number(depensesResult.rows[0]?.total || 0);
     const totalDepenses = totalSalaires + totalAutresDepenses;
 
-    // 4. Dépenses du mois
+    // 4. Dépenses du mois - ✅ CORRIGÉ : dateDepense → date_depense
     const depensesMoisResult = await query(`
       SELECT COALESCE(SUM(montant), 0) as total
       FROM depenses
       WHERE COALESCE(statut, 'valide') = 'valide'
-      AND EXTRACT(MONTH FROM COALESCE("dateDepense", NOW())) = $1
-      AND EXTRACT(YEAR FROM COALESCE("dateDepense", NOW())) = $2
+      AND EXTRACT(MONTH FROM COALESCE(date_depense, NOW())) = $1
+      AND EXTRACT(YEAR FROM COALESCE(date_depense, NOW())) = $2
     `, [currentMonth, currentYear]);
     const depensesMois = Number(depensesMoisResult.rows[0]?.total || 0);
 
@@ -102,7 +102,7 @@ export async function GET() {
       pourcentage: totalRecettes > 0 ? Math.round((Number(cat.montant) / totalRecettes) * 100) : 0
     }));
 
-    // 8. Évolution mensuelle (6 derniers mois)
+    // 8. Évolution mensuelle (6 derniers mois) - ✅ CORRIGÉ : dateDepense → date_depense
     const evolutionResult = await query(`
       SELECT
         TO_CHAR(date_serie, 'Mon YYYY') as mois,
@@ -117,8 +117,8 @@ export async function GET() {
         COALESCE((
           SELECT SUM(montant) FROM depenses 
           WHERE COALESCE(statut, 'valide') = 'valide'
-          AND EXTRACT(MONTH FROM COALESCE("dateDepense", NOW())) = EXTRACT(MONTH FROM date_serie)
-          AND EXTRACT(YEAR FROM COALESCE("dateDepense", NOW())) = EXTRACT(YEAR FROM date_serie)
+          AND EXTRACT(MONTH FROM COALESCE(date_depense, NOW())) = EXTRACT(MONTH FROM date_serie)
+          AND EXTRACT(YEAR FROM COALESCE(date_depense, NOW())) = EXTRACT(YEAR FROM date_serie)
         ), 0) + COALESCE((
           SELECT SUM(montant) FROM paiements_salaires
           WHERE statut = 'paye'

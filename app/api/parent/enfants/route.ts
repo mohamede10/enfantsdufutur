@@ -27,6 +27,14 @@ export async function GET() {
 
     const parentId = parentResult.rows[0].id;
 
+    // Récupérer le total des remises accordées à ce parent
+    const remisesResult = await query(`
+      SELECT COALESCE(SUM(montant), 0) as total_remise
+      FROM remises_familles
+      WHERE parent_id = $1
+    `, [parentId]);
+    const totalRemiseParent = Number(remisesResult.rows[0]?.total_remise) || 0;
+
     // 2️⃣ Récupérer les ÉLÈVES déjà inscrits
     const elevesResult = await query(`
       SELECT 
@@ -336,18 +344,7 @@ export async function GET() {
         totalPaye = fraisPayeDirect + fraisPayeEcheances;
       }
       
-      const reste = Math.max(0, montantTotal - totalPaye);
-
-      // Log détaillé
-      console.log(`=== RÉSULTAT FINAL pour ${enfant.id} (${enfant.prenom} ${enfant.nom}) ===`);
-      console.log(`montantBase: ${montantBase}`);
-      console.log(`fraisCantine: ${fraisCantine}`);
-      console.log(`fraisTransport: ${fraisTransport}`);
-      console.log(`fraisFournitures: ${fraisFournitures}`);
-      console.log(`montantTotal: ${montantTotal}`);
-      console.log(`totalPaye: ${totalPaye}`);
-      console.log(`reste: ${reste}`);
-      console.log('---');
+      let reste = Math.max(0, montantTotal - totalPaye);
 
       return {
         ...enfant,
@@ -367,6 +364,19 @@ export async function GET() {
         }
       };
     });
+
+    // Appliquer la remise globale du parent sur le reste à payer si applicable
+    if (totalRemiseParent > 0) {
+      let remiseADeduire = totalRemiseParent;
+      for (const e of enfantsAvecFrais) {
+        if (remiseADeduire <= 0) break;
+        const deduction = Math.min(e.frais_reste, remiseADeduire);
+        e.frais_reste -= deduction;
+        e.details_frais.reste -= deduction;
+        e.details_frais.remise = (e.details_frais.remise || 0) + deduction;
+        remiseADeduire -= deduction;
+      }
+    }
 
     // Afficher les totaux
     const totalAPayer = enfantsAvecFrais.reduce((acc, e) => acc + e.frais_montant, 0);

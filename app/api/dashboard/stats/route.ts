@@ -85,8 +85,16 @@ export async function GET() {
     `);
     const totalPayeReinscription = Number(totalPayeReinscriptionResult.rows[0]?.total_paye) || 0;
 
-    // ⭐⭐⭐ 7. TOTAL GÉNÉRAL À PAYER ⭐⭐⭐
-    const totalAPayer = totalAPayerInscription + totalAPayerReinscription;
+    // ⭐⭐⭐ 7. TOTAL DES REMISES FAMILLES NOMBREUSES ⭐⭐⭐
+    const remisesResult = await query(`
+      SELECT COALESCE(SUM(montant), 0) as total_remises
+      FROM remises_familles
+    `);
+    const totalRemises = Number(remisesResult.rows[0]?.total_remises) || 0;
+
+    // ⭐⭐⭐ 8. TOTAL GÉNÉRAL À PAYER ET SOLDE RESTANT NET ⭐⭐⭐
+    const totalAPayerBrut = totalAPayerInscription + totalAPayerReinscription;
+    const totalAPayer = Math.max(0, totalAPayerBrut - totalRemises);
     const totalPaye = totalPayeInscription + totalPayeReinscription;
     const soldeRestant = Math.max(0, totalAPayer - totalPaye);
 
@@ -278,6 +286,8 @@ export async function GET() {
         totalDepenses: totalDepenses,
         solde: solde,
         tauxRecouvrement: tauxRecouvrement,
+        totalAPayerBrut: totalAPayerBrut,
+        totalRemises: totalRemises,
         totalAPayer: totalAPayer,
         totalPaye: totalPaye,
         soldeRestant: soldeRestant,

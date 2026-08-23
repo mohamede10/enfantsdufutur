@@ -40,10 +40,22 @@ export default function FinancesPage() {
   const [data, setData] = useState<any>(null);
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [showDepenseForm, setShowDepenseForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"apercu" | "recettes" | "depenses" | "journal">("apercu");
+  const [activeTab, setActiveTab] = useState<"apercu" | "recettes" | "depenses" | "journal" | "remises">("apercu");
   const [searchDepense, setSearchDepense] = useState("");
   const [filterMois, setFilterMois] = useState("");
   const [filterAnnee, setFilterAnnee] = useState(new Date().getFullYear().toString());
+  
+  // ⭐ États pour les remises familles nombreuses
+  const [remisesParents, setRemisesParents] = useState<any[]>([]);
+  const [loadingRemises, setLoadingRemises] = useState(false);
+  const [filterMinEnfants, setFilterMinEnfants] = useState<number>(2);
+  const [showRemiseModal, setShowRemiseModal] = useState(false);
+  const [selectedParentRemise, setSelectedParentRemise] = useState<any | null>(null);
+  const [montantRemise, setMontantRemise] = useState("");
+  const [motifRemise, setMotifRemise] = useState("Remise famille nombreuse");
+  const [submittingRemise, setSubmittingRemise] = useState(false);
+  const [searchParentRemise, setSearchParentRemise] = useState("");
+
   const [newDepense, setNewDepense] = useState({
     categorie: "Fournitures de bureau",
     montant: "",
@@ -53,7 +65,10 @@ export default function FinancesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { fetchDashboard(); }, []);
-  useEffect(() => { if (activeTab === "depenses") fetchDepenses(); }, [activeTab, filterMois, filterAnnee]);
+  useEffect(() => { 
+    if (activeTab === "depenses") fetchDepenses();
+    if (activeTab === "remises") fetchRemises();
+  }, [activeTab, filterMois, filterAnnee, filterMinEnfants]);
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -72,6 +87,50 @@ export default function FinancesPage() {
       const res = await fetch(url);
       if (res.ok) setDepenses(await res.json());
     } catch (e) { console.error(e); }
+  };
+
+  const fetchRemises = async () => {
+    setLoadingRemises(true);
+    try {
+      const res = await fetch(`/api/admin/finances/remises?minEnfants=${filterMinEnfants}`);
+      if (res.ok) {
+        setRemisesParents(await res.json());
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoadingRemises(false); }
+  };
+
+  const handleApplyRemise = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedParentRemise || !montantRemise || parseFloat(montantRemise) <= 0) {
+      alert("Veuillez sélectionner un parent et saisir un montant valide");
+      return;
+    }
+    setSubmittingRemise(true);
+    try {
+      const res = await fetch("/api/admin/finances/remises", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parentId: selectedParentRemise.id,
+          montant: parseFloat(montantRemise),
+          motif: motifRemise
+        })
+      });
+
+      if (res.ok) {
+        setShowRemiseModal(false);
+        setMontantRemise("");
+        setSelectedParentRemise(null);
+        fetchRemises();
+        fetchDashboard();
+        alert("Remise accordée avec succès !");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erreur lors de l'application de la remise");
+      }
+    } catch (e) { console.error(e); }
+    finally { setSubmittingRemise(false); }
   };
 
   const handleAjoutDepense = async (e: React.FormEvent) => {
@@ -197,7 +256,8 @@ export default function FinancesPage() {
               { id: "apercu", label: " Aperçu" },
               { id: "recettes", label: " Recettes" },
               { id: "depenses", label: "📉 Dépenses" },
-              { id: "journal", label: "📋 Journal" }
+              { id: "journal", label: "📋 Journal" },
+              { id: "remises", label: "🏷️ Remises Familles" }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -448,54 +508,188 @@ export default function FinancesPage() {
               </div>
             </div>
           )}
-
           {/* === JOURNAL === */}
           {activeTab === "journal" && (
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-700">Journal de caisse (Recettes + Dépenses)</h3>
-              <p className="text-sm text-gray-500">Résumé de tous les mouvements de caisse.</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ArrowUpCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-medium text-green-700">Total entrées</span>
+              <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-700">Journal de caisse (Recettes + Dépenses)</h3>
+                  <p className="text-sm text-gray-500">Résumé de tous les mouvements de caisse.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                              <ArrowUpCircle className="w-5 h-5 text-green-600" />
+                              <span className="font-medium text-green-700">Total entrées</span>
+                          </div>
+                          <p className="text-2xl font-bold text-green-800">{stats.totalRecettes?.toLocaleString()} GNF</p>
+                      </div>
+                      <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                              <ArrowDownCircle className="w-5 h-5 text-red-600" />
+                              <span className="font-medium text-red-700">Total sorties</span>
+                          </div>
+                          <p className="text-2xl font-bold text-red-800">{stats.totalDepenses?.toLocaleString()} GNF</p>
+                      </div>
+                      <div className={`${stats.solde >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'} border rounded-xl p-4`}>
+                          <div className="flex items-center gap-2 mb-2">
+                              <Wallet className={`w-5 h-5 ${stats.solde >= 0 ? 'text-blue-600' : 'text-gray-600'}`} />
+                              <span className={`font-medium ${stats.solde >= 0 ? 'text-blue-700' : 'text-gray-700'}`}>Solde net</span>
+                          </div>
+                          <p className={`text-2xl font-bold ${stats.solde >= 0 ? 'text-blue-800' : 'text-gray-800'}`}>{stats.solde?.toLocaleString()} GNF</p>
+                      </div>
                   </div>
-                  <p className="text-2xl font-bold text-green-800">{stats.totalRecettes?.toLocaleString()} GNF</p>
+                  <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+                      <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-yellow-600" />
+                          <span className="text-sm font-medium text-yellow-700">Encours impayés : {stats.encours?.toLocaleString()} GNF</span>
+                      </div>
+                      <p className="text-xs text-yellow-600 mt-1">Paiements en attente de validation</p>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                      <div className="rounded-lg border p-4">
+                          <h4 className="font-semibold text-sm text-gray-700 mb-3">Personnel actif</h4>
+                          <p className="text-3xl font-bold text-gray-900">{stats.nombrePersonnel}</p>
+                          <p className="text-xs text-gray-400">agents</p>
+                      </div>
+                      <div className="rounded-lg border p-4">
+                          <h4 className="font-semibold text-sm text-gray-700 mb-3">Élèves inscrits</h4>
+                          <p className="text-3xl font-bold text-gray-900">{stats.nombreEleves}</p>
+                          <p className="text-xs text-gray-400">élèves</p>
+                      </div>
+                  </div>
+              </div>
+          )}
+          {/* === REMISES FAMILLES NOMBREUSES === */}
+          {activeTab === "remises" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap justify-between items-center gap-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                <div>
+                  <h3 className="font-bold text-indigo-900 text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                    Gestion des Remises Familles Nombreuses
+                  </h3>
+                  <p className="text-xs text-indigo-700 mt-1">
+                    Accordez des réductions aux parents qui ont plusieurs enfants inscrits au sein de l'établissement.
+                  </p>
                 </div>
-                <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ArrowDownCircle className="w-5 h-5 text-red-600" />
-                    <span className="font-medium text-red-700">Total sorties</span>
-                  </div>
-                  <p className="text-2xl font-bold text-red-800">{stats.totalDepenses?.toLocaleString()} GNF</p>
+                <button
+                  onClick={fetchRemises}
+                  disabled={loadingRemises}
+                  className="px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingRemises ? "animate-spin" : ""}`} />
+                  Rafraîchir
+                </button>
+              </div>
+
+              {/* Filtres par nombre d'enfants et barre de recherche */}
+              <div className="flex flex-wrap gap-3 items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <span className="text-gray-600">Filtrer par :</span>
+                  {[
+                    { count: 2, label: "👨‍👩‍👧‍👦 2 enfants et +" },
+                    { count: 3, label: "⭐ 3 enfants et +" },
+                    { count: 4, label: "👑 4+ enfants" },
+                    { count: 1, label: "Tous les parents" },
+                  ].map((f) => (
+                    <button
+                      key={f.count}
+                      onClick={() => setFilterMinEnfants(f.count)}
+                      className={`px-3 py-1.5 rounded-lg border transition ${
+                        filterMinEnfants === f.count
+                          ? "bg-indigo-600 text-white border-indigo-600 font-bold shadow-sm"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
                 </div>
-                <div className={`${stats.solde >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'} border rounded-xl p-4`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wallet className={`w-5 h-5 ${stats.solde >= 0 ? 'text-blue-600' : 'text-gray-600'}`} />
-                    <span className={`font-medium ${stats.solde >= 0 ? 'text-blue-700' : 'text-gray-700'}`}>Solde net</span>
-                  </div>
-                  <p className={`text-2xl font-bold ${stats.solde >= 0 ? 'text-blue-800' : 'text-gray-800'}`}>{stats.solde?.toLocaleString()} GNF</p>
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher un parent par nom, prénom ou email..."
+                    value={searchParentRemise}
+                    onChange={(e) => setSearchParentRemise(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm text-black focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
                 </div>
               </div>
-              <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-700">Encours impayés : {stats.encours?.toLocaleString()} GNF</span>
+
+              {loadingRemises ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
-                <p className="text-xs text-yellow-600 mt-1">Paiements en attente de validation</p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="rounded-lg border p-4">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Personnel actif</h4>
-                  <p className="text-3xl font-bold text-gray-900">{stats.nombrePersonnel}</p>
-                  <p className="text-xs text-gray-400">agents</p>
+              ) : (
+                <div className="border rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="p-4">Parent</th>
+                        <th className="p-4">Contact</th>
+                        <th className="p-4 text-center">Enfants inscrits</th>
+                        <th className="p-4 text-right">Scolarité totale</th>
+                        <th className="p-4 text-right">Remises accordées</th>
+                        <th className="p-4 text-right">Solde restant</th>
+                        <th className="p-4 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y text-sm">
+                      {remisesParents
+                        .filter(p => !searchParentRemise || `${p.prenom} ${p.nom} ${p.email}`.toLowerCase().includes(searchParentRemise.toLowerCase()))
+                        .map((p) => (
+                          <tr key={p.id} className="hover:bg-gray-50 transition">
+                            <td className="p-4 font-semibold text-black">
+                              {p.prenom} {p.nom}
+                            </td>
+                            <td className="p-4 text-xs text-gray-600">
+                              <div>{p.email}</div>
+                              <div className="text-gray-400">{p.telephone}</div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                p.nb_enfants >= 3 
+                                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                  : p.nb_enfants === 2
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {p.nb_enfants} {p.nb_enfants > 1 ? 'enfants' : 'enfant'}
+                              </span>
+                            </td>
+                            <td className="p-4 text-right font-medium text-gray-800">
+                              {Number(p.total_a_payer).toLocaleString()} GNF
+                            </td>
+                            <td className="p-4 text-right font-bold text-indigo-600">
+                              {Number(p.total_remises) > 0 ? `-${Number(p.total_remises).toLocaleString()} GNF` : '0 GNF'}
+                            </td>
+                            <td className="p-4 text-right font-bold text-red-600">
+                              {Number(p.solde_restant).toLocaleString()} GNF
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                onClick={() => {
+                                  setSelectedParentRemise(p);
+                                  setMontantRemise("");
+                                  setMotifRemise(`Remise famille nombreuse (${p.nb_enfants} enfants)`);
+                                  setShowRemiseModal(true);
+                                }}
+                                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition flex items-center gap-1.5 mx-auto"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                Accorder une remise
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {remisesParents.length === 0 && (
+                    <div className="p-8 text-center text-gray-500 text-sm">
+                      Aucun parent trouvé.
+                    </div>
+                  )}
                 </div>
-                <div className="rounded-lg border p-4">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Élèves inscrits</h4>
-                  <p className="text-3xl font-bold text-gray-900">{stats.nombreEleves}</p>
-                  <p className="text-xs text-gray-400">élèves</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -557,6 +751,99 @@ export default function FinancesPage() {
                   Enregistrer la dépense
                 </button>
                 <button type="button" onClick={() => setShowDepenseForm(false)} className="flex-1 border py-2 rounded-lg text-sm hover:bg-gray-50 transition">
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Accorder une Remise */}
+      {showRemiseModal && selectedParentRemise && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b flex justify-between items-center bg-indigo-50 rounded-t-2xl">
+              <div>
+                <h2 className="text-xl font-bold text-indigo-900">Accorder une remise</h2>
+                <p className="text-xs text-indigo-700 mt-0.5">
+                  Parent: <span className="font-semibold">{selectedParentRemise.prenom} {selectedParentRemise.nom}</span> ({selectedParentRemise.nb_enfants} enfants)
+                </p>
+              </div>
+              <button onClick={() => setShowRemiseModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <form onSubmit={handleApplyRemise} className="p-6 space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg text-xs space-y-1 text-gray-600">
+                <div className="flex justify-between">
+                  <span>Scolarité totale :</span>
+                  <span className="font-semibold text-gray-900">{Number(selectedParentRemise.total_a_payer).toLocaleString()} GNF</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Remises déjà accordées :</span>
+                  <span className="font-semibold text-indigo-600">-{Number(selectedParentRemise.total_remises).toLocaleString()} GNF</span>
+                </div>
+                <div className="flex justify-between border-t pt-1 font-bold text-gray-900">
+                  <span>Solde restant actuel :</span>
+                  <span className="text-red-600">{Number(selectedParentRemise.solde_restant).toLocaleString()} GNF</span>
+                </div>
+              </div>
+
+              {/* Shortcuts pour le montant */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Suggestions de pourcentage</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[5, 10, 15, 20].map((pct) => {
+                    const montantSuggere = Math.round((Number(selectedParentRemise.total_a_payer) * pct) / 100);
+                    return (
+                      <button
+                        type="button"
+                        key={pct}
+                        onClick={() => setMontantRemise(montantSuggere.toString())}
+                        className="py-1.5 px-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition text-center"
+                      >
+                        {pct}% ({Math.round(montantSuggere / 1000)}k)
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant de la remise (GNF) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max={selectedParentRemise.solde_restant}
+                  value={montantRemise}
+                  onChange={e => setMontantRemise(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-black focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
+                  placeholder="Ex: 1000000"
+                />
+                {montantRemise && parseFloat(montantRemise) > 0 && (
+                  <p className="text-xs text-green-600 font-medium mt-1">
+                    Nouveau solde restant : {Math.max(0, selectedParentRemise.solde_restant - parseFloat(montantRemise)).toLocaleString()} GNF
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Description</label>
+                <input
+                  type="text"
+                  value={motifRemise}
+                  onChange={e => setMotifRemise(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm text-black focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Ex: Réduction Famille Nombreuse (3 enfants)"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={submittingRemise} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium">
+                  {submittingRemise && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Appliquer la remise
+                </button>
+                <button type="button" onClick={() => setShowRemiseModal(false)} className="flex-1 border py-2 rounded-lg text-sm text-black hover:bg-gray-50 transition">
                   Annuler
                 </button>
               </div>

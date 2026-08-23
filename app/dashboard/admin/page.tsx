@@ -302,8 +302,13 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-900 text-sm">Total à payer</p>
+              <p className="text-gray-900 text-sm">Total à payer (Net)</p>
               <p className="text-lg font-bold text-blue-600">{(financieres.totalAPayer || 0).toLocaleString()} GNF</p>
+              {(financieres.totalRemises || 0) > 0 && (
+                <p className="text-xs text-indigo-600 font-semibold mt-1">
+                  🏷️ Remises: -{(financieres.totalRemises || 0).toLocaleString()} GNF
+                </p>
+              )}
             </div>
             <div className="bg-blue-100 p-3 rounded-lg"><DollarSign className="w-4 h-4 text-blue-600" /></div>
           </div>

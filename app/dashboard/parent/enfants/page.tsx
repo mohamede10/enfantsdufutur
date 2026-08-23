@@ -145,12 +145,21 @@ export default function MesEnfantsPage() {
   };
 
   // STATISTIQUES GLOBALES SYNCHRONISÉES AVEC L'ACCUEIL
+  const totalAPayerBrut = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.total) || 0), 0);
+  const totalPaye = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.paye) || 0), 0);
+  const totalRemises = enfants.reduce((acc, e) => acc + (Number((e.details_frais as any)?.remise) || 0), 0);
+  const totalAPayerNet = Math.max(0, totalAPayerBrut - totalRemises);
+  const soldeRestant = Math.max(0, totalAPayerNet - totalPaye);
+
   const statsGlobales = {
     totalEnfants: enfants.filter(e => e.est_eleve).length,
     totalPreinscriptions: enfants.filter(e => e.est_preinscription && e.type === 'preinscription').length,
-    totalAPayer: enfants.reduce((acc, e) => acc + (Number(e.details_frais?.total) || 0), 0),
-    totalPaye: enfants.reduce((acc, e) => acc + (Number(e.details_frais?.paye) || 0), 0),
-    soldeRestant: enfants.reduce((acc, e) => acc + (Number(e.details_frais?.reste) || 0), 0),
+    totalAPayerBrut: totalAPayerBrut,
+    totalAPayerNet: totalAPayerNet,
+    totalAPayer: totalAPayerNet,
+    totalPaye: totalPaye,
+    totalRemises: totalRemises,
+    soldeRestant: soldeRestant,
   };
 
   const filteredEnfants = enfants.filter(e => {
@@ -225,6 +234,28 @@ export default function MesEnfantsPage() {
         </div>
       </div>
 
+      {/* ⭐ BANNIÈRE DE REMISE SI APPLICABLE */}
+      {statsGlobales.totalRemises > 0 && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center justify-between text-indigo-900 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 font-bold text-lg">
+              🏷️
+            </div>
+            <div>
+              <h4 className="font-bold text-sm">Remise Famille Nombreuse Accordée</h4>
+              <p className="text-xs text-indigo-700">Une réduction exceptionnelle de scolarité a été déduite de votre solde global.</p>
+              <p className="text-xs text-indigo-900 mt-1 font-medium">
+                Scolarité brute initiale : <span className="font-semibold text-gray-900">{statsGlobales.totalAPayerBrut.toLocaleString()} GNF</span>
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-indigo-600 font-semibold block">Montant de la remise</span>
+            <span className="text-lg font-bold text-indigo-700">-{statsGlobales.totalRemises.toLocaleString()} GNF</span>
+          </div>
+        </div>
+      )}
+
       {/* STATISTIQUES GLOBALES */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
@@ -238,9 +269,14 @@ export default function MesEnfantsPage() {
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <div className="flex items-center gap-2 mb-1 text-gray-900">
             <CreditCard className="w-5 h-5 text-blue-600" />
-            <p className="text-sm">Montant à payer</p>
+            <p className="text-sm">Montant net à payer</p>
           </div>
-          <p className="text-lg font-bold text-blue-600">{statsGlobales.totalAPayer.toLocaleString()} GNF</p>
+          <p className="text-lg font-bold text-blue-600">{statsGlobales.totalAPayerNet.toLocaleString()} GNF</p>
+          {statsGlobales.totalRemises > 0 && (
+            <p className="text-xs text-gray-400 mt-1 line-through">
+              Brut: {statsGlobales.totalAPayerBrut.toLocaleString()} GNF
+            </p>
+          )}
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <div className="flex items-center gap-2 mb-1 text-gray-900"><CreditCard className="w-5 h-5 text-green-600" /><p className="text-sm">Montant payé</p></div>
