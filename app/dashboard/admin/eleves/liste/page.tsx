@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import BadgeEleveModal from "@/components/BadgeEleveModal";
 import {
   Search,
   Eye,
@@ -27,7 +28,8 @@ import {
   Calendar,
   MapPin,
   Smartphone,
-  RefreshCw
+  RefreshCw,
+  Download
 } from "lucide-react";
 
 interface Eleve {
@@ -75,6 +77,10 @@ export default function ListeElevesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // ⭐ États pour le badge scolaire
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [selectedBadgeEleve, setSelectedBadgeEleve] = useState<Eleve | null>(null);
 
   // États pour le statut
   const [updatingStatut, setUpdatingStatut] = useState(false);
@@ -405,10 +411,21 @@ export default function ListeElevesPage() {
                               setSelectedEleve(e);
                               setShowDetailModal(true);
                             }}
-                            className="text-blue-600 hover:text-blue-700 transition p-1 hover:bg-blue-50 rounded"
+                            className="text-blue-600 hover:text-blue-700 transition p-1.5 hover:bg-blue-50 rounded-lg"
                             title="Voir les détails"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedBadgeEleve(e);
+                              setShowBadgeModal(true);
+                            }}
+                            className="text-amber-600 hover:text-amber-700 transition p-1.5 hover:bg-amber-50 rounded-lg flex items-center gap-1 font-semibold text-xs border border-amber-200"
+                            title="Générer / Imprimer le Badge Scolaire"
+                          >
+                            <Download className="w-4 h-4 text-amber-600" />
+                            <span>Badge</span>
                           </button>
                         </div>
                       </td>
@@ -726,6 +743,16 @@ export default function ListeElevesPage() {
           </div>
         </div>
       )}
+
+      {/* ⭐ MODAL INSIGNE / BADGE ELEVE */}
+      <BadgeEleveModal
+        isOpen={showBadgeModal}
+        onClose={() => {
+          setShowBadgeModal(false);
+          setSelectedBadgeEleve(null);
+        }}
+        eleve={selectedBadgeEleve}
+      />
     </div>
   );
 }

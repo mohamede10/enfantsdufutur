@@ -78,7 +78,6 @@ const nextConfig: NextConfig = {
   },
   
   turbopack: {},
-  trailingSlash: true,
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

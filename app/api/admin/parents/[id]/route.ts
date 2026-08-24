@@ -292,26 +292,23 @@ export async function DELETE(
         DELETE FROM inscriptions WHERE parent_id = $1
       `, [parentId]);
 
-      // 5. Supprimer les présences et notes des enfants
+      // 5. Supprimer les présences et notes des enfants - ✅ CORRIGÉ
       if (enfantIds.length > 0) {
-        const placeholders = enfantIds.map((_, i) => `$${i + 2}`).join(', ');
+        await query(`
+          DELETE FROM presences WHERE eleve_id IN (SELECT unnest($1::int[]))
+        `, [enfantIds]);
 
         await query(`
-          DELETE FROM presences WHERE eleve_id IN (${placeholders})
-        `, [parentId, ...enfantIds]);
+          DELETE FROM notes WHERE eleve_id IN (SELECT unnest($1::int[]))
+        `, [enfantIds]);
 
         await query(`
-          DELETE FROM notes WHERE eleve_id IN (${placeholders})
-        `, [parentId, ...enfantIds]);
-
-        // Supprimer les inscriptions transport/cantine
-        await query(`
-          DELETE FROM inscriptions_transport WHERE eleve_id IN (${placeholders})
-        `, [parentId, ...enfantIds]);
+          DELETE FROM inscriptions_transport WHERE eleve_id IN (SELECT unnest($1::int[]))
+        `, [enfantIds]);
 
         await query(`
-          DELETE FROM inscriptions_cantine WHERE eleve_id IN (${placeholders})
-        `, [parentId, ...enfantIds]);
+          DELETE FROM inscriptions_cantine WHERE eleve_id IN (SELECT unnest($1::int[]))
+        `, [enfantIds]);
       }
 
       // 6. Supprimer les liens parent-enfant

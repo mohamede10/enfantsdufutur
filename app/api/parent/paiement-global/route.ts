@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         SELECT id, montant_restant_plan 
         FROM preinscriptions 
         WHERE parent_id = $1 AND montant_restant_plan > 0 AND statut != 'rejete'
-        ORDER BY created_at ASC
+        ORDER BY date_preinscription ASC
       `, [targetParentId]);
 
       // 2. Récupérer toutes les réinscriptions avec un solde > 0
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         SELECT id, montant_restant_plan 
         FROM reinscriptions 
         WHERE parent_id = $1 AND montant_restant_plan > 0 AND statut != 'rejete'
-        ORDER BY created_at ASC
+        ORDER BY date_reinscription ASC
       `, [targetParentId]);
 
       let montantRestantDistribuer = montant;

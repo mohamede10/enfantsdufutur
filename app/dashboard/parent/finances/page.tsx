@@ -5,6 +5,7 @@ import Link from "next/link";
 import PaiementPlanModal from "@/components/PaiementPlanModal";
 import PaiementUnifieModal from "@/components/PaiementUnifieModal";
 import ParentStatsCharts from "@/components/ParentStatsCharts";
+import RecuPaiement from "@/components/RecuPaiement";
 
 import {
   Users,
@@ -32,8 +33,23 @@ import {
   File,
   ExternalLink,
   Image,
-  User
+  User,
+  Receipt,
+  Printer,
+  Search
 } from "lucide-react";
+
+interface DetailsFrais {
+  inscription: number;
+  cantine: number;
+  transport: number;
+  librairie: number;
+  scolarite: number;
+  total: number;
+  paye: number;
+  reste: number;
+  remise?: number;
+}
 
 interface Enfant {
   id: number;
@@ -45,6 +61,7 @@ interface Enfant {
   niveau: string;
   frais_inscription_classe: number;
   photo_url: string | null;
+  details_frais?: DetailsFrais;
 }
 
 interface Preinscription {
@@ -143,6 +160,13 @@ export default function ParentDashboard() {
   const [reference, setReference] = useState("");
   const [paiementLoading, setPaiementLoading] = useState(false);
 
+  // États pour les reçus
+  const [recus, setRecus] = useState<any[]>([]);
+  const [loadingRecus, setLoadingRecus] = useState(false);
+  const [selectedRecu, setSelectedRecu] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<"apercu" | "recus">("apercu");
+  const [searchRecu, setSearchRecu] = useState("");
+
   // États pour le modal de détails
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPreinscriptionDetail, setSelectedPreinscriptionDetail] = useState<Preinscription | null>(null);
@@ -173,7 +197,23 @@ export default function ParentDashboard() {
 
   useEffect(() => {
     fetchData();
+    fetchRecus();
   }, []);
+
+  const fetchRecus = async () => {
+    setLoadingRecus(true);
+    try {
+      const res = await fetch("/api/parent/recus");
+      if (res.ok) {
+        const data = await res.json();
+        setRecus(data);
+      }
+    } catch (e) {
+      console.error("Erreur chargement reçus:", e);
+    } finally {
+      setLoadingRecus(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -363,28 +403,15 @@ export default function ParentDashboard() {
     return <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><XCircle className="w-3 h-3" /> Non payé</span>;
   };
 
-  // Dans ParentDashboard, remplacer la section de calcul des statistiques globales
+  // ✅ CALCUL IDENTIQUE AU DASHBOARD PARENT (app/dashboard/parent/page.tsx)
+  // Source : enfants.details_frais retourné par /api/parent/enfants
+  // Ce calcul est IDENTIQUE à celui du dashboard pour garantir la cohérence
 
-  // CALCUL DES STATISTIQUES GLOBALES 
-
-  // 1. Calcul du total des frais de pré-inscription (inscription + services optionnels)
-  //    Chaque pré-inscription a un montant_total qui inclut déjà tous les services
-  const totalPreinscriptionFrais = preinscriptions.reduce((acc, p) => acc + (Number(p.montant_total) || 0), 0);
-
-  // 2. Les services optionnels sont DÉJÀ inclus dans montant_total
-  //    On ne les additionne pas séparément pour éviter le double comptage
-  const totalCantine = 0;
-  const totalTransport = 0;
-  const totalFournitures = 0;
-
-  // 3. Calcul du total payé pour tous les enfants (paiements direct + échéances)
-  const totalPaye = Object.values(statsEnfant).reduce((acc, s) => acc + (Number(s.paiements?.total_paye) || 0), 0);
-
-  //  MONTANT À PAYER = Total des pré-inscriptions (inclut tous les services)
-  const totalAPayer = totalPreinscriptionFrais;
-
-  //  Solde restant = Montant à payer - Montant payé
-  const soldeRestant = Math.max(0, totalAPayer - totalPaye);
+  const totalAPayerBrut = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.total) || 0), 0);
+  const totalPaye = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.paye) || 0), 0);
+  const totalRemises = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.remise) || 0), 0);
+  const totalAPayerNet = Math.max(0, totalAPayerBrut - totalRemises);
+  const soldeRestant = Math.max(0, totalAPayerNet - totalPaye);
 
   const statsGlobales = {
     totalEnfants: enfants.length,
@@ -392,23 +419,16 @@ export default function ParentDashboard() {
     preinscriptionsEnAttente: preinscriptions.filter(p => p.statut === "en_attente").length,
     preinscriptionsPayees: preinscriptions.filter(p => p.frais_statut === "paye").length,
     totalRetards: Object.values(statsEnfant).reduce((acc, s) => acc + (Number(s.presences?.retards) || 0), 0),
-
-    //  Montant à payer = Total des pré-inscriptions (inclut tous les services)
-    totalAPayer: totalAPayer,
-
-    //  Montant payé = total payé pour tous les enfants
+    totalAPayerBrut: totalAPayerBrut,
+    totalAPayerNet: totalAPayerNet,
+    totalAPayer: totalAPayerNet,
     totalPaye: totalPaye,
-
-    //  Totaux par catégorie (pour affichage)
-    totalFraisInscription: totalPreinscriptionFrais,
-    totalTransport: 0, // Déjà inclus dans montant_total
-    totalCantine: 0,   // Déjà inclus dans montant_total
-    totalFournitures: 0, // Déjà inclus dans montant_total
-
-    // Total général des frais
-    totalFraisGeneral: totalPreinscriptionFrais,
-
-    //  Solde restant = Montant à payer - Montant payé
+    totalRemises: totalRemises,
+    totalFraisInscription: totalAPayerNet,
+    totalTransport: 0,
+    totalCantine: 0,
+    totalFournitures: 0,
+    totalFraisGeneral: totalAPayerNet,
     soldeRestant: soldeRestant,
   };
 
@@ -458,7 +478,7 @@ export default function ParentDashboard() {
         <p className="text-gray-900">Bienvenue dans votre espace de suivi scolaire</p>
       </div>
 
-      {/* STATISTIQUES GLOBALES AVEC LES BONS CALCULS */}
+      {/* STATISTIQUES FINANCIÈRES — MÊMES MONTANTS QUE LE DASHBOARD */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <div className="flex items-center gap-2 mb-1"><Users className="w-5 h-5" /><p className="text-sm opacity-90">Enfants inscrits</p></div>
@@ -468,37 +488,66 @@ export default function ParentDashboard() {
           <div className="flex items-center gap-2 mb-1"><FileText className="w-5 h-5" /><p className="text-sm opacity-90">Pré-inscriptions</p></div>
           <p className="text-3xl font-bold">{statsGlobales.totalPreinscriptions}</p>
         </div>
-        {/* MONTANT À PAYER = Total des frais de pré-inscription */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900">
+
+        {/* MONTANT TOTAL BRUT */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="flex items-center gap-2 mb-1 text-gray-600">
             <CreditCard className="w-5 h-5 text-blue-600" />
+            <p className="text-sm">Total frais brut</p>
+          </div>
+          <p className="text-lg font-bold text-blue-600">{statsGlobales.totalAPayerBrut.toLocaleString()} GNF</p>
+        </div>
+
+        {/* MONTANT NET À PAYER (après remises) */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="flex items-center gap-2 mb-1 text-gray-600">
+            <CreditCard className="w-5 h-5 text-indigo-600" />
             <p className="text-sm">Montant à payer</p>
           </div>
-          <p className="text-lg font-bold text-blue-600">{statsGlobales.totalAPayer.toLocaleString()} GNF</p>
+          <p className="text-lg font-bold text-indigo-600">{statsGlobales.totalAPayer.toLocaleString()} GNF</p>
+          {statsGlobales.totalRemises > 0 && (
+            <p className="text-xs text-green-600 mt-1">Remise : -{statsGlobales.totalRemises.toLocaleString()} GNF</p>
+          )}
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900"><CreditCard className="w-5 h-5 text-green-600" /><p className="text-sm">Montant payé</p></div>
+
+        {/* MONTANT PAYÉ */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="flex items-center gap-2 mb-1 text-gray-600"><CreditCard className="w-5 h-5 text-green-600" /><p className="text-sm">Montant payé</p></div>
           <p className="text-lg font-bold text-green-600">{statsGlobales.totalPaye.toLocaleString()} GNF</p>
         </div>
-        {/* CANTINE - Total des frais de cantine pour tous les enfants */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900"><Utensils className="w-5 h-5 text-orange-600" /><p className="text-sm">Cantine</p></div>
-          <p className="text-lg font-bold text-orange-600">{statsGlobales.totalCantine.toLocaleString()} GNF</p>
+
+        {/* SOLDE RESTANT */}
+        <div className={`rounded-xl shadow-sm p-4 border ${statsGlobales.soldeRestant === 0 ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
+          <div className="flex items-center gap-2 mb-1 text-gray-600">
+            <CreditCard className={`w-5 h-5 ${statsGlobales.soldeRestant === 0 ? 'text-green-600' : 'text-red-600'}`} />
+            <p className="text-sm">Solde restant</p>
+          </div>
+          <p className={`text-lg font-bold ${statsGlobales.soldeRestant === 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {statsGlobales.soldeRestant.toLocaleString()} GNF
+          </p>
+          {statsGlobales.soldeRestant === 0 && (
+            <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> Tout est payé
+            </p>
+          )}
         </div>
-        {/* TRANSPORT - Total des frais de transport pour tous les enfants */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900"><Bus className="w-5 h-5 text-blue-600" /><p className="text-sm">Transport</p></div>
-          <p className="text-lg font-bold text-blue-600">{statsGlobales.totalTransport.toLocaleString()} GNF</p>
+
+        {/* PREINSCRIPTIONS EN ATTENTE */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="flex items-center gap-2 mb-1 text-gray-600">
+            <Clock className="w-5 h-5 text-yellow-500" />
+            <p className="text-sm">En attente</p>
+          </div>
+          <p className="text-lg font-bold text-yellow-600">{statsGlobales.preinscriptionsEnAttente}</p>
         </div>
-        {/* FOURNITURES - Total des frais de fournitures pour tous les enfants */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900"><ShoppingCart className="w-5 h-5 text-purple-600" /><p className="text-sm">Fournitures</p></div>
-          <p className="text-lg font-bold text-purple-600">{statsGlobales.totalFournitures.toLocaleString()} GNF</p>
-        </div>
-        {/* SOLDE RESTANT = Montant à payer - Montant payé */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900"><CreditCard className="w-5 h-5 text-red-600" /><p className="text-sm">Solde restant</p></div>
-          <p className="text-lg font-bold text-red-600">{statsGlobales.soldeRestant.toLocaleString()} GNF</p>
+
+        {/* PREINSCRIPTIONS PAYÉES */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="flex items-center gap-2 mb-1 text-gray-600">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <p className="text-sm">Dossiers payés</p>
+          </div>
+          <p className="text-lg font-bold text-green-600">{statsGlobales.preinscriptionsPayees}</p>
         </div>
       </div>
 
@@ -511,6 +560,186 @@ export default function ParentDashboard() {
           statsGlobales={statsGlobales}
         />
       </div>
+
+      {/* ONGLETS */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="border-b px-6 bg-gray-50">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("apercu")}
+              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-all ${
+                activeTab === "apercu"
+                  ? "border-blue-600 text-blue-600 bg-white rounded-t-lg"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <FileText className="w-4 h-4" /> Mes pré-inscriptions
+            </button>
+            <button
+              onClick={() => setActiveTab("recus")}
+              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-all ${
+                activeTab === "recus"
+                  ? "border-blue-600 text-blue-600 bg-white rounded-t-lg"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Receipt className="w-4 h-4" /> Mes reçus
+              {recus.length > 0 && (
+                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                  {recus.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {/* Onglet : pré-inscriptions (vide pour l'instant, les cartes sont au-dessus) */}
+          {activeTab === "apercu" && (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="font-medium">Vos pré-inscriptions sont affichées ci-dessus</p>
+              <p className="text-sm text-gray-400 mt-1">Consultez vos statistiques et détails en haut de la page</p>
+            </div>
+          )}
+
+          {/* Onglet : MES REÇUS */}
+          {activeTab === "recus" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-lg">Mes reçus de paiement</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Historique de tous vos paiements effectués
+                  </p>
+                </div>
+                <button
+                  onClick={fetchRecus}
+                  disabled={loadingRecus}
+                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"
+                >
+                  {loadingRecus ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
+                  Rafraîchir
+                </button>
+              </div>
+
+              {/* Barre de recherche */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher un reçu, un enfant..."
+                  value={searchRecu}
+                  onChange={(e) => setSearchRecu(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {loadingRecus ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : recus.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Receipt className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="font-semibold text-gray-600">Aucun reçu disponible</p>
+                  <p className="text-sm text-gray-400 mt-1">Vos reçus apparaîtront ici après chaque paiement</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">N° Reçu</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Enfant</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Type</th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wide">Montant</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Mode</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Date</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wide">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {recus
+                        .filter((r) =>
+                          !searchRecu ||
+                          r.enfant?.toLowerCase().includes(searchRecu.toLowerCase()) ||
+                          r.numero_recu?.toLowerCase().includes(searchRecu.toLowerCase()) ||
+                          r.type_frais?.toLowerCase().includes(searchRecu.toLowerCase())
+                        )
+                        .map((recu, idx) => (
+                          <tr key={`${recu.source}-${recu.source_id}-${idx}`} className="hover:bg-blue-50/40 transition">
+                            <td className="px-4 py-3">
+                              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">
+                                {recu.numero_recu}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <User className="w-3.5 h-3.5 text-blue-600" />
+                                </div>
+                                <span className="font-medium text-gray-800">{recu.enfant || "—"}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full font-medium">
+                                {recu.type_frais}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="font-bold text-green-700">
+                                {Number(recu.montant).toLocaleString("fr-FR")} GNF
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-600 text-xs">
+                              {recu.mode_paiement === "orange_money" ? "Orange Money" :
+                               recu.mode_paiement === "especes" ? "Espèces" :
+                               recu.mode_paiement === "carte" ? "Carte" :
+                               recu.mode_paiement || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500 text-xs">
+                              {recu.date_paiement
+                                ? new Date(recu.date_paiement).toLocaleDateString("fr-FR")
+                                : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                onClick={() => setSelectedRecu(recu)}
+                                className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition font-medium"
+                              >
+                                <Printer className="w-3 h-3" /> Reçu
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  {recus.filter((r) =>
+                    !searchRecu ||
+                    r.enfant?.toLowerCase().includes(searchRecu.toLowerCase()) ||
+                    r.numero_recu?.toLowerCase().includes(searchRecu.toLowerCase())
+                  ).length === 0 && (
+                    <div className="text-center py-8 text-gray-400 text-sm">
+                      Aucun reçu trouvé pour «&nbsp;{searchRecu}&nbsp;»
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MODAL REÇU */}
+      {selectedRecu && (
+        <RecuPaiement
+          recu={selectedRecu}
+          onClose={() => setSelectedRecu(null)}
+        />
+      )}
     </div>
   );
 }

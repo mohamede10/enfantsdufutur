@@ -6,8 +6,10 @@ import {
   DollarSign, TrendingUp, TrendingDown, Plus, Loader2,
   Wallet, Users, CheckCircle, Clock, Search, Download,
   ArrowUpCircle, ArrowDownCircle, Filter, RefreshCw,
-  GraduationCap, Bus, Utensils, BookOpen, Wrench, Zap, X
+  GraduationCap, Bus, Utensils, BookOpen, Wrench, Zap, X,
+  Receipt, Printer, User
 } from "lucide-react";
+import RecuPaiement from "@/components/RecuPaiement";
 
 const CATEGORIES_DEPENSES = [
   "Salaires du personnel",
@@ -40,7 +42,7 @@ export default function FinancesPage() {
   const [data, setData] = useState<any>(null);
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [showDepenseForm, setShowDepenseForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"apercu" | "recettes" | "depenses" | "journal" | "remises">("apercu");
+  const [activeTab, setActiveTab] = useState<"apercu" | "recettes" | "depenses" | "journal" | "remises" | "recus">("apercu");
   const [searchDepense, setSearchDepense] = useState("");
   const [filterMois, setFilterMois] = useState("");
   const [filterAnnee, setFilterAnnee] = useState(new Date().getFullYear().toString());
@@ -56,6 +58,14 @@ export default function FinancesPage() {
   const [submittingRemise, setSubmittingRemise] = useState(false);
   const [searchParentRemise, setSearchParentRemise] = useState("");
 
+  // États pour les reçus
+  const [recusAdmin, setRecusAdmin] = useState<any[]>([]);
+  const [loadingRecus, setLoadingRecus] = useState(false);
+  const [selectedRecu, setSelectedRecu] = useState<any | null>(null);
+  const [searchRecu, setSearchRecu] = useState("");
+  const [filterRecuMois, setFilterRecuMois] = useState("");
+  const [filterRecuAnnee, setFilterRecuAnnee] = useState(new Date().getFullYear().toString());
+
   const [newDepense, setNewDepense] = useState({
     categorie: "Fournitures de bureau",
     montant: "",
@@ -68,7 +78,8 @@ export default function FinancesPage() {
   useEffect(() => { 
     if (activeTab === "depenses") fetchDepenses();
     if (activeTab === "remises") fetchRemises();
-  }, [activeTab, filterMois, filterAnnee, filterMinEnfants]);
+    if (activeTab === "recus") fetchRecusAdmin();
+  }, [activeTab, filterMois, filterAnnee, filterMinEnfants, filterRecuMois, filterRecuAnnee]);
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -98,6 +109,18 @@ export default function FinancesPage() {
       }
     } catch (e) { console.error(e); }
     finally { setLoadingRemises(false); }
+  };
+
+  const fetchRecusAdmin = async () => {
+    setLoadingRecus(true);
+    try {
+      let url = `/api/admin/recus?annee=${filterRecuAnnee}`;
+      if (filterRecuMois) url += `&mois=${filterRecuMois}`;
+      if (searchRecu) url += `&search=${encodeURIComponent(searchRecu)}`;
+      const res = await fetch(url);
+      if (res.ok) setRecusAdmin(await res.json());
+    } catch (e) { console.error(e); }
+    finally { setLoadingRecus(false); }
   };
 
   const handleApplyRemise = async (e: React.FormEvent) => {
@@ -253,11 +276,12 @@ export default function FinancesPage() {
         <div className="border-b px-6">
           <div className="flex gap-0">
             {[
-              { id: "apercu", label: " Aperçu" },
-              { id: "recettes", label: " Recettes" },
+              { id: "apercu", label: "📊 Aperçu" },
+              { id: "recettes", label: "📈 Recettes" },
               { id: "depenses", label: "📉 Dépenses" },
               { id: "journal", label: "📋 Journal" },
-              { id: "remises", label: "🏷️ Remises Familles" }
+              { id: "remises", label: "🏷️ Remises Familles" },
+              { id: "recus", label: "🧾 Reçus" }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -692,8 +716,162 @@ export default function FinancesPage() {
               )}
             </div>
           )}
+          {/* === REÇUS === */}
+          {activeTab === "recus" && (
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-blue-600" /> Reçus de paiement
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">Tous les reçus émis pour les parents</p>
+                </div>
+                <button
+                  onClick={fetchRecusAdmin}
+                  disabled={loadingRecus}
+                  className="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                >
+                  {loadingRecus ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  Rafraîchir
+                </button>
+              </div>
+
+              {/* Filtres */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <select
+                  value={filterRecuMois}
+                  onChange={e => setFilterRecuMois(e.target.value)}
+                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Tous les mois</option>
+                  {MOIS_NOMS.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
+                </select>
+                <select
+                  value={filterRecuAnnee}
+                  onChange={e => setFilterRecuAnnee(e.target.value)}
+                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {["2024", "2025", "2026", "2027"].map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <div className="relative flex-1 min-w-[220px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher parent, enfant, N° reçu..."
+                    value={searchRecu}
+                    onChange={e => setSearchRecu(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && fetchRecusAdmin()}
+                    className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Résumé */}
+              {!loadingRecus && recusAdmin.length > 0 && (
+                <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-sm">
+                  <span className="font-semibold text-blue-800">{recusAdmin.length} reçu{recusAdmin.length > 1 ? 's' : ''} trouvé{recusAdmin.length > 1 ? 's' : ''}</span>
+                  <span className="text-blue-600">
+                    Total : <strong>{recusAdmin.reduce((acc, r) => acc + Number(r.montant), 0).toLocaleString()} GNF</strong>
+                  </span>
+                </div>
+              )}
+
+              {loadingRecus ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : recusAdmin.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Receipt className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="font-semibold text-gray-600">Aucun reçu trouvé</p>
+                  <p className="text-sm text-gray-400 mt-1">Modifiez les filtres ou attendez des paiements</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">N° Reçu</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Parent</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Élève</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Type</th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wide">Montant</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Mode</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Date</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wide">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {recusAdmin.map((recu, idx) => (
+                        <tr key={`${recu.source}-${recu.source_id}-${idx}`} className="hover:bg-blue-50/30 transition">
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">
+                              {recu.numero_recu}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+                                <User className="w-3 h-3 text-indigo-600" />
+                              </div>
+                              <span className="font-medium text-gray-800 text-xs">{recu.parent_nom || '—'}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 font-medium text-xs">{recu.enfant || '—'}</td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+                              {recu.type_frais}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-green-700">
+                            {Number(recu.montant).toLocaleString()} GNF
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">
+                            {recu.mode_paiement === 'orange_money' ? 'Orange Money' :
+                             recu.mode_paiement === 'especes' ? 'Espèces' :
+                             recu.mode_paiement === 'carte' ? 'Carte' :
+                             recu.mode_paiement || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">
+                            {recu.date_paiement ? new Date(recu.date_paiement).toLocaleDateString('fr-FR') : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => setSelectedRecu(recu)}
+                              className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition font-medium"
+                            >
+                              <Printer className="w-3 h-3" /> Imprimer
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t">
+                      <tr>
+                        <td colSpan={4} className="px-4 py-3 font-bold text-gray-700">Total ({recusAdmin.length} reçus)</td>
+                        <td className="px-4 py-3 text-right font-bold text-green-700">
+                          {recusAdmin.reduce((acc, r) => acc + Number(r.montant), 0).toLocaleString()} GNF
+                        </td>
+                        <td colSpan={3}></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal Reçu */}
+      {selectedRecu && (
+        <RecuPaiement
+          recu={selectedRecu}
+          onClose={() => setSelectedRecu(null)}
+        />
+      )}
 
       {/* Modal Ajout Dépense */}
       {showDepenseForm && (

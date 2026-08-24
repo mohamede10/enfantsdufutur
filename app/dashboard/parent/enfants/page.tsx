@@ -325,6 +325,7 @@ export default function MesEnfantsPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Classe</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Frais</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Accès</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -380,11 +381,21 @@ export default function MesEnfantsPage() {
                             <button
                               onClick={() => handleOpenDetails(e)}
                               className="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition"
-                              title="Voir détails"
+                              title="Voir détails financiers"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <Link
+                            href={`/dashboard/parent/enfants/${e.eleve_id}`}
+                            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition text-xs font-semibold shadow-sm"
+                            title="Accéder au tableau de bord de l'enfant"
+                          >
+                            <GraduationCap className="w-3.5 h-3.5" />
+                            Tableau de bord
+                          </Link>
                         </td>
                       </tr>
                     );

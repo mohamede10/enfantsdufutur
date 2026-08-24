@@ -1,4 +1,4 @@
-// app/api/parent/enfants/[id]/route.ts - Version corrigée
+// app/api/parent/enfants/[eleveId]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
@@ -7,7 +7,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ eleveId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,8 +15,8 @@ export async function GET(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const { id } = await params;
-    const eleveId = parseInt(id);
+    const { eleveId: eleveIdParam } = await params;
+    const eleveId = parseInt(eleveIdParam);
     const userEmail = session.user?.email;
 
     // Vérifier que l'enfant appartient au parent
