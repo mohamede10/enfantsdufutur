@@ -1,7 +1,7 @@
 // app/reinscription/ReinscriptionForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -45,6 +45,7 @@ interface Fourniture {
   prix_unitaire: number;
   quantite_stock: number;
   selectedQty: number;
+  niveaux_cibles: string[]; // ✅ Ajout
 }
 
 interface TransportOption {
@@ -137,11 +138,18 @@ export default function ReinscriptionForm() {
 
   const [activeEnfantIndex, setActiveEnfantIndex] = useState(0);
 
-  // Fournitures
+  // Fournitures optionnelles
   const [supplies, setSupplies] = useState<Fourniture[]>([]);
   const [totalFournitures, setTotalFournitures] = useState(0);
   const [loadingSupplies, setLoadingSupplies] = useState(false);
   const [suppliesError, setSuppliesError] = useState<string | null>(null);
+
+  // Fournitures obligatoires
+  const [mandatorySuppliesMap, setMandatorySuppliesMap] = useState<Map<string, Fourniture[]>>(new Map());
+  const [mandatorySupplies, setMandatorySupplies] = useState<{ enfantId: string; article: Fourniture }[]>([]);
+  const [totalMandatorySupplies, setTotalMandatorySupplies] = useState(0);
+  const [loadingMandatory, setLoadingMandatory] = useState(false);
+  const [mandatoryError, setMandatoryError] = useState<string | null>(null);
 
   // Transport
   const [transportOptions, setTransportOptions] = useState<TransportOption[]>([]);
@@ -154,7 +162,7 @@ export default function ReinscriptionForm() {
   const [loadingCantine, setLoadingCantine] = useState(false);
 
   // Boutons d'action pour les étapes facultatives
-  const [skipSupplies, setSkipSupplies] = useState(false);
+  const [skipOptionalSupplies, setSkipOptionalSupplies] = useState(false);
   const [skipTransport, setSkipTransport] = useState(false);
   const [skipCantine, setSkipCantine] = useState(false);
 
@@ -165,61 +173,36 @@ export default function ReinscriptionForm() {
 
   // ⭐ Recalcul du total réinscription
   useEffect(() => {
-    console.log('🔍 [DEBUG] Recalcul du total réinscription');
-    console.log('📊 Enfants:', enfants.map(e => ({ nom: e.nom, prenom: e.prenom, classe: e.classe })));
-    console.log('📊 Classes disponibles:', classes.map(c => ({ 
-      id: c.id, 
-      nom: c.nom, 
-      reinscription_total_versement: c.reinscription_total_versement,
-      total_versement: c.total_versement,
-      frais_inscription: c.frais_inscription
-    })));
-
     let total = 0;
     enfants.forEach(enfant => {
       if (enfant.classe) {
         const matchedClass = classes.find(c => c.nom === enfant.classe);
         if (matchedClass) {
-          // ✅ CORRECTION : utiliser reinscription_total_versement en priorité
           const montant = matchedClass.reinscription_total_versement || 
                          matchedClass.total_versement || 
                          matchedClass.frais_inscription || 
                          0;
-          
-          console.log(`💰 [${enfant.prenom || 'Enfant'} ${enfant.nom || ''}] Classe: ${matchedClass.nom}`, {
-            reinscription_total_versement: matchedClass.reinscription_total_versement,
-            total_versement: matchedClass.total_versement,
-            frais_inscription: matchedClass.frais_inscription,
-            montant_utilise: montant,
-            source: matchedClass.reinscription_total_versement ? '✅ réinscription' : 
-                    matchedClass.total_versement ? '⚠️ inscription' : 
-                    matchedClass.frais_inscription ? '⚠️ frais' : '❌ défaut'
-          });
-          
           total += montant;
-        } else {
-          console.warn(`⚠️ Classe non trouvée pour: ${enfant.classe}`);
         }
-      } else {
-        console.log(`⏭️ Enfant sans classe: ${enfant.prenom || 'Sans nom'}`);
       }
     });
-    
-    console.log(`💰 TOTAL RÉINSCRIPTION FINAL: ${total.toLocaleString()} GNF`);
     setTotalReinscription(total);
   }, [enfants, classes]);
 
-  // Mettre à jour totalFournitures quand supplies change
+  // Mettre à jour totalFournitures (optionnelles)
   useEffect(() => {
     const total = supplies.reduce((sum, item) => sum + (item.prix_unitaire * item.selectedQty), 0);
     setTotalFournitures(total);
   }, [supplies]);
 
-  // Charger les fournitures
+  // Charger les fournitures et services à l'étape 5
   useEffect(() => {
-    if (step === 5 && !skipSupplies) {
+    if (step === 5) {
+      if (mandatorySuppliesMap.size === 0 && !loadingMandatory && !mandatoryError) {
+        fetchMandatorySupplies();
+      }
       if (supplies.length === 0 && !loadingSupplies && !suppliesError) {
-        fetchSupplies();
+        fetchOptionalSupplies();
       }
       if (transportOptions.length === 0) {
         fetchTransportOptions();
@@ -228,42 +211,147 @@ export default function ReinscriptionForm() {
         fetchCantineOptions();
       }
     }
-  }, [step, skipSupplies]);
+  }, [step, mandatorySuppliesMap.size, loadingMandatory, mandatoryError, supplies.length, loadingSupplies, suppliesError, transportOptions.length, cantineOptions.length]);
 
-  const fetchSupplies = async () => {
+  // ✅ Fonction pour charger les fournitures obligatoires (avec niveaux cibles)
+  const fetchMandatorySupplies = async () => {
     try {
-      setLoadingSupplies(true);
-      setSuppliesError(null);
-
-      const response = await fetch('/api/public/librairie');
-
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
-      }
-
+      setLoadingMandatory(true);
+      setMandatoryError(null);
+      const response = await fetch('/api/public/librairie_niveau');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
       if (Array.isArray(data) && data.length > 0) {
         const items = data.map((item: any) => ({
           id: item.id,
           nom: item.nom || "Fourniture sans nom",
-          prix_unitaire: item.prix || 0,
-          quantite_stock: item.stock || 0,
+          prix_unitaire: item.prix_unitaire || 0,
+          quantite_stock: item.quantite_stock || 0,
           selectedQty: 0,
+          niveaux_cibles: item.niveaux_cibles || [],
         }));
-        setSupplies(items);
+
+        const map = new Map<string, Fourniture[]>();
+        items.forEach(article => {
+          article.niveaux_cibles.forEach((niveau: string) => {
+            if (!map.has(niveau)) map.set(niveau, []);
+            // ✅ Détermination des quantités par défaut
+            let qty = 1;
+            if (article.nom.includes('Tenue scolaire')) qty = 2;
+            else if (article.nom.includes('Ramette')) qty = 2;
+            const copy = { ...article, selectedQty: qty };
+            map.get(niveau)!.push(copy);
+          });
+        });
+        setMandatorySuppliesMap(map);
       } else {
-        setSuppliesError("Aucune fourniture disponible pour le moment.");
+        setMandatoryError("Aucune fourniture obligatoire trouvée.");
+      }
+    } catch (e) {
+      console.error("Erreur chargement obligatoires:", e);
+      setMandatoryError("Impossible de charger les fournitures obligatoires.");
+    } finally {
+      setLoadingMandatory(false);
+    }
+  };
+
+  // ✅ Fonction pour charger les fournitures optionnelles (sans niveaux cibles)
+  const fetchOptionalSupplies = async () => {
+    try {
+      setLoadingSupplies(true);
+      setSuppliesError(null);
+      const response = await fetch('/api/public/librairie');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        const optionalItems = data
+          .filter((item: any) => !item.niveaux_cibles || item.niveaux_cibles.length === 0)
+          .map((item: any) => ({
+            id: item.id,
+            nom: item.nom || "Fourniture sans nom",
+            prix_unitaire: item.prix || 0,
+            quantite_stock: item.stock || 0,
+            selectedQty: 0,
+            niveaux_cibles: [],
+          }));
+        setSupplies(optionalItems);
+      } else {
         setSupplies([]);
       }
     } catch (e) {
-      console.error("Erreur lors du chargement des fournitures", e);
-      setSuppliesError("Impossible de charger les fournitures. Veuillez réessayer.");
-      setSupplies([]);
+      console.error("Erreur chargement optionnelles:", e);
+      setSuppliesError("Impossible de charger les fournitures optionnelles.");
     } finally {
       setLoadingSupplies(false);
     }
   };
+
+  // ✅ Fonction de calcul du prix unitaire effectif
+  const getPrixUnitaireEffectif = (article: Fourniture, qty: number): number => {
+    if (article.nom.includes('Tenue scolaire')) {
+      if (qty === 1) {
+        const niveaux = article.niveaux_cibles || [];
+        if (niveaux.some(n => n === 'Maternelle' || n === 'Primaire')) return 200000;
+        if (niveaux.some(n => n === 'Collège' || n === 'Lycée')) return 250000;
+      }
+    }
+    return article.prix_unitaire;
+  };
+
+  // ✅ useEffect pour recalculer les articles obligatoires
+  useEffect(() => {
+    const newMandatory: { enfantId: string; article: Fourniture }[] = [];
+    enfants.forEach(enfant => {
+      const articles = mandatorySuppliesMap.get(enfant.niveau) || [];
+      articles.forEach(art => {
+        newMandatory.push({ enfantId: enfant.id, article: { ...art } });
+      });
+    });
+    setMandatorySupplies(newMandatory);
+  }, [enfants, mandatorySuppliesMap]);
+
+  // ✅ useEffect pour recalculer le total des obligatoires
+  useEffect(() => {
+    const total = mandatorySupplies.reduce((sum, item) => {
+      const prixEffectif = getPrixUnitaireEffectif(item.article, item.article.selectedQty);
+      return sum + prixEffectif * item.article.selectedQty;
+    }, 0);
+    setTotalMandatorySupplies(total);
+  }, [mandatorySupplies]);
+
+  // ✅ Fonction pour modifier les quantités obligatoires (non utilisée mais gardée pour cohérence)
+  const handleMandatorySupplyChange = (index: number, delta: number) => {
+    setMandatorySupplies(prev => {
+      const newList = [...prev];
+      const item = newList[index];
+      const newQty = Math.max(0, Math.min(item.article.selectedQty + delta, item.article.quantite_stock));
+      item.article.selectedQty = newQty;
+      return newList;
+    });
+  };
+
+  // ✅ Résumé des fournitures obligatoires pour l'affichage dans le récapitulatif
+  const mandatorySummary = useMemo(() => {
+    const map = new Map<number, { nom: string; quantiteTotale: number; total: number }>();
+    mandatorySupplies.forEach(item => {
+      const prixEffectif = getPrixUnitaireEffectif(item.article, item.article.selectedQty);
+      const totalLigne = prixEffectif * item.article.selectedQty;
+      const existing = map.get(item.article.id);
+      if (existing) {
+        existing.quantiteTotale += item.article.selectedQty;
+        existing.total += totalLigne;
+      } else {
+        map.set(item.article.id, {
+          nom: item.article.nom,
+          quantiteTotale: item.article.selectedQty,
+          total: totalLigne
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [mandatorySupplies]);
 
   const fetchTransportOptions = async () => {
     try {
@@ -327,6 +415,7 @@ export default function ReinscriptionForm() {
     }
   };
 
+  // Pré-remplir les informations du parent si connecté
   useEffect(() => {
     if (isParentLoggedIn && session?.user) {
       setCompteInfo(prev => ({
@@ -383,11 +472,9 @@ export default function ReinscriptionForm() {
   const handleEnfantChange = (index: number, field: keyof Enfant, value: any) => {
     const newEnfants = [...enfants];
     newEnfants[index] = { ...newEnfants[index], [field]: value };
-
     if (field === 'niveau') {
       newEnfants[index].classe = "";
     }
-
     setEnfants(newEnfants);
   };
 
@@ -401,16 +488,9 @@ export default function ReinscriptionForm() {
     setSupplies(prev =>
       prev.map((item, i) => {
         if (i !== index) return item;
-
         return {
           ...item,
-          selectedQty: Math.max(
-            0,
-            Math.min(
-              item.selectedQty + delta,
-              item.quantite_stock
-            )
-          ),
+          selectedQty: Math.max(0, Math.min(item.selectedQty + delta, item.quantite_stock)),
         };
       })
     );
@@ -443,7 +523,6 @@ export default function ReinscriptionForm() {
         method: "POST",
         body: formData,
       });
-
       const data = await response.json();
       if (data.success) {
         return data.url;
@@ -474,17 +553,15 @@ export default function ReinscriptionForm() {
         enfant.matricule = data.eleve.matricule;
         enfant.ancienneClasse = data.eleve.classe_nom || "";
         enfant.ancienNiveau = data.eleve.niveau || "";
-        
         if (data.eleve.niveau) {
-           const niveaux = [...new Set(classes.map(c => c.niveau))];
-           const indexActuel = niveaux.indexOf(data.eleve.niveau);
-           if (indexActuel < niveaux.length - 1 && indexActuel !== -1) {
-             enfant.niveau = niveaux[indexActuel + 1];
-           } else {
-             enfant.niveau = data.eleve.niveau;
-           }
+          const niveaux = [...new Set(classes.map(c => c.niveau))];
+          const indexActuel = niveaux.indexOf(data.eleve.niveau);
+          if (indexActuel < niveaux.length - 1 && indexActuel !== -1) {
+            enfant.niveau = niveaux[indexActuel + 1];
+          } else {
+            enfant.niveau = data.eleve.niveau;
+          }
         }
-        
         setEnfants([...enfants]);
       } else {
         setEleveNotFound(true);
@@ -549,9 +626,13 @@ export default function ReinscriptionForm() {
     window.scrollTo(0, 0);
   };
 
+  // ✅ getTotalGeneral inclut les obligatoires
   const getTotalGeneral = () => {
     let total = totalReinscription;
-    if (!skipSupplies) total += totalFournitures;
+    total += totalMandatorySupplies; // toujours incluses
+    if (!skipOptionalSupplies) {
+      total += totalFournitures;
+    }
     if (!skipTransport) total += totalTransport;
     if (!skipCantine) total += totalCantine;
     return total;
@@ -627,16 +708,25 @@ export default function ReinscriptionForm() {
         type: "reinscription", // ⭐ Type réinscription
       };
 
-      if (!skipSupplies) {
-        requestBody.fournitures_commande = supplies
-          .filter((s) => s.selectedQty > 0)
-          .map((s) => ({
-            id: s.id,
-            nom: s.nom,
-            prix_unitaire: s.prix_unitaire,
-            quantite: s.selectedQty,
-          }));
-        requestBody.montant_fournitures = totalFournitures;
+      // ✅ Construction de la liste complète des fournitures
+      const allSuppliesToSend = [
+        ...mandatorySupplies.filter(s => s.article.selectedQty > 0).map(s => ({
+          id: s.article.id,
+          nom: s.article.nom,
+          prix_unitaire: s.article.prix_unitaire,
+          quantite: s.article.selectedQty,
+        })),
+        ...(skipOptionalSupplies ? [] : supplies.filter(s => s.selectedQty > 0).map(s => ({
+          id: s.id,
+          nom: s.nom,
+          prix_unitaire: s.prix_unitaire,
+          quantite: s.selectedQty,
+        }))),
+      ];
+
+      if (allSuppliesToSend.length > 0) {
+        requestBody.fournitures_commande = allSuppliesToSend;
+        requestBody.montant_fournitures = totalMandatorySupplies + (skipOptionalSupplies ? 0 : totalFournitures);
       }
 
       if (!skipTransport) {
@@ -702,9 +792,7 @@ export default function ReinscriptionForm() {
         enfant.nom && enfant.prenom && enfant.dateNaissance && enfant.niveau && enfant.classe
       );
     }
-    // ⭐ ÉTAPE 3 - DOCUMENTS : ACTE NAISSANCE ET PHOTO DEVENUS OPTIONNELS
     if (step === 3) {
-      // ✅ Ne plus exiger acteNaissance et photo
       return true;
     }
     if (step === 4) {
@@ -781,7 +869,7 @@ export default function ReinscriptionForm() {
           </div>
         )}
 
-        {/* Étape 1 - Parents (identique à RegisterForm) */}
+        {/* Étape 1 - Parents */}
         {!isParentLoggedIn && step === 1 && (
           <div className="space-y-8">
             <div className="flex items-center gap-3">
@@ -852,12 +940,11 @@ export default function ReinscriptionForm() {
               <button type="button" onClick={addEnfant} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"><Plus className="w-4 h-4" /> Ajouter un enfant</button>
             </div>
             <p className="text-gray-900">Vous pouvez inscrire plusieurs enfants</p>
-            
+
             {/* Barre de recherche d'élève existant */}
             <div className="bg-gray-100 p-4 rounded-lg mb-6 border border-gray-200">
               <h3 className="font-semibold text-gray-800 mb-2">Rechercher un élève existant</h3>
               <p className="text-sm text-gray-600 mb-4">Saisissez le matricule de l'élève pour pré-remplir ses informations.</p>
-              
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -876,14 +963,12 @@ export default function ReinscriptionForm() {
                   Rechercher
                 </button>
               </div>
-
               {eleveNotFound && (
                 <div className="mt-3 text-red-600 text-sm flex items-center gap-1">
                   <AlertTriangle className="w-4 h-4" />
                   Aucun élève trouvé avec ce matricule.
                 </div>
               )}
-
               {foundEleve && (
                 <div className="mt-3 text-green-600 text-sm flex items-center gap-1">
                   <CheckCircle className="w-4 h-4" />
@@ -917,7 +1002,7 @@ export default function ReinscriptionForm() {
           </div>
         )}
 
-        {/* ⭐ Étape 3 - Documents (ACTE NAISSANCE ET PHOTO OPTIONNELS) */}
+        {/* Étape 3 - Documents */}
         {step === 3 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -959,7 +1044,7 @@ export default function ReinscriptionForm() {
           </div>
         )}
 
-        {/* Étape 4 - Validation / Mot de passe (identique à RegisterForm) */}
+        {/* Étape 4 - Validation / Mot de passe */}
         {step === 4 && (
           <div className="space-y-6">
             <div className="flex items-center gap-3"><Lock className="w-8 h-8 text-blue-600" /><h2 className="text-2xl font-bold text-gray-900">Confirmation</h2></div>
@@ -980,7 +1065,7 @@ export default function ReinscriptionForm() {
           </div>
         )}
 
-        {/* Étape 5 - Services (Fournitures, Transport, Cantine) */}
+        {/* Étape 5 - Services */}
         {step === 5 && (
           <div className="space-y-8">
             <div className="flex items-center gap-3">
@@ -997,34 +1082,30 @@ export default function ReinscriptionForm() {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-blue-900">Fournitures scolaires</h3>
-                  {!skipSupplies && totalFournitures > 0 && (
+                  {!skipOptionalSupplies && (totalMandatorySupplies + totalFournitures) > 0 && (
                     <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">
-                      {totalFournitures.toLocaleString()} GNF
+                      {(totalMandatorySupplies + totalFournitures).toLocaleString()} GNF
                     </span>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    setSkipSupplies(!skipSupplies);
-                    if (skipSupplies) {
-                      if (supplies.length === 0 && !loadingSupplies) {
-                        fetchSupplies();
-                      }
+                    setSkipOptionalSupplies(!skipOptionalSupplies);
+                    if (!skipOptionalSupplies) {
+                      setSupplies(supplies.map(s => ({ ...s, selectedQty: 0 })));
                     } else {
                       setSupplies(supplies.map(s => ({ ...s, selectedQty: 0 })));
                     }
                   }}
-                  className={`text-sm font-medium transition ${skipSupplies
-                    ? "text-blue-600 hover:text-blue-800"
-                    : "text-red-600 hover:text-red-800"
-                    }`}
+                  className={`text-sm font-medium transition ${skipOptionalSupplies ? "text-blue-600 hover:text-blue-800" : "text-red-600 hover:text-red-800"}`}
                 >
-                  {skipSupplies ? " Ajouter des fournitures" : "❌ Ignorer les fournitures"}
+                  {skipOptionalSupplies ? "✅ Réactiver les optionnelles" : "❌ Ignorer les fournitures optionnelles"}
                 </button>
               </div>
 
-              {!skipSupplies ? (
+              {/* Fournitures optionnelles */}
+              {!skipOptionalSupplies ? (
                 <>
                   {loadingSupplies ? (
                     <div className="flex justify-center items-center py-8">
@@ -1034,22 +1115,15 @@ export default function ReinscriptionForm() {
                   ) : suppliesError ? (
                     <div className="bg-yellow-50 p-4 rounded-lg text-center text-yellow-700">
                       <p>{suppliesError}</p>
-                      <button
-                        type="button"
-                        onClick={fetchSupplies}
-                        className="mt-2 text-blue-600 hover:text-blue-800 underline text-sm"
-                      >
-                        Réessayer
-                      </button>
+                      <button onClick={fetchOptionalSupplies} className="mt-2 text-blue-600 underline text-sm">Réessayer</button>
                     </div>
                   ) : supplies.length === 0 ? (
                     <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500">
-                      <p>Aucune fourniture disponible pour le moment.</p>
-                      <p className="text-sm mt-1">Vous pourrez en acheter ultérieurement.</p>
+                      <p>Aucune fourniture optionnelle disponible.</p>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-600 mb-4">Choisissez les fournitures pour vos enfants</p>
+                      <p className="text-sm text-gray-600 mb-4">Fournitures optionnelles supplémentaires</p>
                       <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                         {supplies.map((item, idx) => (
                           <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border hover:shadow-md transition">
@@ -1061,12 +1135,8 @@ export default function ReinscriptionForm() {
                             <div className="flex items-center gap-3">
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleSupplyChange(idx, -1);
-                                }}
-                                className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-700"
+                                onClick={() => handleSupplyChange(idx, -1)}
+                                className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
                                 disabled={item.selectedQty === 0}
                               >
                                 <Minus className="w-4 h-4" />
@@ -1074,12 +1144,8 @@ export default function ReinscriptionForm() {
                               <span className="w-8 text-center font-medium text-lg">{item.selectedQty}</span>
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleSupplyChange(idx, 1);
-                                }}
-                                className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-700"
+                                onClick={() => handleSupplyChange(idx, 1)}
+                                className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
                                 disabled={item.selectedQty >= item.quantite_stock}
                               >
                                 <Plus className="w-4 h-4" />
@@ -1090,7 +1156,7 @@ export default function ReinscriptionForm() {
                       </div>
                       {supplies.filter(s => s.selectedQty > 0).length > 0 && (
                         <div className="mt-4 text-right font-semibold text-blue-700">
-                          Total fournitures : {totalFournitures.toLocaleString()} GNF
+                          Total optionnelles : {totalFournitures.toLocaleString()} GNF
                         </div>
                       )}
                     </>
@@ -1098,8 +1164,7 @@ export default function ReinscriptionForm() {
                 </>
               ) : (
                 <div className="bg-gray-50 p-4 rounded-lg text-center text-gray-500">
-                  <p className="text-sm">✅ Vous avez choisi de ne pas commander de fournitures scolaires.</p>
-                  <p className="text-xs mt-1">Vous pourrez en acheter ultérieurement.</p>
+                  <p className="text-sm">✅ Vous avez choisi de ne pas commander de fournitures optionnelles.</p>
                 </div>
               )}
             </div>
@@ -1127,10 +1192,7 @@ export default function ReinscriptionForm() {
                       setTotalTransport(0);
                     }
                   }}
-                  className={`text-sm font-medium transition ${skipTransport
-                    ? "text-green-600 hover:text-green-800"
-                    : "text-red-600 hover:text-red-800"
-                    }`}
+                  className={`text-sm font-medium transition ${skipTransport ? "text-green-600 hover:text-green-800" : "text-red-600 hover:text-red-800"}`}
                 >
                   {skipTransport ? "Ajouter le transport" : "❌ Ignorer le transport"}
                 </button>
@@ -1222,10 +1284,7 @@ export default function ReinscriptionForm() {
                       setTotalCantine(0);
                     }
                   }}
-                  className={`text-sm font-medium transition ${skipCantine
-                    ? "text-orange-600 hover:text-orange-800"
-                    : "text-red-600 hover:text-red-800"
-                    }`}
+                  className={`text-sm font-medium transition ${skipCantine ? "text-orange-600 hover:text-orange-800" : "text-red-600 hover:text-red-800"}`}
                 >
                   {skipCantine ? " Ajouter la cantine" : "❌ Ignorer la cantine"}
                 </button>
@@ -1301,7 +1360,7 @@ export default function ReinscriptionForm() {
               )}
             </div>
 
-            {/* Récapitulatif des services */}
+            {/* Récapitulatif des coûts */}
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h4 className="font-semibold text-blue-800 mb-3">📊 Récapitulatif des coûts</h4>
               <div className="space-y-2 text-sm">
@@ -1309,27 +1368,50 @@ export default function ReinscriptionForm() {
                   <span className="text-gray-900">Réinscription scolaire</span>
                   <span className="font-semibold text-black">{totalReinscription.toLocaleString()} GNF</span>
                 </div>
-                {!skipSupplies && totalFournitures > 0 && (
+
+                {/* Détail des fournitures obligatoires */}
+                {mandatorySummary.length > 0 && (
+                  <>
+                    {mandatorySummary.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs pl-4 text-gray-600">
+                        <span>• {item.nom} (x{item.quantiteTotale})</span>
+                        <span>{item.total.toLocaleString()} GNF</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between font-semibold text-blue-700 border-t border-blue-200 pt-1">
+                      <span>Total</span>
+                      <span>{totalMandatorySupplies.toLocaleString()} GNF</span>
+                    </div>
+                  </>
+                )}
+
+                {/* Fournitures optionnelles */}
+                {!skipOptionalSupplies && totalFournitures > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-900">Fournitures</span>
+                    <span className="text-gray-900">Fournitures optionnelles</span>
                     <span className="font-semibold text-blue-700">{totalFournitures.toLocaleString()} GNF</span>
                   </div>
                 )}
+
+                {/* Transport */}
                 {!skipTransport && totalTransport > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-900">Transport</span>
                     <span className="font-semibold text-green-700">{totalTransport.toLocaleString()} GNF</span>
                   </div>
                 )}
+
+                {/* Cantine */}
                 {!skipCantine && totalCantine > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-900">Cantine</span>
                     <span className="font-semibold text-orange-700">{totalCantine.toLocaleString()} GNF</span>
                   </div>
                 )}
-                <div className="border-t text-black pt-2 flex justify-between font-bold">
+
+                <div className="border-t pt-2 flex justify-between font-bold">
                   <span>Total</span>
-                  <span className="text-black text-lg">{getTotalGeneral().toLocaleString()} GNF</span>
+                  <span className="text-lg">{getTotalGeneral().toLocaleString()} GNF</span>
                 </div>
               </div>
             </div>
