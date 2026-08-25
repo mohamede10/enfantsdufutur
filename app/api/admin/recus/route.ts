@@ -23,21 +23,8 @@ export async function GET(request: NextRequest) {
     const annee = searchParams.get("annee") || new Date().getFullYear().toString();
     const parentId = searchParams.get("parentId") || "";
 
-    const params: any[] = [annee];
-    if (mois) params.push(mois);
-
-    const moisFilter = mois ? `AND EXTRACT(MONTH FROM pay.date_paiement) = $${params.indexOf(mois) + 1}` : "";
-    const parentFilter = parentId ? `AND pa.id = ${parseInt(parentId)}` : "";
-    const searchFilter = search
-      ? `AND (
-          LOWER(pay_enfant) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
-          LOWER(parent_nom_str) LIKE LOWER('%${search.replace(/'/g, "''")}%')
-        )`
-      : "";
-
     // ─────────────────────────────────────────────────────────────────
     // 1. Paiements liés à une PRÉ-INSCRIPTION (avec preinscription_id)
-    //    Couvre paiement-global, paiement-preinscription, paiement-echeance
     // ─────────────────────────────────────────────────────────────────
     const paiPreinsResult = await query(`
       SELECT
@@ -52,7 +39,10 @@ export async function GET(request: NextRequest) {
         up.prenom || ' ' || up.nom                                  AS parent_nom,
         up.email                                                     AS parent_email,
         'paiement'                                                   AS source,
-        pay.id                                                       AS source_id
+        pay.id                                                       AS source_id,
+        pay.preinscription_id,
+        COALESCE(p.montant_total_plan, 0)                            AS montant_total,
+        COALESCE(p.montant_restant_plan, 0)                          AS reste_a_payer
       FROM paiements pay
       JOIN preinscriptions p ON pay.preinscription_id = p.id
       JOIN parents pa ON p.parent_id = pa.id
@@ -64,7 +54,8 @@ export async function GET(request: NextRequest) {
         ${parentId ? `AND pa.id = ${parseInt(parentId)}` : ""}
         ${search ? `AND (
           LOWER(p.enfant_nom || ' ' || p.enfant_prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
-          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%')
+          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
+          LOWER(CONCAT('REC-PAY-', LPAD(pay.id::text, 5, '0'))) LIKE LOWER('%${search.replace(/'/g, "''")}%')
         )` : ""}
       ORDER BY pay.date_paiement DESC
     `, mois ? [annee, mois] : [annee]);
@@ -85,7 +76,10 @@ export async function GET(request: NextRequest) {
         up.prenom || ' ' || up.nom                                  AS parent_nom,
         up.email                                                     AS parent_email,
         'paiement'                                                   AS source,
-        pay.id                                                       AS source_id
+        pay.id                                                       AS source_id,
+        pay.reinscription_id,
+        COALESCE(r.montant_total_plan, 0)                            AS montant_total,
+        COALESCE(r.montant_restant_plan, 0)                          AS reste_a_payer
       FROM paiements pay
       JOIN reinscriptions r ON pay.reinscription_id = r.id
       LEFT JOIN eleves e ON r.eleve_id = e.id
@@ -100,7 +94,8 @@ export async function GET(request: NextRequest) {
         ${parentId ? `AND pa.id = ${parseInt(parentId)}` : ""}
         ${search ? `AND (
           LOWER(COALESCE(ue.nom || ' ' || ue.prenom, r.enfant_nom)) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
-          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%')
+          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
+          LOWER(CONCAT('REC-PAY-', LPAD(pay.id::text, 5, '0'))) LIKE LOWER('%${search.replace(/'/g, "''")}%')
         )` : ""}
       ORDER BY pay.date_paiement DESC
     `, mois ? [annee, mois] : [annee]);
@@ -121,7 +116,10 @@ export async function GET(request: NextRequest) {
         up.prenom || ' ' || up.nom                                  AS parent_nom,
         up.email                                                     AS parent_email,
         'paiement'                                                   AS source,
-        pay.id                                                       AS source_id
+        pay.id                                                       AS source_id,
+        pay.eleve_id,
+        COALESCE(c.total_versement, c.frais_inscription, 0)          AS montant_total,
+        0                                                            AS reste_a_payer
       FROM paiements pay
       JOIN eleves e ON pay.eleve_id = e.id
       JOIN utilisateurs ue ON e.utilisateur_id = ue.id
@@ -138,29 +136,32 @@ export async function GET(request: NextRequest) {
         ${parentId ? `AND pa.id = ${parseInt(parentId)}` : ""}
         ${search ? `AND (
           LOWER(ue.nom || ' ' || ue.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
-          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%')
+          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
+          LOWER(CONCAT('REC-PAY-', LPAD(pay.id::text, 5, '0'))) LIKE LOWER('%${search.replace(/'/g, "''")}%')
         )` : ""}
       ORDER BY pay.date_paiement DESC
     `, mois ? [annee, mois] : [annee]);
 
     // ─────────────────────────────────────────────────────────────────
     // 4. Pré-inscriptions payées via frais_statut (sans paiement direct)
-    //    → cas anciens paiements non tracés dans la table paiements
     // ─────────────────────────────────────────────────────────────────
     const preinscriptionsResult = await query(`
       SELECT
-        CONCAT('REC-PI-', LPAD(p.id::text, 5, '0'))   AS numero_recu,
-        p.frais_date_paiement                          AS date_paiement,
-        p.enfant_prenom || ' ' || p.enfant_nom         AS enfant,
-        p.frais_montant                                AS montant,
-        COALESCE(p.frais_mode_paiement, 'especes')     AS mode_paiement,
-        'Frais de pré-inscription'                     AS type_frais,
-        COALESCE(p.frais_reference, p.numero_dossier)  AS reference,
-        p.classe                                       AS classe,
-        up.prenom || ' ' || up.nom                    AS parent_nom,
-        up.email                                       AS parent_email,
-        'preinscription'                               AS source,
-        p.id                                           AS source_id
+        CONCAT('REC-PI-', LPAD(p.id::text, 5, '0'))                  AS numero_recu,
+        p.frais_date_paiement                                        AS date_paiement,
+        p.enfant_prenom || ' ' || p.enfant_nom                       AS enfant,
+        p.frais_montant                                              AS montant,
+        COALESCE(p.frais_mode_paiement, 'especes')                   AS mode_paiement,
+        'Frais de pré-inscription'                                   AS type_frais,
+        COALESCE(p.frais_reference, p.numero_dossier)                AS reference,
+        p.classe                                                     AS classe,
+        up.prenom || ' ' || up.nom                                  AS parent_nom,
+        up.email                                                     AS parent_email,
+        'preinscription'                                             AS source,
+        p.id                                                         AS source_id,
+        p.id                                                         AS preinscription_id,
+        COALESCE(p.montant_total_plan, p.frais_montant, 0)           AS montant_total,
+        0                                                            AS reste_a_payer
       FROM preinscriptions p
       JOIN parents pa ON p.parent_id = pa.id
       JOIN utilisateurs up ON pa.utilisateur_id = up.id
@@ -174,24 +175,106 @@ export async function GET(request: NextRequest) {
         )
         ${search ? `AND (
           LOWER(p.enfant_nom || ' ' || p.enfant_prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
-          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%')
+          LOWER(up.nom || ' ' || up.prenom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
+          LOWER(CONCAT('REC-PI-', LPAD(p.id::text, 5, '0'))) LIKE LOWER('%${search.replace(/'/g, "''")}%')
         )` : ""}
       ORDER BY p.frais_date_paiement DESC
     `, mois ? [annee, mois] : [annee]);
 
-    // Fusionner et trier par date décroissante
+    // ─────────────────────────────────────────────────────────────────
+    // 5. ⭐ REÇUS DE LA TABLE recus
+    // ─────────────────────────────────────────────────────────────────
+    const recusResult = await query(`
+      SELECT
+        r.numero_recu,
+        r.date_paiement,
+        COALESCE(r.enfant_nom, p.enfant_prenom || ' ' || p.enfant_nom, ue.nom) AS enfant,
+        r.montant,
+        COALESCE(r.mode_paiement, 'especes') AS mode_paiement,
+        COALESCE(r.type_frais, 'inscription') AS type_frais,
+        r.reference,
+        COALESCE(p.classe, c.nom) AS classe,
+        COALESCE(r.parent_nom, up.nom) AS parent_nom,
+        up.email AS parent_email,
+        r.source,
+        r.paiement_id AS source_id,
+        r.preinscription_id,
+        r.eleve_id,
+        COALESCE(r.montant_total, p.montant_total_plan, 0) AS montant_total,
+        COALESCE(r.reste_a_payer, p.montant_restant_plan, 0) AS reste_a_payer
+      FROM recus r
+      LEFT JOIN preinscriptions p ON r.preinscription_id = p.id
+      LEFT JOIN eleves e ON r.eleve_id = e.id
+      LEFT JOIN utilisateurs ue ON e.utilisateur_id = ue.id
+      LEFT JOIN classes c ON e.classe_id = c.id
+      LEFT JOIN parents pa ON p.parent_id = pa.id
+      LEFT JOIN utilisateurs up ON pa.utilisateur_id = up.id
+      WHERE EXTRACT(YEAR FROM r.date_paiement) = $1
+        ${mois ? `AND EXTRACT(MONTH FROM r.date_paiement) = $2` : ""}
+        ${search ? `AND (
+          LOWER(r.numero_recu) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
+          LOWER(r.enfant_nom) LIKE LOWER('%${search.replace(/'/g, "''")}%') OR
+          LOWER(r.parent_nom) LIKE LOWER('%${search.replace(/'/g, "''")}%')
+        )` : ""}
+        ${parentId ? `AND pa.id = ${parseInt(parentId)}` : ""}
+      ORDER BY r.date_paiement DESC
+    `, mois ? [annee, mois] : [annee]);
+
+    // ⭐⭐⭐ DÉDOUBLONNAGE INTELLIGENT ⭐⭐⭐
+    // 1. Créer un Set des paiements existants (montant + date)
+    const paiementKeys = new Set();
+    
+    // Ajouter les clés des paiements de pré-inscription
+    paiPreinsResult.rows.forEach((p: any) => {
+      const dateStr = new Date(p.date_paiement).toDateString();
+      paiementKeys.add(`${p.montant}-${dateStr}`);
+    });
+    
+    // Ajouter les clés des paiements de réinscription
+    paiReinsResult.rows.forEach((p: any) => {
+      const dateStr = new Date(p.date_paiement).toDateString();
+      paiementKeys.add(`${p.montant}-${dateStr}`);
+    });
+    
+    // Ajouter les clés des paiements d'élèves
+    paiEleveResult.rows.forEach((p: any) => {
+      const dateStr = new Date(p.date_paiement).toDateString();
+      paiementKeys.add(`${p.montant}-${dateStr}`);
+    });
+
+    // 2. Filtrer les reçus de la table recus qui ne sont pas déjà dans les paiements
+    const filteredRecus = recusResult.rows.filter((r: any) => {
+      const dateStr = new Date(r.date_paiement).toDateString();
+      const key = `${r.montant}-${dateStr}`;
+      return !paiementKeys.has(key);
+    });
+
+    // 3. Fusionner tous les résultats
     const allRecus = [
       ...paiPreinsResult.rows,
       ...paiReinsResult.rows,
       ...paiEleveResult.rows,
       ...preinscriptionsResult.rows,
-    ].sort((a, b) => {
+      ...filteredRecus,
+    ];
+
+    // 4. Supprimer les doublons restants (par source_id)
+    const seen = new Set();
+    const uniqueRecus = allRecus.filter((recu: any) => {
+      const key = `${recu.source}-${recu.source_id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // 5. Trier par date décroissante
+    uniqueRecus.sort((a, b) => {
       const dateA = new Date(a.date_paiement).getTime();
       const dateB = new Date(b.date_paiement).getTime();
       return dateB - dateA;
     });
 
-    return NextResponse.json(allRecus);
+    return NextResponse.json(uniqueRecus);
   } catch (error) {
     console.error("Erreur API /api/admin/recus:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

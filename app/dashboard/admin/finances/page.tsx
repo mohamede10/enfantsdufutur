@@ -1,13 +1,14 @@
 // app/dashboard/admin/finances/page.tsx
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import {
   DollarSign, TrendingUp, TrendingDown, Plus, Loader2,
   Wallet, Users, CheckCircle, Clock, Search, Download,
   ArrowUpCircle, ArrowDownCircle, Filter, RefreshCw,
   GraduationCap, Bus, Utensils, BookOpen, Wrench, Zap, X,
-  Receipt, Printer, User
+  Receipt, Printer, User, Eye, ChevronRight, ChevronLeft, ChevronDown, CircleUser, History
 } from "lucide-react";
 import RecuPaiement from "@/components/RecuPaiement";
 
@@ -717,151 +718,114 @@ export default function FinancesPage() {
             </div>
           )}
           {/* === REÇUS === */}
-          {activeTab === "recus" && (
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                    <Receipt className="w-5 h-5 text-blue-600" /> Reçus de paiement
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">Tous les reçus émis pour les parents</p>
-                </div>
-                <button
-                  onClick={fetchRecusAdmin}
-                  disabled={loadingRecus}
-                  className="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
-                >
-                  {loadingRecus ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  Rafraîchir
-                </button>
+        {activeTab === "recus" && (
+          <div className="space-y-6">
+            {/* En-tête avec lien vers la nouvelle vue */}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-blue-600" />
+                  Reçus par Parent
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Consultez tous les reçus regroupés par famille
+                </p>
               </div>
-
-              {/* Filtres */}
-              <div className="flex flex-wrap gap-3 items-center">
-                <select
-                  value={filterRecuMois}
-                  onChange={e => setFilterRecuMois(e.target.value)}
-                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Tous les mois</option>
-                  {MOIS_NOMS.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
-                </select>
-                <select
-                  value={filterRecuAnnee}
-                  onChange={e => setFilterRecuAnnee(e.target.value)}
-                  className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {["2024", "2025", "2026", "2027"].map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <div className="relative flex-1 min-w-[220px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Rechercher parent, enfant, N° reçu..."
-                    value={searchRecu}
-                    onChange={e => setSearchRecu(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && fetchRecusAdmin()}
-                    className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Résumé */}
-              {!loadingRecus && recusAdmin.length > 0 && (
-                <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-sm">
-                  <span className="font-semibold text-blue-800">{recusAdmin.length} reçu{recusAdmin.length > 1 ? 's' : ''} trouvé{recusAdmin.length > 1 ? 's' : ''}</span>
-                  <span className="text-blue-600">
-                    Total : <strong>{recusAdmin.reduce((acc, r) => acc + Number(r.montant), 0).toLocaleString()} GNF</strong>
-                  </span>
-                </div>
-              )}
-
-              {loadingRecus ? (
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                </div>
-              ) : recusAdmin.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Receipt className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="font-semibold text-gray-600">Aucun reçu trouvé</p>
-                  <p className="text-sm text-gray-400 mt-1">Modifiez les filtres ou attendez des paiements</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">N° Reçu</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Parent</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Élève</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Type</th>
-                        <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wide">Montant</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Mode</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">Date</th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wide">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {recusAdmin.map((recu, idx) => (
-                        <tr key={`${recu.source}-${recu.source_id}-${idx}`} className="hover:bg-blue-50/30 transition">
-                          <td className="px-4 py-3">
-                            <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded font-semibold text-gray-700">
-                              {recu.numero_recu}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
-                                <User className="w-3 h-3 text-indigo-600" />
-                              </div>
-                              <span className="font-medium text-gray-800 text-xs">{recu.parent_nom || '—'}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-gray-700 font-medium text-xs">{recu.enfant || '—'}</td>
-                          <td className="px-4 py-3">
-                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
-                              {recu.type_frais}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-bold text-green-700">
-                            {Number(recu.montant).toLocaleString()} GNF
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 text-xs">
-                            {recu.mode_paiement === 'orange_money' ? 'Orange Money' :
-                             recu.mode_paiement === 'especes' ? 'Espèces' :
-                             recu.mode_paiement === 'carte' ? 'Carte' :
-                             recu.mode_paiement || '—'}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 text-xs">
-                            {recu.date_paiement ? new Date(recu.date_paiement).toLocaleDateString('fr-FR') : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => setSelectedRecu(recu)}
-                              className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition font-medium"
-                            >
-                              <Printer className="w-3 h-3" /> Imprimer
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-gray-50 border-t">
-                      <tr>
-                        <td colSpan={4} className="px-4 py-3 font-bold text-gray-700">Total ({recusAdmin.length} reçus)</td>
-                        <td className="px-4 py-3 text-right font-bold text-green-700">
-                          {recusAdmin.reduce((acc, r) => acc + Number(r.montant), 0).toLocaleString()} GNF
-                        </td>
-                        <td colSpan={3}></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
+              <Link
+                href="/dashboard/admin/finances/recus"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm"
+              >
+                <Eye className="w-4 h-4" />
+                Voir tous les parents
+                <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
-          )}
+
+            {/* Mini résumé avec accès rapide */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Nouvelle vue disponible</p>
+                    <p className="font-semibold text-gray-800">
+                      Consultez tous les reçus regroupés par parent/famille
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/admin/finances/recus"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium text-sm whitespace-nowrap shadow-md"
+                >
+                  <Receipt className="w-4 h-4" />
+                  Accéder aux reçus par parent
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Derniers reçus (aperçu) */}
+            <div>
+              <h4 className="font-semibold text-gray-700 mb-3">📋 Derniers reçus émis</h4>
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">N° Reçu</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Parent</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Élève</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {recusAdmin.slice(0, 5).map((recu, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                            {recu.numero_recu}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-medium">{recu.parent_nom || '—'}</td>
+                        <td className="px-4 py-3">{recu.enfant}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-green-600">
+                          {Number(recu.montant).toLocaleString()} GNF
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">
+                          {recu.date_paiement ? new Date(recu.date_paiement).toLocaleDateString('fr-FR') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => {
+                              setSelectedRecu({
+                                ...recu,
+                                source: recu.source || 'paiement'
+                              });
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                          >
+                            <Printer className="w-4 h-4 inline mr-1" />
+                            Imprimer
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {recusAdmin.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                          Aucun reçu disponible
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
       </div>
 
