@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -243,7 +243,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
           <div className="p-4 border-t">
             <button
-              onClick={() => router.push("/api/auth/signout")}
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition"
             >
               <LogOut className="w-5 h-5" />
