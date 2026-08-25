@@ -8,7 +8,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  solde: {
+  solde?: {                           // ✅ rendu optionnel
     total: number;
     details: {
       inscription: number;
@@ -26,10 +26,24 @@ const formatMontant = (montant: number): string => {
 
 export default function PaiementGlobalModal({ isOpen, onClose, onSuccess, solde, parentId }: Props) {
   const [paying, setPaying] = useState(false);
-  const [montantSaisi, setMontantSaisi] = useState<string>(solde.total > 0 ? solde.total.toString() : "");
   const [modePaiement, setModePaiement] = useState("");
   const [reference, setReference] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Valeur par défaut si solde n'est pas fourni
+  const safeSolde = solde || {
+    total: 0,
+    details: {
+      inscription: 0,
+      transport: 0,
+      cantine: 0,
+      fournitures: 0
+    }
+  };
+
+  const [montantSaisi, setMontantSaisi] = useState<string>(
+    safeSolde.total > 0 ? safeSolde.total.toString() : ""
+  );
 
   const handlePaiement = async () => {
     const montant = parseInt(montantSaisi.replace(/\s/g, ''));
@@ -37,8 +51,8 @@ export default function PaiementGlobalModal({ isOpen, onClose, onSuccess, solde,
       setError("Veuillez saisir un montant valide");
       return;
     }
-    if (montant > solde.total) {
-      setError(`Le montant (${formatMontant(montant)}) dépasse le solde global restant (${formatMontant(solde.total)})`);
+    if (montant > safeSolde.total) {
+      setError(`Le montant (${formatMontant(montant)}) dépasse le solde global restant (${formatMontant(safeSolde.total)})`);
       return;
     }
     if (!modePaiement) {
@@ -74,10 +88,10 @@ export default function PaiementGlobalModal({ isOpen, onClose, onSuccess, solde,
   };
 
   const handleSuggestion = (pourcentage: number) => {
-    const montantSuggere = Math.round(solde.total * (pourcentage / 100));
+    const montantSuggere = Math.round(safeSolde.total * (pourcentage / 100));
     setMontantSaisi(montantSuggere.toString());
   };
-  const handlePayerSolde = () => setMontantSaisi(solde.total.toString());
+  const handlePayerSolde = () => setMontantSaisi(safeSolde.total.toString());
 
   if (!isOpen) return null;
   const montantSaisiNumber = parseInt(montantSaisi.replace(/\s/g, '')) || 0;
@@ -111,34 +125,34 @@ export default function PaiementGlobalModal({ isOpen, onClose, onSuccess, solde,
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Frais d'inscription</span>
-                <span className="font-medium text-indigo-600">{formatMontant(solde.details.inscription)} GNF</span>
+                <span className="font-medium text-indigo-600">{formatMontant(safeSolde.details.inscription)} GNF</span>
               </div>
-              {solde.details.transport > 0 && (
+              {safeSolde.details.transport > 0 && (
                 <div className="flex justify-between pl-4">
                   <span className="text-gray-600 flex items-center gap-1"><Bus className="w-3 h-3" /> Transport</span>
-                  <span className="font-medium text-blue-600">{formatMontant(solde.details.transport)} GNF</span>
+                  <span className="font-medium text-blue-600">{formatMontant(safeSolde.details.transport)} GNF</span>
                 </div>
               )}
-              {solde.details.cantine > 0 && (
+              {safeSolde.details.cantine > 0 && (
                 <div className="flex justify-between pl-4">
                   <span className="text-gray-600 flex items-center gap-1"><Utensils className="w-3 h-3" /> Cantine</span>
-                  <span className="font-medium text-orange-600">{formatMontant(solde.details.cantine)} GNF</span>
+                  <span className="font-medium text-orange-600">{formatMontant(safeSolde.details.cantine)} GNF</span>
                 </div>
               )}
-              {solde.details.fournitures > 0 && (
+              {safeSolde.details.fournitures > 0 && (
                 <div className="flex justify-between pl-4">
                   <span className="text-gray-600 flex items-center gap-1"><ShoppingCart className="w-3 h-3" /> Fournitures</span>
-                  <span className="font-medium text-purple-600">{formatMontant(solde.details.fournitures)} GNF</span>
+                  <span className="font-medium text-purple-600">{formatMontant(safeSolde.details.fournitures)} GNF</span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between font-bold text-black text-lg">
                 <span>Total restant</span>
-                <span className="text-indigo-700">{formatMontant(solde.total)} GNF</span>
+                <span className="text-indigo-700">{formatMontant(safeSolde.total)} GNF</span>
               </div>
             </div>
           </div>
 
-          {solde.total > 0 ? (
+          {safeSolde.total > 0 ? (
             <>
               {/* Suggestions de montant */}
               <div className="mb-4">
@@ -172,14 +186,14 @@ export default function PaiementGlobalModal({ isOpen, onClose, onSuccess, solde,
                     className="w-full pl-16 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black text-lg font-medium"
                   />
                 </div>
-                {montantSaisiNumber > solde.total && (
+                {montantSaisiNumber > safeSolde.total && (
                   <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                     <AlertTriangle className="w-4 h-4" /> Dépasse le solde global
                   </p>
                 )}
-                {montantSaisiNumber > 0 && montantSaisiNumber <= solde.total && (
+                {montantSaisiNumber > 0 && montantSaisiNumber <= safeSolde.total && (
                   <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" /> Il restera {formatMontant(solde.total - montantSaisiNumber)} GNF
+                    <CheckCircle className="w-4 h-4" /> Il restera {formatMontant(safeSolde.total - montantSaisiNumber)} GNF
                   </p>
                 )}
               </div>
@@ -228,8 +242,8 @@ export default function PaiementGlobalModal({ isOpen, onClose, onSuccess, solde,
 
               <button
                 onClick={handlePaiement}
-                disabled={!modePaiement || paying || montantSaisiNumber <= 0 || montantSaisiNumber > solde.total}
-                className={`w-full py-3 rounded-lg font-semibold transition ${(!modePaiement || paying || montantSaisiNumber <= 0 || montantSaisiNumber > solde.total) ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                disabled={!modePaiement || paying || montantSaisiNumber <= 0 || montantSaisiNumber > safeSolde.total}
+                className={`w-full py-3 rounded-lg font-semibold transition ${(!modePaiement || paying || montantSaisiNumber <= 0 || montantSaisiNumber > safeSolde.total) ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
               >
                 {paying ? <><Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Traitement...</> : `Payer ${montantSaisi ? formatMontant(montantSaisiNumber) : '0'} GNF`}
               </button>
