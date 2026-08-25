@@ -1025,14 +1025,14 @@ export default function GestionReinscriptionsPage() {
                         onClick={() => handleUpdateStatut(selectedReinscription.id, "valide")}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                       >
-                        Valider l'inscription
+                        Valider le paiement
                       </button>
                     ) : (
                       <button
                         onClick={() => { setShowDetailModal(false); handleOpenPaiement(selectedReinscription); }}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
                       >
-                        Enregistrer le paiement
+                        Valider le paiement
                       </button>
                     );
                   })()}
