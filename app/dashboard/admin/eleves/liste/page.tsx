@@ -29,7 +29,8 @@ import {
   MapPin,
   Smartphone,
   RefreshCw,
-  Download
+  Download, 
+  AlertTriangle
 } from "lucide-react";
 
 interface Eleve {

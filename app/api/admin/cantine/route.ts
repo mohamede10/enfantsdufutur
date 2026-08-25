@@ -23,8 +23,16 @@ export async function GET() {
         m.regime_special,
         m.prix,
         m.prix_annuel,
+        -- ⭐ CALCULER LE PRIX MENSUEL (prix_annuel / 9 mois scolaires)
+        CASE 
+          WHEN m.prix_annuel IS NOT NULL AND m.prix_annuel > 0 
+          THEN m.prix_annuel / 9 
+          WHEN m.prix IS NOT NULL AND m.prix > 0 
+          THEN m.prix 
+          ELSE NULL 
+        END as prix_mensuel,
         -- ⭐ Inscrits depuis reserves_cantine
-        (SELECT COUNT(*) FROM reserves_cantine r WHERE r.date = m.date) as inscrits,
+        (SELECT COUNT(*) FROM inscriptions_cantine WHERE est_actif = true) as inscrits,
         -- ⭐ Présents depuis reserves_cantine
         (SELECT COUNT(*) FROM reserves_cantine r WHERE r.date = m.date AND r.est_present = true) as presents
       FROM cantine_menus m
@@ -41,6 +49,8 @@ export async function GET() {
       regime_special: r.regime_special || false,
       prix: r.prix !== null && r.prix !== undefined ? Number(r.prix) : null,
       prix_annuel: r.prix_annuel !== null && r.prix_annuel !== undefined ? Number(r.prix_annuel) : null,
+      // ⭐ AJOUTER prix_mensuel
+      prix_mensuel: r.prix_mensuel !== null && r.prix_mensuel !== undefined ? Number(r.prix_mensuel) : null,
       inscrits: parseInt(r.inscrits || 0),
       presents: parseInt(r.presents || 0)
     }));
@@ -201,7 +211,6 @@ export async function GET() {
 
     // ===================== 3. STRUCTURE DE LA RÉPONSE =====================
     const stats = {
-      // Statistiques globales
       totalInscrits: totalInscrits,
       totalGarcons: totalGarcons,
       totalFilles: totalFilles,
@@ -215,8 +224,6 @@ export async function GET() {
       recetteMoyenneParMenu: Math.round(recetteMoyenneParMenu),
       presentsGarcons: presentsGarcons,
       presentsFilles: presentsFilles,
-      
-      // ⭐ LISTES DES INSCRIPTIONS PAR TYPE
       preinscriptions: preinscriptionsCantine.rows.map((r: any) => ({
         id: r.preinscription_id,
         numero_dossier: r.numero_dossier,
@@ -229,7 +236,6 @@ export async function GET() {
         frais_statut: r.frais_statut,
         date: r.date_preinscription
       })),
-      
       inscriptions: inscriptionsCantine.rows.map((r: any) => ({
         eleve_id: r.eleve_id,
         matricule: r.matricule,
@@ -241,7 +247,6 @@ export async function GET() {
         solde: Number(r.solde) || 0,
         date_inscription: r.date_inscription
       })),
-      
       reinscriptions: reinscriptionsCantine.rows.map((r: any) => ({
         id: r.reinscription_id,
         numero_dossier: r.numero_dossier,
@@ -262,7 +267,7 @@ export async function GET() {
   }
 }
 
-// POST, PUT, DELETE restent inchangés
+// ⭐ POST - Ajouter un menu
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -272,32 +277,45 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { date, plat, accompagnement, dessert, regime_special, prix, prix_annuel } = body;
+    const { date, plat, accompagnement, dessert, regime_special, prix_mensuel, prix_annuel } = body;
 
-    const prixValue = prix !== "" && prix !== null && prix !== undefined ? parseInt(prix) : null;
-    const prixAnnuelValue = prix_annuel !== "" && prix_annuel !== null && prix_annuel !== undefined ? parseInt(prix_annuel) : null;
+    // ⭐ SI UN SEUL PRIX EST FOURNI, CALCULER L'AUTRE
+    let prixMensuelFinal = prix_mensuel ? parseInt(prix_mensuel) : null;
+    let prixAnnuelFinal = prix_annuel ? parseInt(prix_annuel) : null;
+
+    if (prixAnnuelFinal && !prixMensuelFinal) {
+      prixMensuelFinal = Math.round(prixAnnuelFinal / 9);
+    }
+    if (prixMensuelFinal && !prixAnnuelFinal) {
+      prixAnnuelFinal = prixMensuelFinal * 9;
+    }
 
     const result = await query(`
       INSERT INTO cantine_menus (date, plat, accompagnement, dessert, regime_special, prix, prix_annuel)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `, [
-      date, 
+      date || new Date().toISOString().split('T')[0], 
       plat, 
-      accompagnement, 
-      dessert, 
+      accompagnement || '', 
+      dessert || '', 
       regime_special || false,
-      prixValue,
-      prixAnnuelValue
+      prixMensuelFinal,
+      prixAnnuelFinal
     ]);
 
-    return NextResponse.json({ success: true, menu: result.rows[0] });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Menu ajouté avec succès",
+      menu: result.rows[0] 
+    });
   } catch (error) {
     console.error("Erreur API Cantine (POST):", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
+// ⭐ PUT - Modifier un menu
 export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -307,14 +325,22 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { id, date, plat, accompagnement, dessert, regime_special, prix, prix_annuel } = body;
+    const { id, date, plat, accompagnement, dessert, regime_special, prix_mensuel, prix_annuel } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID requis" }, { status: 400 });
     }
 
-    const prixValue = prix !== "" && prix !== null && prix !== undefined ? parseInt(prix) : null;
-    const prixAnnuelValue = prix_annuel !== "" && prix_annuel !== null && prix_annuel !== undefined ? parseInt(prix_annuel) : null;
+    // ⭐ SI UN SEUL PRIX EST FOURNI, CALCULER L'AUTRE
+    let prixMensuelFinal = prix_mensuel ? parseInt(prix_mensuel) : null;
+    let prixAnnuelFinal = prix_annuel ? parseInt(prix_annuel) : null;
+
+    if (prixAnnuelFinal && !prixMensuelFinal) {
+      prixMensuelFinal = Math.round(prixAnnuelFinal / 9);
+    }
+    if (prixMensuelFinal && !prixAnnuelFinal) {
+      prixAnnuelFinal = prixMensuelFinal * 9;
+    }
 
     await query(`
       UPDATE cantine_menus 
@@ -327,23 +353,27 @@ export async function PUT(request: Request) {
           prix_annuel = $7
       WHERE id = $8
     `, [
-      date, 
+      date || new Date().toISOString().split('T')[0], 
       plat, 
-      accompagnement, 
-      dessert, 
+      accompagnement || '', 
+      dessert || '', 
       regime_special || false,
-      prixValue,
-      prixAnnuelValue,
+      prixMensuelFinal,
+      prixAnnuelFinal,
       id
     ]);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Menu modifié avec succès" 
+    });
   } catch (error) {
     console.error("Erreur API Cantine (PUT):", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
+// ⭐ DELETE - Supprimer un menu
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -357,23 +387,9 @@ export async function DELETE(request: Request) {
     
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
-    const checkPreinscription = await query(`
-      SELECT COUNT(*) as count FROM preinscription_cantine WHERE menu_id = $1
-    `, [id]);
-
-    const preinscriptionCount = parseInt(checkPreinscription.rows[0]?.count || 0);
-
-    const checkReservations = await query(`
-      SELECT COUNT(*) as count FROM reservations_cantine WHERE menu_id = $1
-    `, [id]);
-
-    const reservationCount = parseInt(checkReservations.rows[0]?.count || 0);
-
-    if (preinscriptionCount > 0 || reservationCount > 0) {
-      await query('DELETE FROM preinscription_cantine WHERE menu_id = $1', [id]);
-      await query('DELETE FROM reservations_cantine WHERE menu_id = $1', [id]);
-      console.log(`🗑️ Suppression des références: ${preinscriptionCount} dans preinscription_cantine, ${reservationCount} dans reservations_cantine`);
-    }
+    // Supprimer les références
+    await query('DELETE FROM preinscription_cantine WHERE menu_id = $1', [id]);
+    await query('DELETE FROM reservations_cantine WHERE menu_id = $1', [id]);
 
     const result = await query('DELETE FROM cantine_menus WHERE id = $1 RETURNING id', [id]);
 
@@ -381,7 +397,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Menu non trouvé" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, message: "Menu supprimé avec succès" });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Menu supprimé avec succès" 
+    });
   } catch (error) {
     console.error("Erreur API Cantine (DELETE):", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

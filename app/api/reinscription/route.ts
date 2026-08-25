@@ -60,15 +60,19 @@ export async function POST(request: Request) {
 
         // Si la mère est renseignée, l'ajouter comme deuxième parent
         if (parent.mereNom || parent.merePrenom) {
-          // Créer un compte pour la mère (même email)
+          // ⭐ GÉNÉRER UN EMAIL UNIQUE POUR LA MÈRE
+          // On utilise le nom et prénom de la mère pour créer un email, avec un timestamp pour éviter les collisions
+          const mereEmail = `mere_${parent.merePrenom.toLowerCase()}.${parent.mereNom.toLowerCase()}_${Date.now()}@temp.com`;
+          
+          // Créer un compte pour la mère avec cet email unique
           const mereUserResult = await query(`
             INSERT INTO utilisateurs (
               email, password, prenom, nom, telephone, role
             ) VALUES ($1, $2, $3, $4, $5, 'PARENT')
             RETURNING id
           `, [
-            parent.email, 
-            hashedPassword, 
+            mereEmail, // email unique
+            hashedPassword, // même mot de passe que le père (ou on pourrait en générer un autre)
             parent.merePrenom, 
             parent.mereNom, 
             parent.merePhone || null
@@ -121,19 +125,21 @@ export async function POST(request: Request) {
                           Number(classe.frais_inscription) || 
                           500000;
 
-      // Générer un numéro de dossier
+      // ⭐ GÉNÉRER UN NUMÉRO DE DOSSIER UNIQUE (AMÉLIORÉ)
       const currentYear = new Date().getFullYear();
-      const countResult = await query(`
-        SELECT COUNT(*) as count FROM reinscriptions 
-        WHERE EXTRACT(YEAR FROM date_reinscription) = $1
-      `, [currentYear]);
-      const count = parseInt(countResult.rows[0].count) + 1;
-      const numeroDossier = `R${currentYear}-${count.toString().padStart(4, '0')}`;
+      const maxDossierResult = await query(`
+        SELECT MAX(CAST(SUBSTRING(numero_dossier FROM POSITION('-' IN numero_dossier) + 1) AS INTEGER)) as max_num
+        FROM reinscriptions
+        WHERE numero_dossier LIKE $1
+      `, [`R${currentYear}-%`]);
+      const maxNum = maxDossierResult.rows[0]?.max_num || 0;
+      const nextNum = maxNum + 1;
+      const numeroDossier = `R${currentYear}-${nextNum.toString().padStart(4, '0')}`;
 
       // ⭐ CHERCHER L'ÉLÈVE EXISTANT
       let eleveId = null;
       
-      // 1. Rechercher par matricule
+      // 1. Rechercher par matricule (le plus fiable)
       if (enfant.matricule) {
         const eleveResult = await query(`
           SELECT id FROM eleves WHERE matricule = $1
@@ -144,13 +150,34 @@ export async function POST(request: Request) {
         }
       }
 
-      // 2. Si pas trouvé, chercher par nom/prénom/date de naissance
+      // 2. Si non trouvé, chercher par parent + identité (recherche robuste)
+      if (!eleveId && parentIdFinal) {
+        const eleveResult = await query(`
+          SELECT e.id
+          FROM eleves e
+          JOIN lien_parent_eleve l ON e.id = l.eleve_id
+          JOIN utilisateurs u ON e.utilisateur_id = u.id
+          WHERE l.parent_id = $1
+            AND TRIM(u.nom) ILIKE TRIM($2)
+            AND TRIM(u.prenom) ILIKE TRIM($3)
+            AND e.date_naissance = $4
+        `, [parentIdFinal, enfant.nom, enfant.prenom, enfant.dateNaissance]);
+        
+        if (eleveResult.rows.length > 0) {
+          eleveId = eleveResult.rows[0].id;
+          console.log(`✅ Élève trouvé par parent + identité: ${enfant.prenom} ${enfant.nom}`);
+        }
+      }
+
+      // 3. Si toujours pas trouvé, chercher par nom/prénom/date (moins fiable)
       if (!eleveId) {
         const eleveResult = await query(`
           SELECT e.id 
           FROM eleves e
           JOIN utilisateurs u ON e.utilisateur_id = u.id
-          WHERE u.nom = $1 AND u.prenom = $2 AND e.date_naissance = $3
+          WHERE TRIM(u.nom) ILIKE TRIM($1) 
+            AND TRIM(u.prenom) ILIKE TRIM($2) 
+            AND e.date_naissance = $3
         `, [enfant.nom, enfant.prenom, enfant.dateNaissance]);
         if (eleveResult.rows.length > 0) {
           eleveId = eleveResult.rows[0].id;
@@ -158,7 +185,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // 3. Si toujours pas trouvé, créer un nouvel élève
+      // 4. Si toujours pas trouvé, créer un nouvel élève
       if (!eleveId) {
         console.log(`🆕 Création d'un nouvel élève: ${enfant.prenom} ${enfant.nom}`);
         
@@ -181,12 +208,19 @@ export async function POST(request: Request) {
 
         const eleveUserId = eleveUserResult.rows[0].id;
 
-        // Générer un matricule
-        const matCount = await query(`
-          SELECT COUNT(*) as count FROM eleves
-        `);
-        const matCountNum = parseInt(matCount.rows[0].count) + 1;
-        const matricule = `${currentYear}${matCountNum.toString().padStart(4, '0')}`;
+        // ⭐ GÉNÉRER UN MATRICULE UNIQUE
+        const getNextMatricule = async (year: number) => {
+          const result = await query(`
+            SELECT MAX(CAST(SUBSTRING(matricule, 5) AS INTEGER)) as max_num
+            FROM eleves
+            WHERE matricule LIKE $1
+          `, [`${year}%`]);
+          const maxNum = result.rows[0]?.max_num || 0;
+          const nextNum = maxNum + 1;
+          return `${year}${nextNum.toString().padStart(4, '0')}`;
+        };
+
+        const matricule = enfant.matricule ? enfant.matricule : await getNextMatricule(currentYear);
 
         // Créer l'élève
         const eleveResult = await query(`
@@ -202,7 +236,7 @@ export async function POST(request: Request) {
           RETURNING id
         `, [
           eleveUserId,
-          enfant.matricule || matricule,
+          matricule,
           enfant.dateNaissance,
           enfant.lieuNaissance || null,
           enfant.sexe,
@@ -218,7 +252,7 @@ export async function POST(request: Request) {
           VALUES ($1, $2)
         `, [parentIdFinal, eleveId]);
         
-        console.log(`✅ Nouvel élève créé avec ID: ${eleveId}`);
+        console.log(`✅ Nouvel élève créé avec ID: ${eleveId}, matricule: ${matricule}`);
       }
 
       // ⭐ VÉRIFIER QUE L'ÉLÈVE EST BIEN LIÉ AU PARENT
