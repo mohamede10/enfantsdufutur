@@ -1306,7 +1306,7 @@ const mandatorySummary = useMemo(() => {
             <h4 className="font-semibold text-blue-800 mb-3">📊 Récapitulatif des coûts</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-900">Inscription scolaire</span>
+                <span className="text-gray-900">Inscription + scolarité annuelle</span>
                 <span className="font-semibold text-black">{totalInscription.toLocaleString()} GNF</span>
               </div>
 

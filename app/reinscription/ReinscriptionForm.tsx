@@ -1365,7 +1365,7 @@ export default function ReinscriptionForm() {
               <h4 className="font-semibold text-blue-800 mb-3">📊 Récapitulatif des coûts</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-900">Réinscription scolaire</span>
+                  <span className="text-gray-900">Réinscription + scolarité annuelle</span>
                   <span className="font-semibold text-black">{totalReinscription.toLocaleString()} GNF</span>
                 </div>
 
