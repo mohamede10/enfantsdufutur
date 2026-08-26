@@ -1,4 +1,4 @@
-//components\pwa\OfflineManager.tsx
+// components/pwa/OfflineManager.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -75,7 +75,8 @@ export function OfflineManager() {
 
     const handleOffline = () => {
       setIsOnline(false);
-      addToast("Connexion Internet perdue. Passage en mode hors connexion.", "warning");
+      addToast("Connexion Internet perdue. Veuillez vous connecter.", "warning");
+      //addToast("Connexion Internet perdue. Passage en mode hors connexion.", "warning");
     };
 
     window.addEventListener("online", handleOnline);
@@ -102,6 +103,11 @@ export function OfflineManager() {
       const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
       const isApiRequest = url.startsWith("/api/") || url.includes(window.location.origin + "/api/");
       const isMutation = ["POST", "PUT", "DELETE"].includes(method);
+
+      // ⭐ EXCLURE LES ROUTES SENSIBLES
+      if (url.includes("/api/auth") || url.includes("/api/upload")) {
+        return originalFetch(input, init);
+      }
 
       if (isApiRequest && isMutation) {
         // Parse headers
@@ -130,9 +136,14 @@ export function OfflineManager() {
           } else if (init.body instanceof Blob) {
             bodyStr = await init.body.text();
           } else if (init.body instanceof FormData) {
+            // ⭐ CONVERSION ROBUSTE DES FORMDATA
             const obj: Record<string, any> = {};
             init.body.forEach((value, key) => {
-              obj[key] = value;
+              if (value instanceof File || value instanceof Blob) {
+                obj[key] = "[FILE]"; // placeholder pour les fichiers
+              } else {
+                obj[key] = value;
+              }
             });
             bodyStr = JSON.stringify(obj);
           } else {

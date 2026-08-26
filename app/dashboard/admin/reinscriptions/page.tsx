@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Eye,
@@ -122,6 +123,7 @@ interface Notification {
 }
 
 export default function GestionReinscriptionsPage() {
+  const router = useRouter(); // ⭐ Initialiser le router
   const [reinscriptions, setReinscriptions] = useState<Reinscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -508,6 +510,13 @@ export default function GestionReinscriptionsPage() {
           <p className="text-gray-900">Gérez les demandes de réinscription</p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => router.push('/reinscription')} // Redirection vers le formulaire public
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Réinscription anciens 
+          </button>
          <button
             onClick={() => setShowCreateModal(true)}
             className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
@@ -515,6 +524,7 @@ export default function GestionReinscriptionsPage() {
             <Plus className="w-4 h-4" />
             Nouvelle réinscription
           </button>
+          
           <button
             onClick={exportToExcel}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
