@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // vers le lien public 
 import {
   Search,
   Eye,
