@@ -454,7 +454,7 @@ export default function AdminParentsPage() {
                                         <p className="text-gray-900">{parent.profession || "Non renseigné"}</p>
                                     </td>
                                     <td className="px-6 py-4">
-                                        {parent.totalEnfants} {parent.totalEnfants > 1 ? "s" : ""}
+                                        {parent.totalEnfants} {parent.totalEnfants > 1 ? "enfants" : "enfant"}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">

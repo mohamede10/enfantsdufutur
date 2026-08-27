@@ -75,7 +75,7 @@ interface GraphData {
 interface DashboardStats {
   general: {
     totalEleves: number;
-    totalEnseignants: number;
+    totalPersonnels: number; // ← remplace totalEnseignants
     totalClasses: number;
     totalParents: number;
     preinscriptionsEnAttente: number;
@@ -98,7 +98,6 @@ interface DashboardStats {
       date: string;
       mode: string;
     }>;
-    // ⭐ Nouveaux champs pour le total à payer
     totalScolarite: number;
     totalTransport: number;
     totalCantine: number;
@@ -113,7 +112,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     general: {
       totalEleves: 0,
-      totalEnseignants: 0,
+      totalPersonnels: 0,
       totalClasses: 0,
       totalParents: 0,
       preinscriptionsEnAttente: 0,
@@ -219,8 +218,8 @@ export default function AdminDashboard() {
           <Link href="/dashboard/admin/personnel" className="">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-900 text-sm">Enseignants</p>
-              <p className="text-2xl font-bold text-gray-900">{general.totalEnseignants || 0}</p>
+              <p className="text-gray-900 text-sm">Personnels</p> {/* ← libellé modifié */}
+              <p className="text-2xl font-bold text-gray-900">{general.totalPersonnels || 0}</p>
             </div>
             <div className="bg-green-500 p-3 rounded-lg"><GraduationCap className="w-6 h-6 text-white" /></div>
           </div>
