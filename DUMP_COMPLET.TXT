@@ -1,0 +1,55 @@
+# ======================================================
+#Script PowerShell pour exporter le schéma et les données de référence
+# ======================================================
+# 1. Définir la chaîne de connexion
+# ======================================================
+$env:DATABASE_URL = "postgresql://postgres.zwdpyhpbcrcccqgsthnc:12345%2ECOTECHSERVICES@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
+
+# ======================================================
+# 2. Vérifier que pg_dump est disponible
+# ======================================================
+if (-not (Get-Command pg_dump -ErrorAction SilentlyContinue)) {
+    Write-Host "❌ pg_dump introuvable. Installez PostgreSQL ou ajoutez le dossier bin au PATH."
+    exit 1
+}
+
+# ======================================================
+# 3. Exporter le schéma (structure) uniquement
+# ======================================================
+Write-Host "⏳ Export du schéma..."
+pg_dump "$env:DATABASE_URL" --schema-only --no-owner --no-privileges > schema.sql
+if ($LASTEXITCODE -ne 0) { Write-Host "❌ Erreur lors de l'export du schéma"; exit 1 }
+
+# ======================================================
+# 4. Exporter les données des tables de référence
+# ======================================================
+Write-Host "⏳ Export des données de référence..."
+$tables = @(
+    "public.annees_scolaires",
+    "public.classes",
+    "public.matieres",
+    "public.articles_librairie",
+    "public.bus",
+    "public.lignes_transport",
+    "public.cantine_menus",
+    "public.categories_depenses",
+    "public.categories_quiz",
+    "public.services_annexes"
+)
+
+$tableArgs = $tables | ForEach-Object { "--table=$_" }
+pg_dump $env:DATABASE_URL --data-only --no-owner --no-privileges $tableArgs > reference_data.sql
+if ($LASTEXITCODE -ne 0) { Write-Host "❌ Erreur lors de l'export des données"; exit 1 }
+
+# ======================================================
+# 5. Concaténer les deux fichiers
+# ======================================================
+Write-Host "⏳ Assemblage des fichiers..."
+Get-Content schema.sql, reference_data.sql | Set-Content script_clean.sql
+
+# ======================================================
+# 6. Nettoyer les fichiers temporaires (optionnel)
+# ======================================================
+# Remove-Item schema.sql, reference_data.sql
+
+Write-Host "✅ Fichier généré : script_clean.sql"

@@ -45,7 +45,7 @@ interface Fourniture {
   prix_unitaire: number;
   quantite_stock: number;
   selectedQty: number;
-  niveaux_cibles: string[]; // ✅ Ajout
+  niveaux_cibles: string[];
 }
 
 interface TransportOption {
@@ -353,35 +353,27 @@ export default function ReinscriptionForm() {
     return Array.from(map.values());
   }, [mandatorySupplies]);
 
-  const fetchTransportOptions = async () => {
-    try {
-      setLoadingTransport(true);
-      const res = await fetch("/api/public/transport");
-      const data = await res.json();
-
-      if (Array.isArray(data) && data.length > 0) {
-        const items = data.map((item: any) => ({
-          id: item.id,
-          nom: item.nom || "Transport scolaire",
-          prix: Number(item.prix) || 0,
+  // ⭐ TRANSPORT : option unique annuelle (simulée)
+  const fetchTransportOptions = () => {
+    setLoadingTransport(true);
+    // Simuler une requête
+    setTimeout(() => {
+      setTransportOptions([
+        {
+          id: 999,
+          nom: "Transport annuel",
+          prix: 3000000, // 3 000 000 GNF
           selected: false,
-          horaireMatin: item.horaire_matin || "07:30",
-          horaireSoir: item.horaire_soir || "16:30",
-          immatriculation: item.immatriculation || null,
-          chauffeur: item.chauffeur || null,
-          capacite: item.capacite || 0,
-          inscrits: item.inscrits || 0
-        }));
-        setTransportOptions(items);
-      } else {
-        setTransportOptions([]);
-      }
-    } catch (e) {
-      console.error("Erreur chargement transport", e);
-      setTransportOptions([]);
-    } finally {
+          horaireMatin: "",
+          horaireSoir: "",
+          immatriculation: "",
+          chauffeur: "",
+          capacite: 0,
+          inscrits: 0,
+        }
+      ]);
       setLoadingTransport(false);
-    }
+    }, 300);
   };
 
   const fetchCantineOptions = async () => {
@@ -1082,11 +1074,11 @@ export default function ReinscriptionForm() {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-blue-900">Fournitures scolaires</h3>
-                  {!skipOptionalSupplies && (totalMandatorySupplies + totalFournitures) > 0 && (
+                  {/* Fournitures scolaires {!skipOptionalSupplies && (totalMandatorySupplies + totalFournitures) > 0 && (
                     <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">
                       {(totalMandatorySupplies + totalFournitures).toLocaleString()} GNF
                     </span>
-                  )}
+                  )}*/}
                 </div>
                 <button
                   type="button"

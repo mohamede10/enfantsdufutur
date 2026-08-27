@@ -41,3 +41,21 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+ENV.TXT
+
+# Sauvegardes de base de données
+BD_ORIGINALE.sql
+DUMP_COMPLET.TXT
+backup_database-eief_26_08_2026_23H_33.sql
+reference_data.sql
+schema.sql
+script_clean.sql
+
+# Sauvegardes de base de données
+BD_ORIGINALE.sql
+DUMP_COMPLET.TXT
+backup_database-eief_26_08_2026_23H_33.sql
+reference_data.sql
+schema.sql
+script_clean.sql

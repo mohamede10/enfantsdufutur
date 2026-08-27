@@ -445,18 +445,19 @@ export default function GestionElevesPage() {
             <FileText className="w-8 h-8 text-blue-700" />
           </div>
         </div>
+        {/*
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <div><p className="text-gray-900 text-sm">🚌 Transport</p><p className="text-2xl font-bold text-green-600">{stats.transport}</p></div>
+            <div><p className="text-gray-900 text-sm">Transport</p><p className="text-2xl font-bold text-green-600">{stats.transport}</p></div>
             <Bus className="w-8 h-8 text-green-700" />
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <div><p className="text-gray-900 text-sm">🍽️ Cantine</p><p className="text-2xl font-bold text-orange-600">{stats.cantine}</p></div>
+            <div><p className="text-gray-900 text-sm">Cantine</p><p className="text-2xl font-bold text-orange-600">{stats.cantine}</p></div>
             <Utensils className="w-8 h-8 text-orange-700" />
           </div>
-        </div>
+        </div> */}
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between">
             <div><p className="text-gray-900 text-sm">Garçons</p><p className="text-2xl font-bold text-blue-600">{stats.garcons}</p></div>

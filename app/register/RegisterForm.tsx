@@ -1,7 +1,7 @@
 // app/register/RegisterForm.tsx
 "use client";
 
-import { useState, useEffect, useMemo  } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -42,14 +42,8 @@ interface Fourniture {
 interface TransportOption {
   id: number;
   nom: string;
-  prix: number;
+  prix: number;          // annuel
   selected: boolean;
-  horaireMatin?: string;
-  horaireSoir?: string;
-  immatriculation?: string;
-  chauffeur?: string;
-  capacite?: number;
-  inscrits?: number;
 }
 
 interface CantineOption {
@@ -194,46 +188,45 @@ export default function RegisterForm() {
 
   // ✅ Fonction pour charger les fournitures obligatoires (avec niveaux cibles)
   const fetchMandatorySupplies = async () => {
-  try {
-    setLoadingMandatory(true);
-    setMandatoryError(null);
-    const response = await fetch('/api/public/librairie_niveau');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
+    try {
+      setLoadingMandatory(true);
+      setMandatoryError(null);
+      const response = await fetch('/api/public/librairie_niveau');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
 
-    if (Array.isArray(data) && data.length > 0) {
-      const items = data.map((item: any) => ({
-        id: item.id,
-        nom: item.nom || "Fourniture sans nom",
-        prix_unitaire: item.prix_unitaire || 0,
-        quantite_stock: item.quantite_stock || 0,
-        selectedQty: 0,
-        niveaux_cibles: item.niveaux_cibles || [],
-      }));
+      if (Array.isArray(data) && data.length > 0) {
+        const items = data.map((item: any) => ({
+          id: item.id,
+          nom: item.nom || "Fourniture sans nom",
+          prix_unitaire: item.prix_unitaire || 0,
+          quantite_stock: item.quantite_stock || 0,
+          selectedQty: 0,
+          niveaux_cibles: item.niveaux_cibles || [],
+        }));
 
-      const map = new Map<string, Fourniture[]>();
-      items.forEach(article => {
-        article.niveaux_cibles.forEach((niveau: string) => {
-          if (!map.has(niveau)) map.set(niveau, []);
-          // ✅ Détermination des quantités par défaut
-          let qty = 1;
-          if (article.nom.includes('Tenue scolaire')) qty = 2;
-          else if (article.nom.includes('Ramette')) qty = 2;
-          const copy = { ...article, selectedQty: qty };
-          map.get(niveau)!.push(copy);
+        const map = new Map<string, Fourniture[]>();
+        items.forEach(article => {
+          article.niveaux_cibles.forEach((niveau: string) => {
+            if (!map.has(niveau)) map.set(niveau, []);
+            let qty = 1;
+            if (article.nom.includes('Tenue scolaire')) qty = 2;
+            else if (article.nom.includes('Ramette')) qty = 2;
+            const copy = { ...article, selectedQty: qty };
+            map.get(niveau)!.push(copy);
+          });
         });
-      });
-      setMandatorySuppliesMap(map);
-    } else {
-      setMandatoryError("Aucune fourniture obligatoire trouvée.");
+        setMandatorySuppliesMap(map);
+      } else {
+        setMandatoryError("Aucune fourniture obligatoire trouvée.");
+      }
+    } catch (e) {
+      console.error("Erreur chargement obligatoires:", e);
+      setMandatoryError("Impossible de charger les fournitures obligatoires.");
+    } finally {
+      setLoadingMandatory(false);
     }
-  } catch (e) {
-    console.error("Erreur chargement obligatoires:", e);
-    setMandatoryError("Impossible de charger les fournitures obligatoires.");
-  } finally {
-    setLoadingMandatory(false);
-  }
-};
+  };
 
   // ✅ Fonction pour charger les fournitures optionnelles (sans niveaux cibles)
   const fetchOptionalSupplies = async () => {
@@ -312,55 +305,40 @@ export default function RegisterForm() {
   };
 
   // ✅ Résumé des fournitures obligatoires pour l'affichage dans le récapitulatif
-const mandatorySummary = useMemo(() => {
-  const map = new Map<number, { nom: string; quantiteTotale: number; total: number }>();
-  mandatorySupplies.forEach(item => {
-    const prixEffectif = getPrixUnitaireEffectif(item.article, item.article.selectedQty);
-    const totalLigne = prixEffectif * item.article.selectedQty;
-    const existing = map.get(item.article.id);
-    if (existing) {
-      existing.quantiteTotale += item.article.selectedQty;
-      existing.total += totalLigne;
-    } else {
-      map.set(item.article.id, {
-        nom: item.article.nom,
-        quantiteTotale: item.article.selectedQty,
-        total: totalLigne
-      });
-    }
-  });
-  return Array.from(map.values());
-}, [mandatorySupplies]);
-
-  const fetchTransportOptions = async () => {
-    try {
-      setLoadingTransport(true);
-      const res = await fetch("/api/public/transport");
-      const data = await res.json();
-
-      if (Array.isArray(data) && data.length > 0) {
-        const items = data.map((item: any) => ({
-          id: item.id,
-          nom: item.nom || "Transport scolaire",
-          prix: Number(item.prix) || 0,
-          selected: false,
-          horaireMatin: item.horaire_matin || "07:30",
-          horaireSoir: item.horaire_soir || "16:30",
-          immatriculation: item.immatriculation || null,
-          chauffeur: item.chauffeur || null,
-          capacite: item.capacite || 0,
-          inscrits: item.inscrits || 0
-        }));
-        setTransportOptions(items);
+  const mandatorySummary = useMemo(() => {
+    const map = new Map<number, { nom: string; quantiteTotale: number; total: number }>();
+    mandatorySupplies.forEach(item => {
+      const prixEffectif = getPrixUnitaireEffectif(item.article, item.article.selectedQty);
+      const totalLigne = prixEffectif * item.article.selectedQty;
+      const existing = map.get(item.article.id);
+      if (existing) {
+        existing.quantiteTotale += item.article.selectedQty;
+        existing.total += totalLigne;
       } else {
-        setTransportOptions([]);
+        map.set(item.article.id, {
+          nom: item.article.nom,
+          quantiteTotale: item.article.selectedQty,
+          total: totalLigne
+        });
       }
-    } catch (e) {
-      console.error("Erreur chargement transport", e);
-      setTransportOptions([]);
-    } finally {
+    });
+    return Array.from(map.values());
+  }, [mandatorySupplies]);
+
+  // ⭐ TRANSPORT : option unique annuelle
+  const fetchTransportOptions = () => {
+    setLoadingTransport(true);
+    setTimeout(() => {
+      setTransportOptions([
+        {
+          id: 999,
+          nom: "Transport annuel",
+          prix: 3000000, // 3 000 000 GNF
+          selected: false,
+        },
+      ]);
       setLoadingTransport(false);
-    }
+    }, 300);
   };
 
   const fetchCantineOptions = async () => {
@@ -972,11 +950,11 @@ const mandatorySummary = useMemo(() => {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-blue-900">Fournitures scolaires</h3>
-                  {!skipOptionalSupplies && (totalMandatorySupplies + totalFournitures) > 0 && (
+                  {/* Fournitures scolaires {!skipOptionalSupplies && (totalMandatorySupplies + totalFournitures) > 0 && (
                     <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">
                       {(totalMandatorySupplies + totalFournitures).toLocaleString()} GNF
                     </span>
-                  )}
+                  )}*/}
                 </div>
                 <button
                   type="button"
@@ -993,57 +971,6 @@ const mandatorySummary = useMemo(() => {
                   {skipOptionalSupplies ? "✅ Réactiver les optionnelles" : "❌ Ignorer les fournitures optionnelles"}
                 </button>
               </div>
-
-              {/* Fournitures obligatoires 
-              {mandatorySupplies.length > 0 && (
-                <div className="mb-4 p-4 bg-blue-50/50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-800 mb-2">📚 Fournitures incluses (obligatoires)</h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Ces fournitures sont obligatoires pour le niveau de votre enfant.
-                    Vous pouvez ajuster les quantités (1 ou 2 tenues). Le prix unitaire s’adapte automatiquement.
-                  </p>
-                  {mandatorySupplies.map((item, idx) => {
-                    const prixEffectif = getPrixUnitaireEffectif(item.article, item.article.selectedQty);
-                    const totalLigne = prixEffectif * item.article.selectedQty;
-                    return (
-                      <div key={idx} className="flex justify-between items-center py-2 border-b last:border-0">
-                        <div>
-                          <p className="font-medium text-gray-800">{item.article.nom}</p>
-                          <p className="text-sm text-gray-600">
-                            {prixEffectif.toLocaleString()} GNF / unité
-                            {item.article.selectedQty > 1 && ' (prix dégressif)'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => handleMandatorySupplyChange(idx, -1)}
-                            className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
-                            disabled={item.article.selectedQty <= 0}
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="w-8 text-center font-medium">{item.article.selectedQty}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleMandatorySupplyChange(idx, 1)}
-                            className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
-                            disabled={item.article.selectedQty >= item.article.quantite_stock}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                          <span className="ml-2 font-semibold text-blue-700 min-w-[100px] text-right">
-                            {totalLigne.toLocaleString()} GNF
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="text-right font-semibold text-blue-700 mt-2">
-                    Total obligatoire : {totalMandatorySupplies.toLocaleString()} GNF
-                  </div>
-                </div>
-              )} */}
 
               {/* Fournitures optionnelles */}
               {!skipOptionalSupplies ? (
@@ -1159,29 +1086,18 @@ const mandatorySummary = useMemo(() => {
                           <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-lg border hover:shadow-md transition">
                             <div>
                               <p className="font-medium text-gray-800">{item.nom}</p>
-                              {item.prix > 0 ? (
-                                <p className="text-sm text-gray-500">{item.prix.toLocaleString()} GNF</p>
-                              ) : (
-                                <p className="text-sm text-gray-400">Prix non défini</p>
-                              )}
-                              {item.horaireMatin && item.horaireSoir && (
-                                <p className="text-xs text-gray-500">
-                                  Horaire : {item.horaireMatin} - {item.horaireSoir}
-                                </p>
-                              )}
+                              <p className="text-sm text-green-600 font-semibold">{item.prix.toLocaleString()} GNF</p>
                             </div>
                             <button
                               type="button"
                               onClick={() => toggleTransport(idx)}
-                              disabled={item.prix <= 0}
-                              className={`px-4 py-2 rounded-lg transition ${item.selected
-                                ? "bg-green-600 text-white hover:bg-green-700"
-                                : item.prix > 0
-                                  ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                }`}
+                              className={`px-4 py-2 rounded-lg transition ${
+                                item.selected
+                                  ? "bg-green-600 text-white hover:bg-green-700"
+                                  : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                              }`}
                             >
-                              {item.selected ? "✓ Sélectionné" : item.prix > 0 ? "Ajouter" : "Indisponible"}
+                              {item.selected ? "✓ Sélectionné" : "Ajouter"}
                             </button>
                           </div>
                         ))}
@@ -1273,12 +1189,13 @@ const mandatorySummary = useMemo(() => {
                               type="button"
                               onClick={() => toggleCantine(idx)}
                               disabled={item.prix_annuel <= 0}
-                              className={`px-4 py-2 rounded-lg transition ${item.selected
-                                ? "bg-orange-600 text-white hover:bg-orange-700"
-                                : item.prix_annuel > 0
-                                  ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                }`}
+                              className={`px-4 py-2 rounded-lg transition ${
+                                item.selected
+                                  ? "bg-orange-600 text-white hover:bg-orange-700"
+                                  : item.prix_annuel > 0
+                                    ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              }`}
                             >
                               {item.selected ? "✓ Sélectionné" : item.prix_annuel > 0 ? "Ajouter" : "Indisponible"}
                             </button>
@@ -1303,60 +1220,59 @@ const mandatorySummary = useMemo(() => {
 
             {/* Récapitulatif des coûts */}
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-blue-800 mb-3">📊 Récapitulatif des coûts</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-900">Inscription + scolarité annuelle</span>
-                <span className="font-semibold text-black">{totalInscription.toLocaleString()} GNF</span>
-              </div>
+              <h4 className="font-semibold text-blue-800 mb-3">📊 Récapitulatif des coûts</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-900">Inscription + scolarité annuelle</span>
+                  <span className="font-semibold text-black">{totalInscription.toLocaleString()} GNF</span>
+                </div>
 
-              {/* Détail des fournitures obligatoires */}
-              {mandatorySummary.length > 0 && (
-                <>
-                  {/*<div className="text-sm font-semibold text-blue-800 mt-2">Fournitures obligatoires</div>*/}
-                  {mandatorySummary.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-xs pl-4 text-gray-600">
-                      <span>• {item.nom} (x{item.quantiteTotale})</span>
-                      <span>{item.total.toLocaleString()} GNF</span>
+                {/* Détail des fournitures obligatoires */}
+                {mandatorySummary.length > 0 && (
+                  <>
+                    {mandatorySummary.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs pl-4 text-gray-600">
+                        <span>• {item.nom} (x{item.quantiteTotale})</span>
+                        <span>{item.total.toLocaleString()} GNF</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between font-semibold text-blue-700 border-t border-blue-200 pt-1">
+                      <span>Total</span>
+                      <span>{totalMandatorySupplies.toLocaleString()} GNF</span>
                     </div>
-                  ))}
-                  <div className="flex justify-between font-semibold text-blue-700 border-t border-blue-200 pt-1">
-                    <span>Total</span>
-                    <span>{totalMandatorySupplies.toLocaleString()} GNF</span>
+                  </>
+                )}
+
+                {/* Fournitures optionnelles */}
+                {!skipOptionalSupplies && totalFournitures > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-900">Fournitures optionnelles</span>
+                    <span className="font-semibold text-blue-700">{totalFournitures.toLocaleString()} GNF</span>
                   </div>
-                </>
-              )}
+                )}
 
-              {/* Fournitures optionnelles */}
-              {!skipOptionalSupplies && totalFournitures > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-900">Fournitures optionnelles</span>
-                  <span className="font-semibold text-blue-700">{totalFournitures.toLocaleString()} GNF</span>
+                {/* Transport */}
+                {!skipTransport && totalTransport > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-900">Transport</span>
+                    <span className="font-semibold text-green-700">{totalTransport.toLocaleString()} GNF</span>
+                  </div>
+                )}
+
+                {/* Cantine */}
+                {!skipCantine && totalCantine > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-900">Cantine</span>
+                    <span className="font-semibold text-orange-700">{totalCantine.toLocaleString()} GNF</span>
+                  </div>
+                )}
+
+                <div className="border-t pt-2 flex justify-between font-bold">
+                  <span>Total</span>
+                  <span className="text-lg">{getTotalGeneral().toLocaleString()} GNF</span>
                 </div>
-              )}
-
-              {/* Transport */}
-              {!skipTransport && totalTransport > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-900">Transport</span>
-                  <span className="font-semibold text-green-700">{totalTransport.toLocaleString()} GNF</span>
-                </div>
-              )}
-
-              {/* Cantine */}
-              {!skipCantine && totalCantine > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-900">Cantine</span>
-                  <span className="font-semibold text-orange-700">{totalCantine.toLocaleString()} GNF</span>
-                </div>
-              )}
-
-              <div className="border-t pt-2 flex justify-between font-bold">
-                <span>Total</span>
-                <span className="text-lg">{getTotalGeneral().toLocaleString()} GNF</span>
               </div>
             </div>
-          </div>
           </div>
         )}
 
