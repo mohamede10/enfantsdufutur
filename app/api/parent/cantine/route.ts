@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { verifierParentEnfant, getEnfantsAutorises } from "@/lib/auth-helpers";
 
 export async function GET(request: Request) {
   try {
@@ -12,13 +13,28 @@ export async function GET(request: Request) {
     }
 
     const userEmail = session.user?.email;
-
     if (!userEmail) {
       return NextResponse.json({ error: "Email utilisateur non trouvé" }, { status: 400 });
     }
 
-    // Récupérer les enfants inscrits avec leurs inscriptions à la cantine
-    const enfantsResult = await query(`
+    // ⭐ Récupérer l'enfantId depuis l'URL si fourni
+    const url = new URL(request.url);
+    const enfantIdParam = url.searchParams.get("enfantId");
+    const enfantId = enfantIdParam ? parseInt(enfantIdParam) : null;
+
+    // ⭐⭐⭐ SÉCURITÉ : Si enfantId fourni, vérifier qu'il appartient au parent ⭐⭐⭐
+    if (enfantId) {
+      const { autorise } = await verifierParentEnfant(userEmail, enfantId, 'eleves');
+      if (!autorise) {
+        return NextResponse.json(
+          { error: "Accès refusé : cet enfant ne vous appartient pas" },
+          { status: 403 }
+        );
+      }
+    }
+
+    // ⭐ Récupérer les enfants inscrits du parent connecté
+    let enfantsQuery = `
       SELECT 
         e.id,
         e.matricule,
@@ -30,6 +46,11 @@ export async function GET(request: Request) {
         ic.solde,
         ic.preferences_alimentaires,
         ic.allergies,
+        ic.mois_total,
+        ic.mois_restants,
+        ic.montant_mensuel,
+        ic.montant_total,
+        ic.date_inscription,
         'eleve' as source
       FROM eleves e
       JOIN utilisateurs u ON e.utilisateur_id = u.id
@@ -39,11 +60,21 @@ export async function GET(request: Request) {
       JOIN parents p ON lpe.parent_id = p.id
       JOIN utilisateurs pu ON p.utilisateur_id = pu.id
       WHERE pu.email = $1 AND e.deleted_at IS NULL
-      ORDER BY e.id
-    `, [userEmail]);
+    `;
+    const enfantsParams: any[] = [userEmail];
 
-    // Récupérer aussi les pré-inscriptions en attente (enfants pas encore validés)
-    const preinscriptionsResult = await query(`
+    if (enfantId) {
+      enfantsQuery += ` AND e.id = $2`;
+      enfantsParams.push(enfantId);
+    }
+
+    enfantsQuery += ` ORDER BY e.id`;
+
+    const enfantsResult = await query(enfantsQuery, enfantsParams);
+
+    // ⭐ Récupérer les pré-inscriptions avec infos cantine complètes
+    // ⭐⭐ EXCLURE celles déjà converties en élève (via inscriptions.preinscription_id)
+    let preinscriptionsQuery = `
       SELECT 
         p.id,
         p.numero_dossier as matricule,
@@ -52,47 +83,52 @@ export async function GET(request: Request) {
         p.classe as classe_nom,
         pc.id as inscription_cantine_id,
         (pc.id IS NOT NULL) as cantine_actif,
+        COALESCE(pc.prix, 0) as montant_total,
+        COALESCE(pc.prix, 0) as montant_paye,
         0 as solde,
         NULL as preferences_alimentaires,
         NULL as allergies,
+        CASE WHEN pc.id IS NOT NULL THEN 9 ELSE 0 END as mois_total,
+        CASE WHEN pc.id IS NOT NULL THEN 9 ELSE 0 END as mois_restants,
+        CASE WHEN pc.id IS NOT NULL THEN 400000 ELSE 0 END as montant_mensuel,
+        p.date_preinscription as date_inscription,
+        cm.plat as menu_nom,
+        p.statut as preinscription_statut,
+        p.frais_statut as paiement_statut,
         'preinscription' as source
       FROM preinscriptions p
       JOIN parents par ON p.parent_id = par.id
       JOIN utilisateurs pu ON par.utilisateur_id = pu.id
       LEFT JOIN preinscription_cantine pc ON pc.preinscription_id = p.id
-      WHERE pu.email = $1 AND p.statut = 'en_attente'
-      ORDER BY p.id
-    `, [userEmail]);
+      LEFT JOIN cantine_menus cm ON cm.id = pc.menu_id
+      WHERE pu.email = $1 
+        AND p.statut IN ('en_attente', 'valide', 'partiel')
+        AND NOT EXISTS (
+          SELECT 1 FROM inscriptions i
+          WHERE i.preinscription_id = p.id
+        )
+    `;
+    const preinscParams: any[] = [userEmail];
+
+    if (enfantId) {
+      preinscriptionsQuery += ` AND p.id = $2`;
+      preinscParams.push(enfantId);
+    }
+
+    preinscriptionsQuery += ` ORDER BY p.id`;
+
+    const preinscriptionsResult = await query(preinscriptionsQuery, preinscParams);
 
     const tousEnfants = [...enfantsResult.rows, ...preinscriptionsResult.rows];
 
-    // Si aucun enfant trouvé, retourner des données vides
     if (tousEnfants.length === 0) {
       return NextResponse.json({
         enfants: [],
-        menus: [],
         reservations: []
       });
     }
 
-    // Récupérer les CANTINE 
-    const menusResult = await query(`
-      SELECT 
-        id,
-        date,
-        plat,
-        accompagnement,
-        dessert,
-        prix,
-        allergenes,
-        calories
-      FROM menus_cantine
-      WHERE date >= CURRENT_DATE 
-        AND date <= CURRENT_DATE + INTERVAL '7 days'
-      ORDER BY date
-    `);
-
-    // Récupérer les réservations existantes (uniquement pour les élèves inscrits ayant un vrai ID)
+    // Récupérer les réservations (uniquement pour les élèves inscrits)
     const enfantIds = enfantsResult.rows.map((e: any) => e.id).filter(Boolean);
     let reservationsResult = { rows: [] as any[] };
 
@@ -112,7 +148,7 @@ export async function GET(request: Request) {
       `, [enfantIds]);
     }
 
-    // Formater les données
+    // ⭐ Formater les données pour le frontend
     const enfantsData = tousEnfants.map((e: any) => ({
       id: e.id,
       matricule: e.matricule,
@@ -121,23 +157,35 @@ export async function GET(request: Request) {
       classe: e.classe_nom,
       inscritCantine: e.cantine_actif === true,
       solde: parseFloat(e.solde) || 0,
-      preferences: e.preferences_alimentaires ? JSON.parse(e.preferences_alimentaires) : [],
-      allergies: e.allergies ? JSON.parse(e.allergies) : [],
+      preferences: e.preferences_alimentaires
+        ? (typeof e.preferences_alimentaires === 'string'
+            ? JSON.parse(e.preferences_alimentaires)
+            : e.preferences_alimentaires)
+        : [],
+      allergies: e.allergies
+        ? (typeof e.allergies === 'string'
+            ? JSON.parse(e.allergies)
+            : e.allergies)
+        : [],
       menusReserves: reservationsResult.rows.filter((r: any) => r.enfant_id === e.id).length,
-      source: e.source || 'eleve', // 'eleve' ou 'preinscription'
-      statut: e.source === 'preinscription' ? 'en_attente' : 'inscrit'
-    }));
-
-    const menusData = menusResult.rows.map((m: any) => ({
-      id: m.id,
-      date: m.date instanceof Date ? m.date.toISOString().split('T')[0] : m.date,
-      jour: new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'long' }),
-      plat: m.plat,
-      accompagnement: m.accompagnement,
-      dessert: m.dessert,
-      prix: parseFloat(m.prix),
-      allergenes: m.allergenes ? JSON.parse(m.allergenes) : [],
-      calories: m.calories
+      source: e.source || 'eleve',
+      statut: e.source === 'preinscription' ? 'en_attente' : 'inscrit',
+      moisTotal: Number(e.mois_total) || 0,
+      moisRestants: Number(e.mois_restants) || 0,
+      montantMensuel: Number(e.montant_mensuel) || 0,
+      montantTotal: Number(e.montant_total) || 0,
+      // ⭐ NOUVEAU : Montant payé et restant
+      montantPaye: Number(e.montant_paye) || 0,
+      montantRestant: Math.max(0, (Number(e.montant_total) || 0) - (Number(e.montant_paye) || 0)),
+      // ⭐ NOUVEAU : Nom du menu
+      menuNom: e.menu_nom || null,
+      // ⭐ NOUVEAU : Statut de paiement (partiel, non_paye, paye)
+      paiementStatut: e.paiement_statut || null,
+      dateInscription: e.date_inscription
+        ? (e.date_inscription instanceof Date
+            ? e.date_inscription.toISOString().split('T')[0]
+            : e.date_inscription)
+        : null
     }));
 
     const reservationsData = reservationsResult.rows.map((r: any) => ({
@@ -151,7 +199,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       enfants: enfantsData,
-      menus: menusData,
       reservations: reservationsData
     });
 
@@ -170,46 +217,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const userEmail = session.user?.email;
+    if (!userEmail) {
+      return NextResponse.json({ error: "Email utilisateur non trouvé" }, { status: 400 });
+    }
+
     const body = await request.json();
-    const { enfantId, menuIds, quantities, total } = body;
+    const { enfantId, menuIds, quantities, total, type } = body;
 
     if (!enfantId || !menuIds || !quantities || !total) {
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
 
-    // Vérifier le solde
+    const { autorise, erreur } = await verifierParentEnfant(userEmail, enfantId, 'eleves');
+    if (!autorise) {
+      console.error(`⚠️ Tentative d'inscription cantine non autorisée: parent=${userEmail}, enfant=${enfantId}`);
+      return NextResponse.json(
+        { error: "Accès refusé : cet enfant ne vous appartient pas" },
+        { status: 403 }
+      );
+    }
+
     const soldeResult = await query(`
       SELECT solde FROM inscriptions_cantine
       WHERE eleve_id = $1 AND est_actif = true
     `, [enfantId]);
 
-    if (soldeResult.rows.length === 0) {
-      return NextResponse.json({ error: "Enfant non inscrit à la cantine" }, { status: 400 });
-    }
-
-    const soldeActuel = parseFloat(soldeResult.rows[0].solde);
+    const soldeActuel = soldeResult.rows.length > 0
+      ? parseFloat(soldeResult.rows[0].solde) || 0
+      : 0;
 
     if (soldeActuel < total) {
       return NextResponse.json({
-        error: `Solde insuffisant. Solde actuel: ${soldeActuel.toLocaleString()} GNF`
+        error: `Solde insuffisant. Solde actuel: ${soldeActuel.toLocaleString()} GNF. Montant requis: ${total.toLocaleString()} GNF`
       }, { status: 400 });
     }
 
-    // Créer les réservations
     const reservations = [];
     for (const menuId of menuIds) {
       const qty = quantities[menuId];
       if (!qty) continue;
 
-      // Récupérer la date du menu
-      const menuResult = await query(`
-        SELECT date, prix FROM menus_cantine WHERE id = $1
-      `, [parseInt(menuId)]);
-
-      if (menuResult.rows.length === 0) continue;
-
-      const menuDate = menuResult.rows[0].date;
-      const menuPrix = parseFloat(menuResult.rows[0].prix);
+      const menuDate = body.date || new Date().toISOString().split('T')[0];
 
       for (let i = 0; i < qty; i++) {
         const result = await query(`
@@ -222,21 +271,21 @@ export async function POST(request: Request) {
           id: result.rows[0].id,
           enfantId: result.rows[0].enfant_id,
           menuId: result.rows[0].menu_id,
-          date: result.rows[0].date instanceof Date ? result.rows[0].date.toISOString().split('T')[0] : result.rows[0].date,
+          date: result.rows[0].date instanceof Date
+            ? result.rows[0].date.toISOString().split('T')[0]
+            : result.rows[0].date,
           statut: result.rows[0].statut,
           paye: result.rows[0].paye
         });
       }
     }
 
-    // Débiter le solde
     await query(`
       UPDATE inscriptions_cantine
       SET solde = solde - $1
-      WHERE eleve_id = $2
+      WHERE eleve_id = $2 AND est_actif = true
     `, [total, enfantId]);
 
-    // Créer une transaction de débit
     await query(`
       INSERT INTO transactions_cantine (eleve_id, montant, type, description, date)
       VALUES ($1, $2, 'debit', 'Réservation repas', NOW())
@@ -265,6 +314,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const userEmail = session.user?.email;
+    if (!userEmail) {
+      return NextResponse.json({ error: "Email utilisateur non trouvé" }, { status: 400 });
+    }
+
     const body = await request.json();
     const { reservationId, enfantId, menuId } = body;
 
@@ -272,38 +326,43 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
 
-    // Récupérer le prix du menu
-    const menuResult = await query(`
-      SELECT m.prix, rc.date
-      FROM reservations_cantine rc
-      JOIN menus_cantine m ON rc.menu_id = m.id
-      WHERE rc.id = $1 AND rc.eleve_id = $2
+    const { autorise } = await verifierParentEnfant(userEmail, enfantId, 'eleves');
+    if (!autorise) {
+      console.error(`⚠️ Tentative d'annulation non autorisée: parent=${userEmail}, enfant=${enfantId}`);
+      return NextResponse.json(
+        { error: "Accès refusé : cet enfant ne vous appartient pas" },
+        { status: 403 }
+      );
+    }
+
+    const reservationResult = await query(`
+      SELECT date FROM reservations_cantine
+      WHERE id = $1 AND eleve_id = $2
     `, [reservationId, enfantId]);
 
-    if (menuResult.rows.length === 0) {
+    if (reservationResult.rows.length === 0) {
       return NextResponse.json({ error: "Réservation non trouvée" }, { status: 404 });
     }
 
-    const prix = parseFloat(menuResult.rows[0].prix);
+    const prix = body.montant || 0;
 
-    // Supprimer la réservation
     await query(`
       DELETE FROM reservations_cantine
       WHERE id = $1 AND eleve_id = $2
     `, [reservationId, enfantId]);
 
-    // Recréditer le solde
-    await query(`
-      UPDATE inscriptions_cantine
-      SET solde = solde + $1
-      WHERE eleve_id = $2
-    `, [prix, enfantId]);
+    if (prix > 0) {
+      await query(`
+        UPDATE inscriptions_cantine
+        SET solde = solde + $1
+        WHERE eleve_id = $2 AND est_actif = true
+      `, [prix, enfantId]);
 
-    // Créer une transaction de crédit
-    await query(`
-      INSERT INTO transactions_cantine (eleve_id, montant, type, description, date)
-      VALUES ($1, $2, 'credit', 'Annulation réservation', NOW())
-    `, [enfantId, prix]);
+      await query(`
+        INSERT INTO transactions_cantine (eleve_id, montant, type, description, date)
+        VALUES ($1, $2, 'credit', 'Annulation réservation', NOW())
+      `, [enfantId, prix]);
+    }
 
     return NextResponse.json({ success: true });
 

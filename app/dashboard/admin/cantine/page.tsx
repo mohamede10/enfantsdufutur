@@ -140,6 +140,13 @@ export default function CantinePage() {
   const [totalAPayer, setTotalAPayer] = useState(0);
   const [inscriptions, setInscriptions] = useState<InscriptionCantineDetail[]>([]);
 
+  // ⭐ États pour éviter la double soumission
+  const [isSubmittingMenu, setIsSubmittingMenu] = useState(false);
+  const [isSubmittingInscription, setIsSubmittingInscription] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [deletingMenuId, setDeletingMenuId] = useState<number | null>(null);
+  const [deletingInscriptionId, setDeletingInscriptionId] = useState<number | null>(null);
+
   const MOIS_MAX = 9;
 
   // ⭐ Chargement des données
@@ -271,6 +278,11 @@ export default function CantinePage() {
 
   const handleSubmitMenu = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ⭐ Éviter la double soumission
+    if (isSubmittingMenu) return;
+
+    setIsSubmittingMenu(true);
     try {
       const method = editingMenu ? "PUT" : "POST";
       const body = { ...menuForm, id: editingMenu?.id };
@@ -290,11 +302,17 @@ export default function CantinePage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
+    } finally {
+      setIsSubmittingMenu(false);
     }
   };
 
   const handleDeleteMenu = async (id: number) => {
+    // ⭐ Éviter les clics multiples
+    if (deletingMenuId !== null) return;
+
     if (confirm("Voulez-vous vraiment supprimer ce menu ?")) {
+      setDeletingMenuId(id);
       try {
         const response = await fetch(`/api/admin/cantine?id=${id}`, { method: 'DELETE' });
         if (response.ok) {
@@ -304,21 +322,27 @@ export default function CantinePage() {
         }
       } catch (error) {
         console.error("Erreur:", error);
+      } finally {
+        setDeletingMenuId(null);
       }
     }
   };
 
   // ⭐ Gestion des inscriptions directes
   const handleInscrire = async () => {
+    // ⭐ Éviter la double soumission
+    if (isSubmittingInscription) return;
+
     if (!selectedEleve) {
       alert("Veuillez sélectionner un élève");
       return;
     }
 
+    setIsSubmittingInscription(true);
     try {
       // ⭐ Détecter le type : élève inscrit ou pré-inscription en attente
       const isPreinscription = selectedEleve.source === 'preinscription';
-      
+
       const payload: any = {
         mois: nombreMois,
         montantMensuel: prixMensuel,
@@ -352,6 +376,8 @@ export default function CantinePage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
+    } finally {
+      setIsSubmittingInscription(false);
     }
   };
 
@@ -363,8 +389,12 @@ export default function CantinePage() {
   };
 
   const handleUpdateInscription = async () => {
+    // ⭐ Éviter la double soumission
+    if (isSubmittingEdit) return;
+
     if (!editingInscription) return;
 
+    setIsSubmittingEdit(true);
     try {
       const response = await fetch(`/api/admin/cantine/inscriptions/${editingInscription.id}`, {
         method: 'PUT',
@@ -388,11 +418,17 @@ export default function CantinePage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
+    } finally {
+      setIsSubmittingEdit(false);
     }
   };
 
   const handleDeleteInscription = async (id: number) => {
+    // ⭐ Éviter les clics multiples
+    if (deletingInscriptionId !== null) return;
+
     if (confirm("Voulez-vous vraiment supprimer cette inscription ?")) {
+      setDeletingInscriptionId(id);
       try {
         const response = await fetch(`/api/admin/cantine/inscriptions/${id}`, { method: 'DELETE' });
         if (response.ok) {
@@ -403,6 +439,8 @@ export default function CantinePage() {
         }
       } catch (error) {
         console.error("Erreur:", error);
+      } finally {
+        setDeletingInscriptionId(null);
       }
     }
   };
@@ -456,14 +494,16 @@ export default function CantinePage() {
         <div className="flex gap-2">
           <button
             onClick={handleOpenAddMenu}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
+            disabled={isSubmittingMenu}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             Ajouter un menu
           </button>
           <button
             onClick={() => setShowInscriptionModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition"
+            disabled={isSubmittingInscription}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus className="w-4 h-4" />
             Inscrire un élève
@@ -619,11 +659,23 @@ export default function CantinePage() {
                        {/*<td className="px-6 py-4 text-center text-black">{m.inscrits || 0}</td>*/}
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
-                          <button onClick={() => handleOpenEditMenu(m)} className="text-blue-600 hover:text-blue-800 p-1">
+                          <button 
+                            onClick={() => handleOpenEditMenu(m)} 
+                            disabled={deletingMenuId === m.id}
+                            className="text-blue-600 hover:text-blue-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteMenu(m.id)} className="text-red-600 hover:text-red-800 p-1">
-                            <Trash2 className="w-4 h-4" />
+                          <button 
+                            onClick={() => handleDeleteMenu(m.id)} 
+                            disabled={deletingMenuId === m.id}
+                            className="text-red-600 hover:text-red-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {deletingMenuId === m.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -673,11 +725,23 @@ export default function CantinePage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
-                          <button onClick={() => handleOpenEditInscription(ins)} className="text-blue-600 hover:text-blue-800 p-1">
+                          <button 
+                            onClick={() => handleOpenEditInscription(ins)} 
+                            disabled={deletingInscriptionId === ins.id}
+                            className="text-blue-600 hover:text-blue-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteInscription(ins.id)} className="text-red-600 hover:text-red-800 p-1">
-                            <Trash2 className="w-4 h-4" />
+                          <button 
+                            onClick={() => handleDeleteInscription(ins.id)} 
+                            disabled={deletingInscriptionId === ins.id}
+                            className="text-red-600 hover:text-red-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {deletingInscriptionId === ins.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -802,9 +866,6 @@ export default function CantinePage() {
         )}
       </div>
 
-      {/* Modals (inchangés) */}
-      {/* ... Les modals restent les mêmes que dans la version précédente ... */}
-
       {/* Modal d'inscription */}
       {showInscriptionModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
@@ -814,7 +875,11 @@ export default function CantinePage() {
                 <UserPlus className="w-5 h-5 text-green-600" />
                 Inscription à la cantine
               </h2>
-              <button onClick={() => setShowInscriptionModal(false)} className="text-gray-900 hover:text-gray-900">
+              <button 
+                onClick={() => setShowInscriptionModal(false)} 
+                disabled={isSubmittingInscription}
+                className="text-gray-900 hover:text-gray-900 disabled:opacity-50"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -830,7 +895,8 @@ export default function CantinePage() {
                     placeholder="Rechercher par nom, prénom ou matricule..."
                     value={searchEleve}
                     onChange={(e) => setSearchEleve(e.target.value)}
-                    className="text-gray-900 w-full pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isSubmittingInscription}
+                    className="text-gray-900 w-full pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   />
                 </div>
                 {searchEleve && (
@@ -842,7 +908,8 @@ export default function CantinePage() {
                           setSelectedEleve(eleve);
                           setSearchEleve(`${eleve.prenom} ${eleve.nom} (${eleve.matricule})`);
                         }}
-                        className="text-gray-900 w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 border-b last:border-b-0"
+                        disabled={isSubmittingInscription}
+                        className="text-gray-900 w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 border-b last:border-b-0 disabled:opacity-50"
                       >
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                           <User className="w-4 h-4 text-blue-600" />
@@ -873,7 +940,7 @@ export default function CantinePage() {
                   <button
                     type="button"
                     onClick={handleRetirerMois}
-                    disabled={nombreMois <= 1}
+                    disabled={nombreMois <= 1 || isSubmittingInscription}
                     className="text-gray-900 w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4 text-gray-900" />
@@ -885,7 +952,7 @@ export default function CantinePage() {
                   <button
                     type="button"
                     onClick={handleAjouterMois}
-                    disabled={nombreMois >= MOIS_MAX}
+                    disabled={nombreMois >= MOIS_MAX || isSubmittingInscription}
                     className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <PlusIcon className="w-4 h-4 text-gray-900" />
@@ -903,7 +970,8 @@ export default function CantinePage() {
                   type="number"
                   value={prixMensuel}
                   onChange={(e) => setPrixMensuel(Number(e.target.value) || 0)}
-                  className="text-gray-900 w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isSubmittingInscription}
+                  className="text-gray-900 w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
                   min="0"
                   step="10000"
                 />
@@ -933,17 +1001,27 @@ export default function CantinePage() {
                 <button
                   type="button"
                   onClick={() => setShowInscriptionModal(false)}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
+                  disabled={isSubmittingInscription}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleInscrire}
-                  disabled={!selectedEleve}
+                  disabled={!selectedEleve || isSubmittingInscription}
                   className="flex-1 px-4 py-3 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <UserPlus className="w-4 h-4" />
-                  Inscrire à la cantine
+                  {isSubmittingInscription ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Inscription...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Inscrire à la cantine
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -959,7 +1037,11 @@ export default function CantinePage() {
               <h2 className="text-xl font-bold text-gray-900">
                 {editingMenu ? "Modifier le menu" : "Ajouter un menu"}
               </h2>
-              <button onClick={() => setShowMenuForm(false)} className="text-gray-900 hover:text-gray-900">
+              <button 
+                onClick={() => setShowMenuForm(false)} 
+                disabled={isSubmittingMenu}
+                className="text-gray-900 hover:text-gray-900 disabled:opacity-50"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -972,7 +1054,8 @@ export default function CantinePage() {
                   placeholder="Ex: Riz au gras sauce poulet"
                   value={menuForm.plat}
                   onChange={e => setMenuForm({ ...menuForm, plat: e.target.value })}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingMenu}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div>
@@ -982,7 +1065,8 @@ export default function CantinePage() {
                   placeholder="Ex: Frites ou Salade"
                   value={menuForm.accompagnement}
                   onChange={e => setMenuForm({ ...menuForm, accompagnement: e.target.value })}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingMenu}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div>
@@ -992,7 +1076,8 @@ export default function CantinePage() {
                   placeholder="Ex: Yaourt ou Fruit"
                   value={menuForm.dessert}
                   onChange={e => setMenuForm({ ...menuForm, dessert: e.target.value })}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingMenu}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div>
@@ -1004,7 +1089,8 @@ export default function CantinePage() {
                   placeholder="Ex: 400000"
                   value={menuForm.prix_mensuel}
                   onChange={e => setMenuForm({ ...menuForm, prix_mensuel: Number(e.target.value) || 0 })}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingMenu}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div>
@@ -1016,7 +1102,8 @@ export default function CantinePage() {
                   placeholder="Ex: 3600000"
                   value={menuForm.prix_annuel}
                   onChange={e => setMenuForm({ ...menuForm, prix_annuel: Number(e.target.value) || 0 })}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingMenu}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -1025,7 +1112,8 @@ export default function CantinePage() {
                   id="regime_special"
                   checked={menuForm.regime_special}
                   onChange={e => setMenuForm({ ...menuForm, regime_special: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  disabled={isSubmittingMenu}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                 />
                 <label htmlFor="regime_special" className="text-sm font-medium text-gray-900">
                   Régime spécial disponible
@@ -1035,16 +1123,27 @@ export default function CantinePage() {
                 <button
                   type="button"
                   onClick={() => setShowMenuForm(false)}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
+                  disabled={isSubmittingMenu}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  disabled={isSubmittingMenu}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-4 h-4" />
-                  {editingMenu ? "Modifier" : "Ajouter"}
+                  {isSubmittingMenu ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {editingMenu ? "Modifier" : "Ajouter"}
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -1061,7 +1160,11 @@ export default function CantinePage() {
                 <Pencil className="w-5 h-5 text-blue-600" />
                 Modifier l'inscription
               </h2>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-900 hover:text-gray-900">
+              <button 
+                onClick={() => setShowEditModal(false)} 
+                disabled={isSubmittingEdit}
+                className="text-gray-900 hover:text-gray-900 disabled:opacity-50"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1077,8 +1180,8 @@ export default function CantinePage() {
                   <button
                     type="button"
                     onClick={handleRetirerMois}
-                    disabled={nombreMois <= 1}
-                    className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                    disabled={nombreMois <= 1 || isSubmittingEdit}
+                    className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -1089,8 +1192,8 @@ export default function CantinePage() {
                   <button
                     type="button"
                     onClick={handleAjouterMois}
-                    disabled={nombreMois >= MOIS_MAX}
-                    className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
+                    disabled={nombreMois >= MOIS_MAX || isSubmittingEdit}
+                    className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <PlusIcon className="w-4 h-4" />
                   </button>
@@ -1103,7 +1206,8 @@ export default function CantinePage() {
                   type="number"
                   value={prixMensuel}
                   onChange={(e) => setPrixMensuel(Number(e.target.value) || 0)}
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingEdit}
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   min="0"
                   step="10000"
                 />
@@ -1120,16 +1224,27 @@ export default function CantinePage() {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
+                  disabled={isSubmittingEdit}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleUpdateInscription}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  disabled={isSubmittingEdit}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-4 h-4" />
-                  Enregistrer
+                  {isSubmittingEdit ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Enregistrer
+                    </>
+                  )}
                 </button>
               </div>
             </div>

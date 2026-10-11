@@ -1,0 +1,30 @@
+# 1. Créer un remote "all" qui pointe vers votre dépôt perso
+git remote add all https://github.com/mohamede10/enfantsdufutur.git
+
+# 2. Ajouter les URLs de push supplémentaires
+git remote set-url --add --push all https://github.com/mohamede10/enfantsdufutur.git
+git remote set-url --add --push all https://github.com/cotechservices/eief.git
+
+git remote -v
+
+Résultat attendu :
+all  https://github.com/mohamede10/enfantsdufutur.git (fetch)
+all  https://github.com/mohamede10/enfantsdufutur.git (push)
+all  https://github.com/cotechservices/eief.git (push)
+
+Utilisation
+
+git push all main
+
+
+Pour ajouter une 3e destination plus tard
+powershell
+git remote set-url --add --push all https://github.com/autre-compte/autre-depot.git
+
+Pour retirer une destination
+powershell
+# Voir la config actuelle
+git config --get-all remote.all.pushurl
+
+# Retirer une URL spécifique (mettez l'URL exacte à retirer)
+git remote set-url --delete --push all https://github.com/cotechservices/eief.git

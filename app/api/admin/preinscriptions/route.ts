@@ -410,6 +410,7 @@ export async function PUT(request: NextRequest) {
       // ⭐ Vérifier le statut de paiement UNIQUEMENT via paiements
       const checkResult = await query(`
         SELECT 
+          p.statut,
           p.frais_statut,
           p.frais_montant,
           p.classe,
@@ -428,6 +429,33 @@ export async function PUT(request: NextRequest) {
       }
 
       const check = checkResult.rows[0];
+
+      // 🛡️ Si déjà validée, éviter toute duplication
+      if (check.statut === 'validee') {
+        return NextResponse.json({
+          success: true,
+          message: "Cette pré-inscription est déjà validée."
+        });
+      }
+
+      // 🛡️ Vérifier si une inscription existe déjà pour cette pré-inscription
+      const existingInscr = await query(
+        "SELECT id FROM inscriptions WHERE preinscription_id = $1",
+        [id]
+      );
+      if (existingInscr.rows.length > 0) {
+        await query(
+          `UPDATE preinscriptions 
+           SET statut = $1, observations = $2, traite_par = $3, date_traitement = NOW()
+           WHERE id = $4`,
+          [statut, observations || null, (session.user as any).id, id]
+        );
+        return NextResponse.json({
+          success: true,
+          message: "Une inscription existe déjà pour ce dossier."
+        });
+      }
+
       const totalPaye = Number(check.total_paye) || 0;
       const fraisTotal = Number(check.frais_montant) || 0;
 
@@ -483,31 +511,54 @@ export async function PUT(request: NextRequest) {
           }
         }
 
-        // 2. Créer l'utilisateur élève
-        const emailEleve = `${data.enfant_prenom.toLowerCase()}.${data.enfant_nom.toLowerCase()}${Math.floor(Math.random() * 1000)}@eief.com`;
-        const motDePasseTemp = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcrypt.hash(motDePasseTemp, 10);
+        // 2. Vérifier si un élève existe déjà pour ce parent avec le même nom et prénom
+        let eleveId = null;
+        let matricule = null;
 
-        const newEleveUser = await query(`
-          INSERT INTO utilisateurs (email, password, prenom, nom, role, est_actif)
-          VALUES ($1, $2, $3, $4, 'ELEVE', true)
-          RETURNING id
-        `, [emailEleve, hashedPassword, data.enfant_prenom, data.enfant_nom]);
+        const existingEleve = await query(`
+          SELECT e.id, e.matricule
+          FROM eleves e
+          JOIN lien_parent_eleve l ON e.id = l.eleve_id
+          JOIN utilisateurs u ON e.utilisateur_id = u.id
+          WHERE l.parent_id = $1
+            AND TRIM(LOWER(u.nom)) = TRIM(LOWER($2))
+            AND TRIM(LOWER(u.prenom)) = TRIM(LOWER($3))
+          LIMIT 1
+        `, [data.parent_id, data.enfant_nom, data.enfant_prenom]);
 
-        // 3. Créer la fiche élève
-        const matricule = `ELE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        if (existingEleve.rows.length > 0) {
+          eleveId = existingEleve.rows[0].id;
+          matricule = existingEleve.rows[0].matricule;
+          console.log(`ℹ️ Élève existant trouvé (pas de duplication): ${data.enfant_prenom} ${data.enfant_nom}`);
+        } else {
+          // Créer l'utilisateur élève
+          const emailEleve = `${data.enfant_prenom.toLowerCase()}.${data.enfant_nom.toLowerCase()}${Math.floor(Math.random() * 1000)}@eief.com`;
+          const motDePasseTemp = Math.random().toString(36).slice(-8);
+          const hashedPassword = await bcrypt.hash(motDePasseTemp, 10);
 
-        const newEleve = await query(`
-          INSERT INTO eleves (utilisateur_id, matricule, date_naissance, lieu_naissance, sexe, classe_id, est_inscrit)
-          VALUES ($1, $2, $3, $4, $5, $6, true)
-          RETURNING id
-        `, [newEleveUser.rows[0].id, matricule, data.date_naissance, data.lieu_naissance, data.sexe, classeId]);
+          const newEleveUser = await query(`
+            INSERT INTO utilisateurs (email, password, prenom, nom, role, est_actif)
+            VALUES ($1, $2, $3, $4, 'ELEVE', true)
+            RETURNING id
+          `, [emailEleve, hashedPassword, data.enfant_prenom, data.enfant_nom]);
 
-        // 4. Lier l'élève au parent
-        await query(`
-          INSERT INTO lien_parent_eleve (parent_id, eleve_id)
-          VALUES ($1, $2)
-        `, [data.parent_id, newEleve.rows[0].id]);
+          // Créer la fiche élève
+          matricule = `ELE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+          const newEleve = await query(`
+            INSERT INTO eleves (utilisateur_id, matricule, date_naissance, lieu_naissance, sexe, classe_id, est_inscrit)
+            VALUES ($1, $2, $3, $4, $5, $6, true)
+            RETURNING id
+          `, [newEleveUser.rows[0].id, matricule, data.date_naissance, data.lieu_naissance, data.sexe, classeId]);
+
+          eleveId = newEleve.rows[0].id;
+
+          // Lier l'élève au parent
+          await query(`
+            INSERT INTO lien_parent_eleve (parent_id, eleve_id)
+            VALUES ($1, $2)
+          `, [data.parent_id, eleveId]);
+        }
 
         // 5. Récupérer l'année scolaire active
         const anneeScolaire = await query(`
@@ -518,9 +569,9 @@ export async function PUT(request: NextRequest) {
         await query(`
           INSERT INTO inscriptions (preinscription_id, eleve_id, parent_id, numero_matricule, annee_scolaire_id, statut)
           VALUES ($1, $2, $3, $4, $5, 'active')
-        `, [id, newEleve.rows[0].id, data.parent_id, matricule, anneeScolaire.rows[0]?.id || null]);
+        `, [id, eleveId, data.parent_id, matricule, anneeScolaire.rows[0]?.id || null]);
 
-        console.log(`✅ Élève créé: ${data.enfant_prenom} ${data.enfant_nom} (Matricule: ${matricule})`);
+        console.log(`✅ Élève lié/créé: ${data.enfant_prenom} ${data.enfant_nom} (Matricule: ${matricule})`);
 
       } catch (createError) {
         console.error("Erreur lors de la création de l'élève:", createError);

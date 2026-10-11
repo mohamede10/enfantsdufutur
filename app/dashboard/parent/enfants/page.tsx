@@ -58,6 +58,9 @@ interface Enfant {
   photo_url?: string | null;
   details_frais: DetailsFrais;
   moyenne: number;
+  est_eleve?: boolean;
+  est_preinscription?: boolean;
+  type?: string;
 }
 
 interface Stats {

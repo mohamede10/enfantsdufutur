@@ -249,6 +249,30 @@ export async function POST(request: NextRequest) {
     // 3. Créer les pré-inscriptions
     const preinscriptions = [];
     for (const enfant of enfants) {
+      // 🛡️ Protection anti-doublon: Vérifier si une pré-inscription identique existe déjà récemment ou est en cours
+      const existingPreins = await query(
+        `SELECT id, numero_dossier FROM preinscriptions 
+         WHERE parent_id = $1 
+           AND TRIM(LOWER(enfant_nom)) = TRIM(LOWER($2)) 
+           AND TRIM(LOWER(enfant_prenom)) = TRIM(LOWER($3))
+           AND (
+             statut IN ('en_attente', 'validee')
+             OR date_preinscription >= NOW() - INTERVAL '15 minutes'
+           )
+         ORDER BY id DESC LIMIT 1`,
+        [parentIdToUse, enfant.nom, enfant.prenom]
+      );
+
+      if (existingPreins.rows.length > 0) {
+        console.log(`⚠️ Pré-inscription déjà existante détectée (anti-doublon): ${enfant.prenom} ${enfant.nom}`);
+        preinscriptions.push({
+          id: existingPreins.rows[0].id,
+          numeroDossier: existingPreins.rows[0].numero_dossier,
+          enfant: `${enfant.prenom} ${enfant.nom}`
+        });
+        continue;
+      }
+
       const annee = new Date().getFullYear().toString().slice(-2);
       const timestamp = Date.now().toString();
       const random = Math.floor(Math.random() * 10000);

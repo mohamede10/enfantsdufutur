@@ -32,7 +32,8 @@ import {
   File,
   ExternalLink,
   Image,
-  User
+  User,
+  ArrowRight
 } from "lucide-react";
 
 interface DetailsFrais {
@@ -89,24 +90,6 @@ interface Preinscription {
   montant_restant_plan?: number;
 }
 
-interface Stats {
-  notes: Array<{ matiere: string; moyenne: number; coefficient: number }>;
-  presences: { total: number; presents: number; absents: number; retards: number };
-  paiements: {
-    total_paye: number;
-    nombre_paiements: number;
-    details?: Array<{ montant: number; type_frais: string; mode_paiement: string; date_paiement: string }>;
-  };
-  frais_inscription: number;
-  transport: number;
-  cantine: number;
-  fournitures: number;
-  scolarite: number;
-  total_frais_general: number;
-  montant_a_payer: number;
-  solde_restant: number;
-}
-
 interface PreinscriptionDetail extends Preinscription {
   details_frais: {
     inscription: number;
@@ -135,32 +118,13 @@ interface Notification {
   message: string;
 }
 
-// Valeurs par défaut pour les stats
-const DEFAULT_STATS: Stats = {
-  notes: [],
-  presences: { total: 0, presents: 0, absents: 0, retards: 0 },
-  paiements: { total_paye: 0, nombre_paiements: 0, details: [] },
-  frais_inscription: 0,
-  transport: 0,
-  cantine: 0,
-  fournitures: 0,
-  scolarite: 0,
-  total_frais_general: 0,
-  montant_a_payer: 0,
-  solde_restant: 0
-};
-
 export default function ParentDashboard() {
   const [enfants, setEnfants] = useState<Enfant[]>([]);
   const [preinscriptions, setPreinscriptions] = useState<Preinscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statsEnfant, setStatsEnfant] = useState<{ [key: number]: Stats }>({});
   const [showPaiementModal, setShowPaiementModal] = useState(false);
   const [showGlobalPaiementModal, setShowGlobalPaiementModal] = useState(false);
   const [selectedPreinscription, setSelectedPreinscription] = useState<Preinscription | null>(null);
-  const [modePaiement, setModePaiement] = useState("");
-  const [reference, setReference] = useState("");
-  const [paiementLoading, setPaiementLoading] = useState(false);
 
   // États pour le modal de détails
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -205,8 +169,7 @@ export default function ParentDashboard() {
     try {
       // 1. Récupérer les enfants
       const enfantsRes = await fetch("/api/parent/enfants");
-      
-      // ⭐⭐⭐ VÉRIFIER LA RÉPONSE ⭐⭐⭐
+
       if (!enfantsRes.ok) {
         console.error("❌ Erreur API enfants:", enfantsRes.status);
         addNotification("error", "Erreur lors du chargement des enfants");
@@ -222,7 +185,6 @@ export default function ParentDashboard() {
       if (Array.isArray(enfantsData)) {
         enfantsArray = enfantsData;
       } else if (enfantsData && typeof enfantsData === 'object') {
-        // Si c'est un objet, essayer d'extraire un tableau
         if (Array.isArray(enfantsData.data)) {
           enfantsArray = enfantsData.data;
         } else if (Array.isArray(enfantsData.enfants)) {
@@ -233,8 +195,7 @@ export default function ParentDashboard() {
           setLoading(false);
           return;
         } else {
-          // Si c'est un objet avec des propriétés, le convertir en tableau
-          const values = Object.values(enfantsData).filter(item => 
+          const values = Object.values(enfantsData).filter(item =>
             typeof item === 'object' && item !== null && !Array.isArray(item)
           );
           if (values.length > 0) {
@@ -259,63 +220,7 @@ export default function ParentDashboard() {
         console.error("Erreur pré-inscriptions:", e);
       }
 
-      // 3. Si aucun enfant, arrêter
-      if (enfantsArray.length === 0) {
-        console.log("ℹ️ Aucun enfant trouvé");
-        setLoading(false);
-        return;
-      }
-
-      // 4. Charger les statistiques pour chaque enfant
-      const statsPromises = enfantsArray.map(async (enfant: Enfant) => {
-        try {
-          const enfantId = enfant.eleve_id || enfant.id;
-          console.log(`📊 Chargement des stats pour l'enfant ${enfantId} (${enfant.prenom} ${enfant.nom})`);
-          const statsResponse = await fetch(`/api/parent/enfants/${enfantId}/stats`);
-
-          if (!statsResponse.ok) {
-            console.error(`❌ Erreur HTTP ${statsResponse.status} pour l'enfant ${enfantId}`);
-            return { eleveId: enfantId, stats: { ...DEFAULT_STATS } };
-          }
-
-          const statsData = await statsResponse.json();
-          console.log(`✅ Stats pour ${enfant.prenom}:`, statsData);
-
-          const validatedStats: Stats = {
-            notes: statsData.notes || [],
-            presences: statsData.presences || { total: 0, presents: 0, absents: 0, retards: 0 },
-            paiements: {
-              total_paye: Number(statsData.paiements?.total_paye) || 0,
-              nombre_paiements: Number(statsData.paiements?.nombre_paiements) || 0,
-              details: statsData.paiements?.details || []
-            },
-            frais_inscription: Number(statsData.frais_inscription) || 0,
-            transport: Number(statsData.transport) || 0,
-            cantine: Number(statsData.cantine) || 0,
-            fournitures: Number(statsData.fournitures) || 0,
-            scolarite: Number(statsData.scolarite) || 0,
-            total_frais_general: Number(statsData.total_frais_general) || 0,
-            montant_a_payer: Number(statsData.montant_a_payer) || 0,
-            solde_restant: Number(statsData.solde_restant) || 0
-          };
-
-          return { eleveId: enfantId, stats: validatedStats };
-        } catch (error) {
-          const enfantId = enfant.eleve_id || enfant.id;
-          console.error(`❌ Erreur stats pour enfant ${enfantId}:`, error);
-          return { eleveId: enfantId, stats: { ...DEFAULT_STATS } };
-        }
-      });
-
-      const statsResults = await Promise.all(statsPromises);
-
-      const newStatsEnfant: { [key: number]: Stats } = {};
-      statsResults.forEach(({ eleveId, stats }) => {
-        newStatsEnfant[eleveId] = stats;
-      });
-      setStatsEnfant(newStatsEnfant);
-
-      console.log("📊 Statistiques finales:", newStatsEnfant);
+      // ⭐ Plus de chargement de stats par enfant (optimisation)
 
     } catch (error) {
       console.error("❌ Erreur globale:", error);
@@ -399,28 +304,23 @@ export default function ParentDashboard() {
   };
 
   // ⭐⭐⭐ CALCUL DES STATISTIQUES GLOBALES ⭐⭐⭐
-  
-  // 1. Calcul du total brut par enfant
+
   const totalAPayerBrut = enfants.reduce((acc, e) => {
     const totalBrutEnfant = Number(e.details_frais?.total_brut) || Number(e.details_frais?.total) || 0;
     return acc + totalBrutEnfant;
   }, 0);
 
-  // 2. Totaux par catégorie
   const totalScolarite = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.scolarite) || Number(e.details_frais?.inscription) || 0), 0);
   const totalTransport = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.transport) || 0), 0);
   const totalCantine = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.cantine) || 0), 0);
   const totalFournitures = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.librairie) || 0), 0);
 
-  // 3. Récupérer la remise globale
   const remisesAffectees = enfants.reduce((acc, e) => acc + (Number((e.details_frais as any)?.remise) || 0), 0);
   const totalRemiseParentGlobale = enfants.length > 0 ? (Number((enfants[0] as any)?.total_remise_parent) || Number((enfants[0] as any)?.remise_globale) || 0) : 0;
   const totalRemises = Math.max(remisesAffectees, totalRemiseParentGlobale);
 
-  // 4. Montant total payé
   const totalPaye = enfants.reduce((acc, e) => acc + (Number(e.details_frais?.paye) || 0), 0);
 
-  // 5. Calculs finaux
   const totalAPayerNet = Math.max(0, totalAPayerBrut - totalRemises);
   const soldeRestant = Math.max(0, totalAPayerNet - totalPaye);
 
@@ -443,27 +343,25 @@ export default function ParentDashboard() {
     }
   });
 
-  // ⭐ Statistiques globales à afficher
   const statsGlobales = {
     totalEnfants: enfants.length,
     totalPreinscriptions: preinscriptions.length,
     preinscriptionsEnAttente: preinscriptions.filter(p => p.statut === "en_attente").length,
     preinscriptionsPayees: preinscriptions.filter(p => p.frais_statut === "paye").length,
-    totalRetards: Object.values(statsEnfant).reduce((acc, s) => acc + (Number(s.presences?.retards) || 0), 0),
-    
+
     totalAPayerBrut: finalTotalBrut,
     totalAPayerNet: finalTotalNet,
     totalAPayer: finalTotalNet,
     totalPaye: totalPaye,
     totalRemises: finalRemise,
-    
+
     totalFraisInscription: totalScolarite,
     totalTransport: totalTransport,
     totalCantine: totalCantine,
     totalFournitures: totalFournitures,
     totalFraisGeneral: finalTotalNet,
     soldeRestant: finalSoldeRestant,
-    
+
     soldeDetaille: {
       total: finalSoldeRestant,
       details: {
@@ -637,14 +535,121 @@ export default function ParentDashboard() {
         </div>
       </div>
 
-      {/* Section Pré-inscriptions */}
+      {/* Section 1 : mes enfants inscrits */}
+      {enfants.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <GraduationCap className="w-6 h-6 text-blue-600" />
+                Mes enfants ({enfants.length})
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Accédez au suivi complet de chacun de vos enfants (devoirs, notes, cours, évaluations, bulletins et finances)
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link
+                href="/dashboard/parent/enfants"
+                className="bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5"
+              >
+                <Users className="w-4 h-4" />
+                Gérer mes enfants
+              </Link>
+              <Link
+                href="/register"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Nouvelle inscription
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {enfants.map((enfant) => {
+              const childId = enfant.eleve_id || enfant.id;
+
+              return (
+                <div
+                  key={childId}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div className="p-5">
+                    <div className="flex items-center gap-3">
+                      {enfant.photo_url ? (
+                        <img
+                          src={enfant.photo_url}
+                          alt={enfant.prenom}
+                          className="w-14 h-14 rounded-2xl object-cover border-2 border-blue-100 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-xl border border-blue-200">
+                          {enfant.prenom?.charAt(0)}{enfant.nom?.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-base truncate">
+                          {enfant.prenom} {enfant.nom}
+                        </h3>
+                        <p className="text-xs text-blue-700 font-medium">
+                          {enfant.classe_nom || "Classe non assignée"} {enfant.niveau && `• ${enfant.niveau}`}
+                        </p>
+                        <p className="text-[11px] text-gray-500 font-mono mt-0.5">
+                          Matricule : {enfant.matricule || "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bouton d'accès direct au Dashboard individuel */}
+                  <div className="p-4 bg-gray-50/70 border-t border-gray-100 mt-auto">
+                    <Link
+                      href={`/dashboard/parent/enfants/${childId}`}
+                      className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded-xl shadow-sm hover:shadow transition active:scale-95"
+                    >
+                      <GraduationCap className="w-4 h-4" />
+                      Tableau de bord de {enfant.prenom}
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Message si aucun enfant ni préinscription */}
+      {enfants.length === 0 && preinscriptions.length === 0 && (
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center mb-8 shadow-sm">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Aucun enfant enregistré</h3>
+          <p className="text-sm text-gray-500 mb-5 max-w-md mx-auto">
+            Vous n'avez pas encore d'enfant inscrit ou en cours de pré-inscription pour cette année scolaire.
+          </p>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Inscrire un enfant
+          </Link>
+        </div>
+      )}
+
+      {/* Section 2 : Dossiers de Pré-inscriptions */}
       {preinscriptions.length > 0 && (
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-purple-600" />
-              Mes enfants
-            </h2>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-purple-600" />
+                Dossiers de pré-inscription ({preinscriptions.length})
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">Dossiers en attente de validation ou de paiement</p>
+            </div>
             <div className="flex gap-2">
               {statsGlobales.soldeRestant > 0 && (
                 <button

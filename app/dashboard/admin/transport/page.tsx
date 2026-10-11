@@ -105,12 +105,18 @@ export default function TransportPage() {
     montantTotal: 0,
   });
 
-  // ⭐ Nouveaux états pour la recherche d’élève
+  // ⭐ États pour la recherche d'élève
   const [eleveSearch, setEleveSearch] = useState("");
   const [filteredEleves, setFilteredEleves] = useState<Eleve[]>([]);
   const [showEleveDropdown, setShowEleveDropdown] = useState(false);
   const eleveInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ⭐ États pour éviter la double soumission
+  const [isSubmittingBus, setIsSubmittingBus] = useState(false);
+  const [isSubmittingInscription, setIsSubmittingInscription] = useState(false);
+  const [deletingBusId, setDeletingBusId] = useState<number | null>(null);
+  const [deletingInscriptionId, setDeletingInscriptionId] = useState<number | null>(null);
 
   // Charger les données
   const fetchTransport = async () => {
@@ -147,12 +153,11 @@ export default function TransportPage() {
 
   const fetchEleves = async () => {
     try {
-      // ⭐ Charger élèves inscrits + pré-inscriptions en attente
       const res = await fetch("/api/admin/eleves-et-preinscriptions");
       if (res.ok) {
         const data = await res.json();
         setEleves(data);
-        setFilteredEleves(data);
+        // ⭐ NE PAS initialiser filteredEleves ici : liste vide par défaut
       }
     } catch (error) {
       console.error("Erreur chargement élèves:", error);
@@ -177,6 +182,30 @@ export default function TransportPage() {
     fetchEleves();
     fetchLignes();
   }, []);
+
+  // ⭐ CORRECTION : N'afficher les élèves QUE si une recherche est en cours
+  useEffect(() => {
+    const query = eleveSearch.trim().toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    if (query === "") {
+      setFilteredEleves([]);
+      return;
+    }
+
+    const normalize = (str: string) =>
+      (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const results = eleves.filter(
+      (e) =>
+        normalize(e.nom).includes(query) ||
+        normalize(e.prenom).includes(query) ||
+        normalize(e.matricule).includes(query)
+    );
+
+    setFilteredEleves(results.slice(0, 50)); // Limiter à 50 résultats
+  }, [eleveSearch, eleves]);
 
   // Gestion des bus
   const handleOpenAdd = () => {
@@ -211,6 +240,10 @@ export default function TransportPage() {
 
   const handleSubmitBus = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmittingBus) return;
+
+    setIsSubmittingBus(true);
     try {
       const method = editingBus ? "PUT" : "POST";
       const body = editingBus ? { ...formData, id: editingBus.id } : formData;
@@ -231,11 +264,16 @@ export default function TransportPage() {
       }
     } catch (error) {
       console.error("Erreur soumission transport:", error);
+    } finally {
+      setIsSubmittingBus(false);
     }
   };
 
   const handleDeleteBus = async (id: number) => {
+    if (deletingBusId !== null) return;
+
     if (confirm("Voulez-vous vraiment supprimer ce bus et sa ligne ?")) {
+      setDeletingBusId(id);
       try {
         const response = await fetch(`/api/admin/transport?id=${id}`, {
           method: "DELETE",
@@ -248,6 +286,8 @@ export default function TransportPage() {
         }
       } catch (error) {
         console.error("Erreur suppression transport:", error);
+      } finally {
+        setDeletingBusId(null);
       }
     }
   };
@@ -264,10 +304,11 @@ export default function TransportPage() {
       montantTotal: 0,
     });
     setEleveSearch("");
-    setFilteredEleves(eleves);
+    setSelectedEleve(null);
+    setFilteredEleves([]); // ⭐ Liste vide au départ
+    setShowEleveDropdown(false);
     fetchLignes();
     setShowInscriptionForm(true);
-    // Réinitialiser le champ de recherche après l'ouverture
     setTimeout(() => eleveInputRef.current?.focus(), 100);
   };
 
@@ -280,42 +321,24 @@ export default function TransportPage() {
       montantMensuel: Number(ins.montant_mensuel) || 0,
       montantTotal: Number(ins.montant_total) || 0,
     });
-    // Trouver l'élève pour afficher son nom dans la recherche
-    const eleve = eleves.find(e => 
-      ins.source === 'preinscription' 
-        ? e.preinscription_id === ins.preinscription_id 
+    const eleve = eleves.find(e =>
+      ins.source === 'preinscription'
+        ? e.preinscription_id === ins.preinscription_id
         : e.id === ins.eleve_id
     );
+    setSelectedEleve(eleve || null);
     setEleveSearch(eleve ? `${eleve.prenom} ${eleve.nom} (${eleve.matricule})` : `${ins.eleve_prenom} ${ins.eleve_nom}`);
-    setFilteredEleves(eleves);
+    setFilteredEleves([]); // ⭐ Liste vide (élève déjà sélectionné)
+    setShowEleveDropdown(false);
     setShowInscriptionForm(true);
   };
 
-  // Recherche d'élève
-  useEffect(() => {
-    if (eleveSearch.trim() === "") {
-      setFilteredEleves(eleves);
-    } else {
-      const query = eleveSearch.toLowerCase();
-      setFilteredEleves(
-        eleves.filter(
-          (e) =>
-            e.nom.toLowerCase().includes(query) ||
-            e.prenom.toLowerCase().includes(query) ||
-            e.matricule.toLowerCase().includes(query)
-        )
-      );
-    }
-  }, [eleveSearch, eleves]);
-
   const handleSelectEleve = (eleve: Eleve) => {
     setSelectedEleve(eleve);
-    // Pour les élèves inscrits, on utilise eleve.id ; pour les pré-inscriptions, on met null
     setInscriptionForm({ ...inscriptionForm, eleveId: eleve.ref_id.toString() });
-    setEleveSearch(`${eleve.prenom} ${eleve.nom} (${eleve.matricule})${
-      eleve.source === 'preinscription' ? ' En attente' : ''
-    }`);
+    setEleveSearch(`${eleve.prenom} ${eleve.nom} (${eleve.matricule})${eleve.source === 'preinscription' ? ' - En attente' : ''}`);
     setShowEleveDropdown(false);
+    setFilteredEleves([]); // ⭐ Vider après sélection
   };
 
   // Gestion de la ligne
@@ -345,6 +368,10 @@ export default function TransportPage() {
   // Soumission
   const handleInscriptionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmittingInscription) return;
+
+    setIsSubmittingInscription(true);
     try {
       const url = editingInscription
         ? `/api/admin/transport/inscriptions/${editingInscription.id}?source=${editingInscription.source || 'eleve'}`
@@ -359,7 +386,6 @@ export default function TransportPage() {
           montantTotal: inscriptionForm.montantTotal,
         };
       } else if (selectedEleve?.source === 'preinscription') {
-        // ⭐ Pré-inscription (en_attente) → envoyer preinscriptionId
         body = {
           preinscriptionId: selectedEleve.preinscription_id,
           ligneId: parseInt(inscriptionForm.ligneId),
@@ -367,7 +393,6 @@ export default function TransportPage() {
           montantMensuel: inscriptionForm.montantMensuel,
         };
       } else {
-        // Élève inscrit → envoyer eleveId
         body = {
           eleveId: parseInt(inscriptionForm.eleveId),
           ligneId: parseInt(inscriptionForm.ligneId),
@@ -394,11 +419,16 @@ export default function TransportPage() {
       }
     } catch (error) {
       console.error("Erreur soumission inscription:", error);
+    } finally {
+      setIsSubmittingInscription(false);
     }
   };
 
   const handleDeleteInscription = async (ins: InscriptionTransport) => {
+    if (deletingInscriptionId !== null) return;
+
     if (confirm("Voulez-vous vraiment désactiver ou retirer cette inscription ?")) {
+      setDeletingInscriptionId(ins.id);
       try {
         const response = await fetch(`/api/admin/transport/inscriptions/${ins.id}?source=${ins.source || 'eleve'}`, {
           method: "DELETE",
@@ -411,6 +441,8 @@ export default function TransportPage() {
         }
       } catch (error) {
         console.error("Erreur désactivation inscription:", error);
+      } finally {
+        setDeletingInscriptionId(null);
       }
     }
   };
@@ -458,14 +490,16 @@ export default function TransportPage() {
           </Link>
           <button
             onClick={handleOpenAdd}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
+            disabled={isSubmittingBus}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             Ajouter un bus
           </button>
           <button
             onClick={handleOpenInscriptionAdd}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition"
+            disabled={isSubmittingInscription}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus className="w-4 h-4" />
             Inscrire un élève
@@ -587,15 +621,21 @@ export default function TransportPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleOpenEdit(b)}
-                          className="text-blue-600 hover:text-blue-800 p-1"
+                          disabled={deletingBusId === b.id || isSubmittingBus}
+                          className="text-blue-600 hover:text-blue-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteBus(b.id)}
-                          className="text-red-600 hover:text-red-800 p-1"
+                          disabled={deletingBusId === b.id}
+                          className="text-red-600 hover:text-red-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {deletingBusId === b.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -643,7 +683,7 @@ export default function TransportPage() {
                       <span>{ins.eleve_prenom} {ins.eleve_nom}</span>
                       {ins.source === 'preinscription' && (
                         <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">
-                          
+                          En attente
                         </span>
                       )}
                     </div>
@@ -665,15 +705,21 @@ export default function TransportPage() {
                     <div className="flex gap-2 text-black">
                       <button
                         onClick={() => handleOpenInscriptionEdit(ins)}
-                        className="text-blue-600 hover:text-blue-800 p-1"
+                        disabled={deletingInscriptionId === ins.id || isSubmittingInscription}
+                        className="text-blue-600 hover:text-blue-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteInscription(ins)}
-                        className="text-red-600 hover:text-red-800 p-1"
+                        disabled={deletingInscriptionId === ins.id}
+                        className="text-red-600 hover:text-red-800 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {deletingInscriptionId === ins.id ? (
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </td>
@@ -691,7 +737,7 @@ export default function TransportPage() {
         </div>
       </div>
 
-      {/* ===== Modal Inscription (style cantine) ===== */}
+      {/* ===== Modal Inscription ===== */}
       {showInscriptionForm && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 animate-fade-in">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
@@ -703,7 +749,8 @@ export default function TransportPage() {
               </h2>
               <button
                 onClick={() => setShowInscriptionForm(false)}
-                className="text-gray-900 hover:text-gray-900"
+                disabled={isSubmittingInscription}
+                className="text-gray-900 hover:text-gray-900 disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -717,39 +764,62 @@ export default function TransportPage() {
                 <input
                   ref={eleveInputRef}
                   type="text"
-                  placeholder="Rechercher par nom, prénom ou matricule..."
+                  placeholder="🔍 Rechercher par nom, prénom ou matricule..."
                   value={eleveSearch}
                   onChange={(e) => {
-                    setEleveSearch(e.target.value);
+                    const value = e.target.value;
+                    setEleveSearch(value);
                     setShowEleveDropdown(true);
-                    if (e.target.value === "") {
+                    if (value === "") {
                       setInscriptionForm({ ...inscriptionForm, eleveId: "" });
+                      setSelectedEleve(null);
+                      setFilteredEleves([]);
                     }
                   }}
-                  onFocus={() => setShowEleveDropdown(true)}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onFocus={() => {
+                    // N'ouvrir la dropdown que si une recherche est en cours
+                    if (eleveSearch.trim() !== "" && !selectedEleve) {
+                      setShowEleveDropdown(true);
+                    }
+                  }}
+                  disabled={isSubmittingInscription}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   required
                 />
-                {showEleveDropdown && filteredEleves.length > 0 && (
+                {/* Dropdown uniquement si recherche non vide et aucun élève sélectionné */}
+                {showEleveDropdown && eleveSearch.trim() !== "" && !selectedEleve && !isSubmittingInscription && (
                   <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
-                    {filteredEleves.map((el) => (
-                      <div
-                        key={el.id}
-                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between"
-                        onClick={() => handleSelectEleve(el)}
-                      >
-                        <span>
-                          {el.prenom} {el.nom}
-                        </span>
-                        <span className="text-gray-900 text-sm">
-                          {el.matricule} - {el.classe_nom || "Non assigné"}
-                        </span>
+                    {filteredEleves.length > 0 ? (
+                      filteredEleves.map((el) => (
+                        <div
+                          key={`${el.source}-${el.ref_id}`}
+                          className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b border-gray-100 last:border-b-0"
+                          onClick={() => handleSelectEleve(el)}
+                        >
+                          <span className="font-medium text-gray-900">
+                            {el.prenom} {el.nom}
+                          </span>
+                          <span className="text-gray-500 text-xs">
+                            {el.matricule} • {el.classe_nom || "Non assigné"}
+                            {el.source === 'preinscription' && (
+                              <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[10px] font-semibold">
+                                En attente
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        Aucun élève trouvé pour « {eleveSearch} »
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
-                {inscriptionForm.eleveId && (
-                  <p className="text-xs text-green-600 mt-1">✓ Élève sélectionné</p>
+                {inscriptionForm.eleveId && selectedEleve && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Élève sélectionné : {selectedEleve.prenom} {selectedEleve.nom}
+                  </p>
                 )}
               </div>
 
@@ -762,7 +832,8 @@ export default function TransportPage() {
                   required
                   value={inscriptionForm.ligneId}
                   onChange={handleLigneChange}
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingInscription}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 >
                   <option value="">Sélectionner une ligne</option>
                   {lignes.map((l) => (
@@ -783,7 +854,8 @@ export default function TransportPage() {
                   <button
                     type="button"
                     onClick={() => handleMoisChange(-1)}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50"
+                    disabled={isSubmittingInscription || inscriptionForm.mois <= 1}
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -793,7 +865,8 @@ export default function TransportPage() {
                   <button
                     type="button"
                     onClick={() => handleMoisChange(1)}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50"
+                    disabled={isSubmittingInscription || inscriptionForm.mois >= 12}
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -831,15 +904,24 @@ export default function TransportPage() {
                 <button
                   type="button"
                   onClick={() => setShowInscriptionForm(false)}
-                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-50 text-sm font-medium transition"
+                  disabled={isSubmittingInscription}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-50 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition"
+                  disabled={isSubmittingInscription || !inscriptionForm.eleveId || !inscriptionForm.ligneId}
+                  className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {editingInscription ? "Modifier" : "Inscrire au transport"}
+                  {isSubmittingInscription ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    editingInscription ? "Modifier" : "Inscrire au transport"
+                  )}
                 </button>
               </div>
             </form>
@@ -847,7 +929,7 @@ export default function TransportPage() {
         </div>
       )}
 
-      {/* Modal Ajout/Modification d'un bus (inchangé) */}
+      {/* Modal Ajout/Modification d'un bus */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 animate-fade-in">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md border border-gray-100 max-h-[90vh] overflow-y-auto">
@@ -857,13 +939,13 @@ export default function TransportPage() {
               </h2>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-gray-900 hover:text-gray-900"
+                disabled={isSubmittingBus}
+                className="text-gray-900 hover:text-gray-900 disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleSubmitBus} className="space-y-4 text-black">
-              {/* ... mêmes champs que précédemment ... */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">
                   Plaque d'immatriculation
@@ -876,7 +958,8 @@ export default function TransportPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, immatriculation: e.target.value })
                   }
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingBus}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -892,7 +975,8 @@ export default function TransportPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, chauffeur: e.target.value })
                     }
-                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmittingBus}
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
                 <div>
@@ -906,7 +990,8 @@ export default function TransportPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, chauffeur_tel: e.target.value })
                     }
-                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmittingBus}
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
               </div>
@@ -926,7 +1011,8 @@ export default function TransportPage() {
                         capacite: parseInt(e.target.value) || 0,
                       })
                     }
-                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmittingBus}
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
                 <div>
@@ -946,7 +1032,8 @@ export default function TransportPage() {
                         prix_abonnement: parseInt(e.target.value) || 0,
                       })
                     }
-                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmittingBus}
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
               </div>
@@ -962,7 +1049,8 @@ export default function TransportPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, trajet: e.target.value })
                   }
-                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isSubmittingBus}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -977,7 +1065,8 @@ export default function TransportPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, horaireMatin: e.target.value })
                     }
-                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmittingBus}
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
                 <div>
@@ -991,7 +1080,8 @@ export default function TransportPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, horaireSoir: e.target.value })
                     }
-                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmittingBus}
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
               </div>
@@ -999,15 +1089,24 @@ export default function TransportPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-50 text-sm font-medium transition"
+                  disabled={isSubmittingBus}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-50 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition"
+                  disabled={isSubmittingBus}
+                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Enregistrer
+                  {isSubmittingBus ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    "Enregistrer"
+                  )}
                 </button>
               </div>
             </form>

@@ -1,9 +1,11 @@
+//app/dashboard/admin/librairie/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-  Store, Package, ShoppingCart, Tag, Search, Plus, Trash2, Edit, CreditCard, Box, Check, ImageIcon, X, Loader2, BookOpen
+  Store, Package, ShoppingCart, Tag, Search, Plus, Trash2, Edit, CreditCard, Box, Check, ImageIcon, X, Loader2, BookOpen,
+  AlertTriangle
 } from "lucide-react";
 import Image from "next/image";
 
@@ -54,6 +56,18 @@ export default function LibrairiePage() {
   const [prixFormate, setPrixFormate] = useState("");
 
   const [commandesCount, setCommandesCount] = useState({ total: 0, enAttente: 0 });
+
+  // ⭐ États pour éviter la double soumission
+  const [isSubmittingArticle, setIsSubmittingArticle] = useState(false);
+  const [isSubmittingVente, setIsSubmittingVente] = useState(false);
+  const [deletingArticleId, setDeletingArticleId] = useState<number | null>(null);
+  const [deletingVenteId, setDeletingVenteId] = useState<number | null>(null);
+
+  // ⭐⭐ NOUVEAU : État pour le modal de confirmation de suppression de vente
+  const [venteToDelete, setVenteToDelete] = useState<Vente | null>(null);
+
+  // ⭐⭐ NOUVEAU : État pour le modal de confirmation de suppression d'article
+  const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -136,8 +150,12 @@ export default function LibrairiePage() {
     return null;
   };
 
+  // ⭐ Soumission article avec anti-double soumission
   const handleArticleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingArticle) return;
+
+    setIsSubmittingArticle(true);
     setUploading(true);
     try {
       let imageUrl = articleData.image_url;
@@ -176,6 +194,7 @@ export default function LibrairiePage() {
       alert("Erreur lors de l'enregistrement");
     } finally {
       setUploading(false);
+      setIsSubmittingArticle(false);
     }
   };
 
@@ -188,17 +207,41 @@ export default function LibrairiePage() {
     setShowArticleForm(true);
   };
 
-  const handleDeleteArticle = async (id: number) => {
-    if (confirm("Supprimer cet article de la librairie ?")) {
-      try {
-        await fetch(`/api/admin/librairie/articles?id=${id}`, { method: 'DELETE' });
+  // ⭐ Ouvre le modal de confirmation pour supprimer un article
+  const handleDeleteArticle = (article: Article) => {
+    if (deletingArticleId !== null) return;
+    setArticleToDelete(article);
+  };
+
+  // ⭐ Confirme et exécute la suppression de l'article
+  const confirmDeleteArticle = async () => {
+    if (!articleToDelete || deletingArticleId !== null) return;
+
+    const id = articleToDelete.id;
+    setDeletingArticleId(id);
+    try {
+      const res = await fetch(`/api/admin/librairie/articles?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setArticleToDelete(null);
         fetchData();
-      } catch (e) { console.error(e); }
+      } else {
+        const error = await res.json();
+        alert(error.error || "Erreur lors de la suppression");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de la suppression");
+    } finally {
+      setDeletingArticleId(null);
     }
   };
 
+  // ⭐ Soumission vente avec anti-double soumission
   const handleVenteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingVente) return;
+
+    setIsSubmittingVente(true);
     try {
       const res = await fetch('/api/admin/librairie/ventes', {
         method: 'POST',
@@ -213,7 +256,44 @@ export default function LibrairiePage() {
         const error = await res.json();
         alert(error.error || "Erreur de vente");
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de la vente");
+    } finally {
+      setIsSubmittingVente(false);
+    }
+  };
+
+  // ⭐⭐ NOUVELLE FONCTION : Ouvre le modal de confirmation pour supprimer une vente
+  const handleDeleteVente = (vente: Vente) => {
+    if (deletingVenteId !== null) return;
+    setVenteToDelete(vente);
+  };
+
+  // ⭐⭐ NOUVELLE FONCTION : Confirme et exécute la suppression de la vente
+  const confirmDeleteVente = async () => {
+    if (!venteToDelete || deletingVenteId !== null) return;
+
+    const id = venteToDelete.id;
+    setDeletingVenteId(id);
+    try {
+      const res = await fetch(`/api/admin/librairie/ventes?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setVenteToDelete(null);
+        fetchData();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Erreur lors de la suppression");
+      }
+    } catch (e) {
+      console.error("Erreur suppression vente:", e);
+      alert("Erreur lors de la suppression de la vente");
+    } finally {
+      setDeletingVenteId(null);
+    }
   };
 
   const filteredArticles = articles.filter(a => a.nom.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -225,7 +305,7 @@ export default function LibrairiePage() {
     valeurStock: articles.reduce((acc, a) => acc + (a.prix_unitaire * a.quantite_stock), 0),
     nombreVentes: ventes.length,
     recettesVentes: ventes.reduce((acc, v) => acc + Number(v.montant_total), 0),
-    totalQuantiteVendue: ventes.reduce((acc, v) => acc + v.quantite, 0), // ⭐ Articles vendus
+    totalQuantiteVendue: ventes.reduce((acc, v) => acc + v.quantite, 0),
   };
 
   if (loading) return <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div></div>;
@@ -257,7 +337,6 @@ export default function LibrairiePage() {
           <div><p className="text-sm text-gray-900">Recettes</p><p className="text-2xl font-bold text-orange-600">{stats.recettesVentes.toLocaleString()} GNF</p></div>
           <CreditCard className="text-orange-200 w-10 h-10" />
         </div>
-        {/* ⭐ Carte Commandes Parents */}
         <Link href="/dashboard/admin/librairie/commandes" className="block">
           <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-yellow-500 flex items-center justify-between hover:bg-yellow-50/40 transition">
             <div>
@@ -362,11 +441,23 @@ export default function LibrairiePage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => openEditForm(a)} className="text-blue-600 hover:text-blue-800 p-1 transition">
+                        <button
+                          onClick={() => openEditForm(a)}
+                          disabled={deletingArticleId === a.id}
+                          className="text-blue-600 hover:text-blue-800 p-1 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeleteArticle(a.id)} className="text-red-600 hover:text-red-800 p-1 transition">
-                          <Trash2 className="w-4 h-4" />
+                        <button
+                          onClick={() => handleDeleteArticle(a)}
+                          disabled={deletingArticleId === a.id}
+                          className="text-red-600 hover:text-red-800 p-1 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {deletingArticleId === a.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -395,6 +486,7 @@ export default function LibrairiePage() {
                   <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Quantité</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase">Montant Total</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Vendeur</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -406,6 +498,22 @@ export default function LibrairiePage() {
                     <td className="px-6 py-4 text-center font-semibold">{v.quantite}</td>
                     <td className="px-6 py-4 text-right font-bold text-green-600">{formatPrix(v.montant_total)} GNF</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{v.vendeur}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => handleDeleteVente(v)}
+                          disabled={deletingVenteId === v.id}
+                          className="text-red-600 hover:text-red-800 p-1 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Supprimer cette vente (le stock sera restauré)"
+                        >
+                          {deletingVenteId === v.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -426,12 +534,15 @@ export default function LibrairiePage() {
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">{editingArticle ? "Modifier l'article" : "Nouvel article"}</h2>
-              <button onClick={() => setShowArticleForm(false)} className="text-gray-900 hover:text-gray-900">
+              <button
+                onClick={() => setShowArticleForm(false)}
+                disabled={isSubmittingArticle}
+                className="text-gray-900 hover:text-gray-900 disabled:opacity-50"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleArticleSubmit} className="space-y-4">
-              {/* Image */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Image de l'article</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition relative">
@@ -441,7 +552,7 @@ export default function LibrairiePage() {
                     accept="image/*"
                     onChange={handleFileChange}
                     className="absolute inset-0 opacity-0 cursor-pointer"
-                    disabled={uploading}
+                    disabled={uploading || isSubmittingArticle}
                   />
                   {previewUrl || articleData.image_url ? (
                     <div className="relative inline-block">
@@ -462,18 +573,18 @@ export default function LibrairiePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Nom de l'article *</label>
-                <input required type="text" value={articleData.nom || ""} onChange={e => setArticleData({ ...articleData, nom: e.target.value })} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input required type="text" value={articleData.nom || ""} onChange={e => setArticleData({ ...articleData, nom: e.target.value })} disabled={isSubmittingArticle} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Description</label>
-                <textarea rows={2} value={articleData.description || ""} onChange={e => setArticleData({ ...articleData, description: e.target.value })} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <textarea rows={2} value={articleData.description || ""} onChange={e => setArticleData({ ...articleData, description: e.target.value })} disabled={isSubmittingArticle} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-1">Prix Unitaire (GNF) *</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 text-sm">GNF</span>
-                    <input required type="text" inputMode="numeric" value={prixFormate || (articleData.prix_unitaire ? formatPrix(articleData.prix_unitaire) : "")} onChange={handlePrixChange} placeholder="0" className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input required type="text" inputMode="numeric" value={prixFormate || (articleData.prix_unitaire ? formatPrix(articleData.prix_unitaire) : "")} onChange={handlePrixChange} placeholder="0" disabled={isSubmittingArticle} className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" />
                   </div>
                   <p className="text-xs text-gray-900 mt-1">Saisissez uniquement des chiffres</p>
                 </div>
@@ -483,12 +594,12 @@ export default function LibrairiePage() {
                     const value = e.target.value;
                     if (value === "") setArticleData({ ...articleData, quantite_stock: 0 });
                     else { const val = parseInt(value); if (!isNaN(val) && val >= 0) setArticleData({ ...articleData, quantite_stock: val }); }
-                  }} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  }} disabled={isSubmittingArticle} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Catégorie</label>
-                <select value={articleData.categorie || "fourniture"} onChange={e => setArticleData({ ...articleData, categorie: e.target.value })} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={articleData.categorie || "fourniture"} onChange={e => setArticleData({ ...articleData, categorie: e.target.value })} disabled={isSubmittingArticle} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100">
                   <option value="fourniture">Fourniture scolaire</option>
                   <option value="uniforme">Uniforme / Tenue</option>
                   <option value="livre">Livre / Cahier</option>
@@ -496,10 +607,10 @@ export default function LibrairiePage() {
                 </select>
               </div>
               <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setShowArticleForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Annuler</button>
-                <button type="submit" disabled={uploading} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50 hover:bg-blue-700 transition">
-                  {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {uploading ? "Enregistrement..." : "Enregistrer"}
+                <button type="button" onClick={() => setShowArticleForm(false)} disabled={isSubmittingArticle} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Annuler</button>
+                <button type="submit" disabled={uploading || isSubmittingArticle} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50 hover:bg-blue-700 transition">
+                  {(uploading || isSubmittingArticle) && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {(uploading || isSubmittingArticle) ? "Enregistrement..." : "Enregistrer"}
                 </button>
               </div>
             </form>
@@ -513,14 +624,14 @@ export default function LibrairiePage() {
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">Nouvelle vente</h2>
-              <button onClick={() => setShowVenteForm(false)} className="text-gray-900 hover:text-gray-900">
+              <button onClick={() => setShowVenteForm(false)} disabled={isSubmittingVente} className="text-gray-900 hover:text-gray-900 disabled:opacity-50">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleVenteSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Article *</label>
-                <select required value={venteData.article_id} onChange={e => setVenteData({ ...venteData, article_id: e.target.value })} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select required value={venteData.article_id} onChange={e => setVenteData({ ...venteData, article_id: e.target.value })} disabled={isSubmittingVente} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100">
                   <option value="">Sélectionner un article</option>
                   {articles.filter(a => a.quantite_stock > 0).map(a => (
                     <option key={a.id} value={a.id}>{a.nom} - {formatPrix(a.prix_unitaire)} GNF (Stock: {a.quantite_stock})</option>
@@ -529,7 +640,7 @@ export default function LibrairiePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Élève (Optionnel)</label>
-                <select value={venteData.eleve_id} onChange={e => setVenteData({ ...venteData, eleve_id: e.target.value })} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={venteData.eleve_id} onChange={e => setVenteData({ ...venteData, eleve_id: e.target.value })} disabled={isSubmittingVente} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100">
                   <option value="">Vente libre / Anonyme</option>
                   {eleves.map(e => (
                     <option key={e.id} value={e.id}>{e.prenom} {e.nom} ({e.matricule})</option>
@@ -541,13 +652,165 @@ export default function LibrairiePage() {
                 <input required type="number" min="1" value={venteData.quantite || 1} onChange={e => {
                   const val = parseInt(e.target.value);
                   setVenteData({ ...venteData, quantite: isNaN(val) || val < 1 ? 1 : val });
-                }} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                }} disabled={isSubmittingVente} className="w-full border border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" />
               </div>
               <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setShowVenteForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Annuler</button>
-                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Valider la vente</button>
+                <button type="button" onClick={() => setShowVenteForm(false)} disabled={isSubmittingVente} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">Annuler</button>
+                <button type="submit" disabled={isSubmittingVente} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  {isSubmittingVente ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Validation...
+                    </>
+                  ) : (
+                    "Valider la vente"
+                  )}
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐⭐ MODAL DE CONFIRMATION - Suppression d'une VENTE ⭐⭐ */}
+      {venteToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[60] p-4 animate-fade-in">
+          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  Supprimer cette vente ?
+                </h3>
+                <p className="text-sm text-gray-900">
+                  Voulez-vous vraiment supprimer cette vente ? Le stock sera automatiquement restauré.
+                </p>
+              </div>
+            </div>
+
+            {/* Récapitulatif de la vente à supprimer */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-5 border border-gray-200">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-900 text-xs uppercase font-semibold">Article</p>
+                  <p className="font-bold text-gray-900">{venteToDelete.article_nom}</p>
+                </div>
+                <div>
+                  <p className="text-gray-900 text-xs uppercase font-semibold">Quantité</p>
+                  <p className="font-bold text-gray-900">{venteToDelete.quantite}</p>
+                </div>
+                <div>
+                  <p className="text-gray-900 text-xs uppercase font-semibold">Élève</p>
+                  <p className="font-bold text-gray-900">{venteToDelete.eleve_nom || "Vente libre"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-900 text-xs uppercase font-semibold">Montant</p>
+                  <p className="font-bold text-green-600">{formatPrix(venteToDelete.montant_total)} GNF</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Boutons */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setVenteToDelete(null)}
+                disabled={deletingVenteId !== null}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-50 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteVente}
+                disabled={deletingVenteId !== null}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {deletingVenteId !== null ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Supprimer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐⭐ MODAL DE CONFIRMATION - Suppression d'un ARTICLE ⭐⭐ */}
+      {articleToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[60] p-4 animate-fade-in">
+          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  Supprimer cet article ?
+                </h3>
+                <p className="text-sm text-gray-900">
+                  Voulez-vous vraiment supprimer cet article de la librairie ? Cette action est irréversible.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4 mb-5 border border-gray-200">
+              <div className="flex items-center gap-3">
+                {articleToDelete.image_url ? (
+                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <img src={articleToDelete.image_url} alt={articleToDelete.nom} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Box className="w-6 h-6 text-gray-900" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{articleToDelete.nom}</p>
+                  <p className="text-sm text-gray-900">
+                    Stock : {articleToDelete.quantite_stock} • {formatPrix(articleToDelete.prix_unitaire)} GNF
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setArticleToDelete(null)}
+                disabled={deletingArticleId !== null}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-50 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteArticle}
+                disabled={deletingArticleId !== null}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {deletingArticleId !== null ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Supprimer
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

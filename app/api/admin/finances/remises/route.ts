@@ -32,99 +32,174 @@ export async function GET(request: NextRequest) {
       );
     `);
 
-    // Récupérer la liste des parents avec leurs enfants (par défaut 2 enfants ou plus)
+    // ⭐ CORRECTION : Comptage propre des enfants sans doublons (UNION + DISTINCT)
     const parentsResult = await query(`
+      WITH enfants_uniques AS (
+        -- Enfants inscrits
+        SELECT DISTINCT lpe.parent_id, lpe.eleve_id::text AS enfant_key
+        FROM lien_parent_eleve lpe
+        JOIN eleves e ON e.id = lpe.eleve_id
+        WHERE e.deleted_at IS NULL
+
+        UNION
+
+        -- Enfants en préinscription
+        SELECT DISTINCT p.parent_id, ('pre_' || p.id)::text AS enfant_key
+        FROM preinscriptions p
+        WHERE p.statut != 'rejete'
+
+        UNION
+
+        -- Enfants en réinscription
+        SELECT DISTINCT r.parent_id, ('re_' || r.id)::text AS enfant_key
+        FROM reinscriptions r
+        WHERE r.statut != 'rejete'
+      ),
+      compte_enfants AS (
+        SELECT parent_id, COUNT(*) AS nb_enfants
+        FROM enfants_uniques
+        GROUP BY parent_id
+      )
       SELECT 
         p.id as parent_id,
         u.nom,
         u.prenom,
         u.email,
         u.telephone,
-        GREATEST(
-          COUNT(DISTINCT lpe.eleve_id),
-          (SELECT COUNT(*) FROM preinscriptions WHERE parent_id = p.id AND statut != 'rejete') +
-          (SELECT COUNT(*) FROM reinscriptions WHERE parent_id = p.id AND statut != 'rejete')
-        ) as nb_enfants,
+        COALESCE(ce.nb_enfants, 0) as nb_enfants,
         COALESCE((SELECT SUM(montant) FROM remises_familles WHERE parent_id = p.id), 0) as total_remises
       FROM parents p
       JOIN utilisateurs u ON p.utilisateur_id = u.id
-      LEFT JOIN lien_parent_eleve lpe ON p.id = lpe.parent_id
-      GROUP BY p.id, u.nom, u.prenom, u.email, u.telephone
-      HAVING GREATEST(
-        COUNT(DISTINCT lpe.eleve_id),
-        (SELECT COUNT(*) FROM preinscriptions WHERE parent_id = p.id AND statut != 'rejete') +
-        (SELECT COUNT(*) FROM reinscriptions WHERE parent_id = p.id AND statut != 'rejete')
-      ) >= $1
+      LEFT JOIN compte_enfants ce ON ce.parent_id = p.id
+      WHERE COALESCE(ce.nb_enfants, 0) >= $1
       ORDER BY nb_enfants DESC, u.nom ASC
     `, [minEnfants]);
 
-    // Pour chaque parent, calculer les détails financiers (dette totale, payé, solde)
-    const parentsComplets = [];
+    const parentsComplets: any[] = [];
 
     for (const parent of parentsResult.rows) {
       const parentId = parent.parent_id;
 
-      // Calculer les frais des élèves inscrits
-      const elevesFraisResult = await query(`
-        SELECT 
-          e.id as eleve_id,
-          COALESCE(c.total_versement, c.frais_inscription, 0) as frais_inscription_classe,
-          COALESCE((SELECT SUM(pai.montant) FROM paiements pai WHERE pai.eleve_id = e.id AND pai.statut = 'valide'), 0) as frais_paye_eleve,
-          COALESCE((SELECT SUM(pai.montant) FROM paiements pai WHERE pai.preinscription_id IN (SELECT i.preinscription_id FROM inscriptions i WHERE i.eleve_id = e.id) AND pai.statut = 'valide'), 0) as frais_paye_preinscription,
-          COALESCE((SELECT SUM(pai.montant) FROM paiements pai WHERE pai.reinscription_id IN (SELECT id FROM reinscriptions WHERE eleve_id = e.id) AND pai.statut = 'valide'), 0) as frais_paye_reinscription
-        FROM eleves e
-        LEFT JOIN classes c ON e.classe_id = c.id
-        JOIN lien_parent_eleve lpe ON e.id = lpe.eleve_id
-        WHERE lpe.parent_id = $1 AND e.deleted_at IS NULL
+      // ⭐ CORRECTION : Frais bruts lus depuis echeances_paiement (préinscriptions + réinscriptions)
+      // 1) Échéances liées aux préinscriptions
+      const fraisPreinsRes = await query(`
+        SELECT COALESCE(SUM(ep.montant), 0) as total
+        FROM echeances_paiement ep
+        WHERE ep.preinscription_id IN (
+          SELECT id FROM preinscriptions WHERE parent_id = $1
+        )
+        AND ep.type IN ('inscription', 'scolarite', 'reinscription')
       `, [parentId]);
+      const scolaritePreins = Number(fraisPreinsRes.rows[0]?.total) || 0;
 
-      // Preinscriptions & Reinscriptions en attente
-      const preinsPending = await query(`
-        SELECT COALESCE(SUM(COALESCE(montant_total_plan, frais_montant)), 0) as total
-        FROM preinscriptions
-        WHERE parent_id = $1 AND statut = 'en_attente'
+      // 2) Échéances liées aux réinscriptions
+      const fraisReinsRes = await query(`
+        SELECT COALESCE(SUM(ep.montant), 0) as total
+        FROM echeances_paiement ep
+        WHERE ep.reinscription_id IN (
+          SELECT id FROM reinscriptions WHERE parent_id = $1
+        )
+        AND ep.type IN ('inscription', 'scolarite', 'reinscription')
       `, [parentId]);
-      const preinsTotal = Number(preinsPending.rows[0]?.total) || 0;
+      const scolariteReins = Number(fraisReinsRes.rows[0]?.total) || 0;
 
-      const reinscrPending = await query(`
-        SELECT COALESCE(SUM(COALESCE(montant_total_plan, montant_frais)), 0) as total
-        FROM reinscriptions
-        WHERE parent_id = $1 AND statut = 'en_attente'
-      `, [parentId]);
-      const reinscrTotal = Number(reinscrPending.rows[0]?.total) || 0;
-
-      // Cantine + Transport + Librairie
-      const servicesRes = await query(`
-        SELECT 
-          COALESCE((SELECT SUM(montant_total) FROM inscriptions_cantine WHERE eleve_id IN (SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1)), 0) +
-          COALESCE((SELECT SUM(montant_mensuel * mois_total) FROM inscriptions_transport WHERE eleve_id IN (SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1)), 0) +
-          COALESCE((SELECT SUM(total) FROM commandes_librairie WHERE parent_id = $1 AND statut = 'valide'), 0) as total_services
-      `, [parentId]);
-      const totalServices = Number(servicesRes.rows[0]?.total_services) || 0;
-
-      let scolariteEleves = 0;
-      let totalPaye = 0;
-
-      for (const row of elevesFraisResult.rows) {
-        scolariteEleves += Number(row.frais_inscription_classe) || 0;
-        totalPaye += Number(row.frais_paye_eleve) + Number(row.frais_paye_preinscription) + Number(row.frais_paye_reinscription);
+      // 3) Fallback : si aucune échéance, utiliser les montants stockés dans les tables
+      let scolariteFallback = 0;
+      if (scolaritePreins === 0) {
+        const fallbackPreins = await query(`
+          SELECT COALESCE(SUM(COALESCE(montant_total_plan, frais_montant, 0)), 0) as total
+          FROM preinscriptions
+          WHERE parent_id = $1 AND statut IN ('valide', 'en_attente', 'partiel')
+        `, [parentId]);
+        scolariteFallback += Number(fallbackPreins.rows[0]?.total) || 0;
+      }
+      if (scolariteReins === 0) {
+        const fallbackReins = await query(`
+          SELECT COALESCE(SUM(COALESCE(montant_total_plan, montant_frais, 0)), 0) as total
+          FROM reinscriptions
+          WHERE parent_id = $1 AND statut IN ('valide', 'en_attente', 'partiel')
+        `, [parentId]);
+        scolariteFallback += Number(fallbackReins.rows[0]?.total) || 0;
       }
 
-      const totalAPayer = scolariteEleves + preinsTotal + reinscrTotal + totalServices;
+      const scolariteBrut = scolaritePreins + scolariteReins + scolariteFallback;
+
+      // ⭐ CORRECTION : Services annexes lus depuis les bonnes tables
+      // Cantine via preinscription_cantine (source principale)
+      const cantineRes = await query(`
+        SELECT COALESCE(SUM(pc.prix), 0) as total
+        FROM preinscription_cantine pc
+        JOIN preinscriptions p ON pc.preinscription_id = p.id
+        WHERE p.parent_id = $1
+          AND p.statut IN ('valide', 'en_attente', 'partiel')
+      `, [parentId]);
+      const cantineBrut = Number(cantineRes.rows[0]?.total) || 0;
+
+      // Transport via preinscription_transport
+      const transportRes = await query(`
+        SELECT COALESCE(SUM(pt.prix), 0) as total
+        FROM preinscription_transport pt
+        JOIN preinscriptions p ON pt.preinscription_id = p.id
+        WHERE p.parent_id = $1
+          AND p.statut IN ('valide', 'en_attente', 'partiel')
+      `, [parentId]);
+      const transportBrut = Number(transportRes.rows[0]?.total) || 0;
+
+      // Fournitures : commandes_fournitures + commandes_librairie
+      const fournituresRes = await query(`
+        SELECT 
+          COALESCE((
+            SELECT SUM(cf.quantite * cf.prix_unitaire) 
+            FROM commandes_fournitures cf
+            JOIN preinscriptions p ON cf.preinscription_id = p.id
+            WHERE p.parent_id = $1
+          ), 0) +
+          COALESCE((
+            SELECT SUM(cl.total) 
+            FROM commandes_librairie cl
+            WHERE cl.parent_id = $1 AND cl.statut = 'valide'
+          ), 0) as total
+      `, [parentId]);
+      const fournituresBrut = Number(fournituresRes.rows[0]?.total) || 0;
+
+      const totalServices = cantineBrut + transportBrut + fournituresBrut;
+
+      // ⭐ CORRECTION : Total payé unifié
+      const paiementsRes = await query(`
+        SELECT COALESCE(SUM(montant), 0) as total
+        FROM (
+          SELECT id, montant FROM paiements
+          WHERE statut IN ('valide', 'paye')
+            AND eleve_id IN (SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1)
+          UNION ALL
+          SELECT id, montant FROM paiements
+          WHERE statut IN ('valide', 'paye')
+            AND preinscription_id IN (SELECT id FROM preinscriptions WHERE parent_id = $1)
+          UNION ALL
+          SELECT id, montant FROM paiements
+          WHERE statut IN ('valide', 'paye')
+            AND reinscription_id IN (SELECT id FROM reinscriptions WHERE parent_id = $1)
+        ) paiements_uniques
+      `, [parentId]);
+      const totalPaye = Number(paiementsRes.rows[0]?.total) || 0;
+
+      // ⭐ Calcul final
+      const totalAPayer = scolariteBrut + totalServices;
       const totalRemises = Number(parent.total_remises) || 0;
       const soldeRestant = Math.max(0, totalAPayer - totalPaye - totalRemises);
 
+      // ⭐ IMPORTANT : Sécuriser tous les champs numériques avec Number() || 0
       parentsComplets.push({
-        id: parent.parent_id,
-        nom: parent.nom,
-        prenom: parent.prenom,
-        email: parent.email,
-        telephone: parent.telephone,
-        nb_enfants: Number(parent.nb_enfants),
-        total_a_payer: totalAPayer,
-        total_paye: totalPaye,
-        total_remises: totalRemises,
-        solde_restant: soldeRestant
+        id: Number(parent.parent_id) || 0,
+        nom: parent.nom || "",
+        prenom: parent.prenom || "",
+        email: parent.email || "",
+        telephone: parent.telephone || "",
+        nb_enfants: Number(parent.nb_enfants) || 0,
+        total_a_payer: Number(totalAPayer) || 0,
+        total_paye: Number(totalPaye) || 0,
+        total_remises: Number(totalRemises) || 0,
+        solde_restant: Number(soldeRestant) || 0
       });
     }
 
@@ -154,7 +229,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Parent ID et montant valide requis" }, { status: 400 });
     }
 
-    // Vérifier si la table remises_familles existe, sinon la créer à la volée
+    // S'assurer que la table existe
     await query(`
       CREATE TABLE IF NOT EXISTS remises_familles (
         id SERIAL PRIMARY KEY,
@@ -166,6 +241,84 @@ export async function POST(request: NextRequest) {
       );
     `);
 
+    // ⭐ CORRECTION MAJEURE : Calculer le solde restant RÉEL du parent avant d'appliquer la remise
+    const soldeInfoRes = await query(`
+      SELECT 
+        -- Scolarité brute (échéances préinscriptions + réinscriptions)
+        COALESCE((
+          SELECT SUM(ep.montant)
+          FROM echeances_paiement ep
+          WHERE ep.preinscription_id IN (SELECT id FROM preinscriptions WHERE parent_id = $1)
+            AND ep.type IN ('inscription', 'scolarite', 'reinscription')
+        ), 0) +
+        COALESCE((
+          SELECT SUM(ep.montant)
+          FROM echeances_paiement ep
+          WHERE ep.reinscription_id IN (SELECT id FROM reinscriptions WHERE parent_id = $1)
+            AND ep.type IN ('inscription', 'scolarite', 'reinscription')
+        ), 0) AS scolarite_brut,
+
+        -- Services bruts (cantine + transport + fournitures + librairie)
+        COALESCE((
+          SELECT SUM(pc.prix) FROM preinscription_cantine pc
+          JOIN preinscriptions p ON pc.preinscription_id = p.id
+          WHERE p.parent_id = $1 AND p.statut IN ('valide', 'en_attente', 'partiel')
+        ), 0) +
+        COALESCE((
+          SELECT SUM(pt.prix) FROM preinscription_transport pt
+          JOIN preinscriptions p ON pt.preinscription_id = p.id
+          WHERE p.parent_id = $1 AND p.statut IN ('valide', 'en_attente', 'partiel')
+        ), 0) +
+        COALESCE((
+          SELECT SUM(cf.quantite * cf.prix_unitaire) FROM commandes_fournitures cf
+          JOIN preinscriptions p ON cf.preinscription_id = p.id
+          WHERE p.parent_id = $1
+        ), 0) +
+        COALESCE((
+          SELECT SUM(total) FROM commandes_librairie
+          WHERE parent_id = $1 AND statut = 'valide'
+        ), 0) AS services_brut,
+
+        -- Total déjà payé
+        COALESCE((
+          SELECT SUM(montant) FROM (
+            SELECT montant FROM paiements
+            WHERE statut IN ('valide', 'paye')
+              AND eleve_id IN (SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1)
+            UNION ALL
+            SELECT montant FROM paiements
+            WHERE statut IN ('valide', 'paye')
+              AND preinscription_id IN (SELECT id FROM preinscriptions WHERE parent_id = $1)
+            UNION ALL
+            SELECT montant FROM paiements
+            WHERE statut IN ('valide', 'paye')
+              AND reinscription_id IN (SELECT id FROM reinscriptions WHERE parent_id = $1)
+          ) p
+        ), 0) AS total_paye,
+
+        -- Remises déjà accordées
+        COALESCE((
+          SELECT SUM(montant) FROM remises_familles WHERE parent_id = $1
+        ), 0) AS remises_existantes
+    `, [parentId]);
+
+    const info = soldeInfoRes.rows[0];
+    const scolariteBrut = Number(info.scolarite_brut) || 0;
+    const servicesBrut = Number(info.services_brut) || 0;
+    const totalBrut = scolariteBrut + servicesBrut;
+    const totalPaye = Number(info.total_paye) || 0;
+    const remisesExistantes = Number(info.remises_existantes) || 0;
+
+    const soldeRestantReel = Math.max(0, totalBrut - totalPaye - remisesExistantes);
+
+    // ⭐ CORRECTION : Plafonner la remise au solde restant réel
+    if (Number(montant) > soldeRestantReel) {
+      return NextResponse.json({ 
+        error: `La remise (${Number(montant).toLocaleString()} GNF) dépasse le solde restant réel (${soldeRestantReel.toLocaleString()} GNF).`,
+        solde_restant_reel: soldeRestantReel
+      }, { status: 400 });
+    }
+
     // Insérer la remise
     const insertResult = await query(`
       INSERT INTO remises_familles (parent_id, montant, motif, saisie_par)
@@ -173,23 +326,66 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `, [parentId, montant, motif || "Remise Famille Nombreuse", (session.user as any).id || null]);
 
-    // Également réduire le montant_restant_plan sur la dernière pré-inscription ou réinscription active si disponible
+    // ⭐ CORRECTION MAJEURE : Répartir la remise PROPORTIONNELLEMENT sur les échéances
+    // au lieu de la soustraire en masse à chaque préinscription/réinscription
+    if (scolariteBrut > 0) {
+      const montantRemiseApplique = Math.min(Number(montant), scolariteBrut);
+      const facteurReduction = 1 - (montantRemiseApplique / scolariteBrut);
+
+      // Mettre à jour chaque échéance de scolarité proportionnellement
+      await query(`
+        UPDATE echeances_paiement
+        SET montant = GREATEST(0, ROUND(montant * $1::numeric, 2))
+        WHERE (
+          preinscription_id IN (SELECT id FROM preinscriptions WHERE parent_id = $2)
+          OR reinscription_id IN (SELECT id FROM reinscriptions WHERE parent_id = $2)
+        )
+        AND type IN ('inscription', 'scolarite', 'reinscription')
+      `, [facteurReduction, parentId]);
+    }
+
+    // ⭐ CORRECTION : Recalculer montant_restant_plan de manière cohérente
     await query(`
-      UPDATE preinscriptions
-      SET montant_restant_plan = GREATEST(0, montant_restant_plan - $1)
-      WHERE parent_id = $2 AND montant_restant_plan > 0
-    `, [montant, parentId]);
+      UPDATE preinscriptions p
+      SET montant_restant_plan = GREATEST(0, 
+        COALESCE((
+          SELECT SUM(ep.montant) 
+          FROM echeances_paiement ep 
+          WHERE ep.preinscription_id = p.id
+            AND ep.type IN ('inscription', 'scolarite', 'reinscription')
+        ), 0)
+        - COALESCE((
+          SELECT SUM(pay.montant) 
+          FROM paiements pay 
+          WHERE pay.preinscription_id = p.id AND pay.statut IN ('valide', 'paye')
+        ), 0)
+      )
+      WHERE p.parent_id = $1
+    `, [parentId]);
 
     await query(`
-      UPDATE reinscriptions
-      SET montant_restant_plan = GREATEST(0, montant_restant_plan - $1)
-      WHERE parent_id = $2 AND montant_restant_plan > 0
-    `, [montant, parentId]);
+      UPDATE reinscriptions r
+      SET montant_restant_plan = GREATEST(0, 
+        COALESCE((
+          SELECT SUM(ep.montant) 
+          FROM echeances_paiement ep 
+          WHERE ep.reinscription_id = r.id
+            AND ep.type IN ('inscription', 'scolarite', 'reinscription')
+        ), 0)
+        - COALESCE((
+          SELECT SUM(pay.montant) 
+          FROM paiements pay 
+          WHERE pay.reinscription_id = r.id AND pay.statut IN ('valide', 'paye')
+        ), 0)
+      )
+      WHERE r.parent_id = $1
+    `, [parentId]);
 
     return NextResponse.json({
       success: true,
       message: `Remise de ${Number(montant).toLocaleString()} GNF appliquée avec succès.`,
-      remise: insertResult.rows[0]
+      remise: insertResult.rows[0],
+      solde_restant_apres: Math.max(0, soldeRestantReel - Number(montant))
     });
   } catch (error: any) {
     console.error("Erreur POST remise:", error);

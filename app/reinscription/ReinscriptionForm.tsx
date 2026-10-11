@@ -1,7 +1,7 @@
 // app/reinscription/ReinscriptionForm.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -83,6 +83,7 @@ export default function ReinscriptionForm() {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [showPassword, setShowPassword] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [classes, setClasses] = useState<Classe[]>([]);
@@ -745,6 +746,8 @@ export default function ReinscriptionForm() {
   // SUBMIT - Utilise la table REINSCRIPTIONS
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setLoading(true);
 
     try {
@@ -877,6 +880,7 @@ export default function ReinscriptionForm() {
       console.error("Erreur:", error);
       alert("Une erreur est survenue. Veuillez réessayer.");
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
       setUploadProgress({ current: 0, total: 0 });
     }
@@ -1647,10 +1651,19 @@ export default function ReinscriptionForm() {
             <button
               type="submit"
               disabled={loading}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg transition ml-auto ${!loading ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-300 text-gray-900 cursor-not-allowed"}`}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg transition ml-auto font-medium ${
+                loading
+                  ? "bg-gray-400 text-white cursor-not-allowed pointer-events-none opacity-80"
+                  : "bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg active:scale-95"
+              }`}
             >
-              {loading ? (uploadProgress.total > 0 ? `Upload... ${uploadProgress.current}/${uploadProgress.total}` : "Envoi en cours...") : "Envoyer ma réinscription"}
-              <GraduationCap className="w-4 h-4" />
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading
+                ? uploadProgress.total > 0
+                  ? `Upload... ${uploadProgress.current}/${uploadProgress.total}`
+                  : "Envoi en cours..."
+                : "Envoyer ma réinscription"}
+              {!loading && <GraduationCap className="w-4 h-4" />}
             </button>
           )}
         </div>

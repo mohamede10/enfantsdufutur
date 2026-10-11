@@ -54,6 +54,12 @@ export async function GET() {
         AND NOT EXISTS (
           SELECT 1 FROM inscriptions i WHERE i.preinscription_id = p.id
         )
+        AND NOT EXISTS (
+          SELECT 1 FROM eleves el 
+          JOIN utilisateurs ul ON el.utilisateur_id = ul.id 
+          WHERE TRIM(LOWER(ul.nom)) = TRIM(LOWER(p.enfant_nom)) 
+            AND TRIM(LOWER(ul.prenom)) = TRIM(LOWER(p.enfant_prenom))
+        )
       ORDER BY p.enfant_nom, p.enfant_prenom
     `);
 

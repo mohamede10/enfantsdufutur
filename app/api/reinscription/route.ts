@@ -158,10 +158,10 @@ export async function POST(request: Request) {
           JOIN lien_parent_eleve l ON e.id = l.eleve_id
           JOIN utilisateurs u ON e.utilisateur_id = u.id
           WHERE l.parent_id = $1
-            AND TRIM(u.nom) ILIKE TRIM($2)
-            AND TRIM(u.prenom) ILIKE TRIM($3)
-            AND e.date_naissance = $4
-        `, [parentIdFinal, enfant.nom, enfant.prenom, enfant.dateNaissance]);
+            AND TRIM(LOWER(u.nom)) = TRIM(LOWER($2))
+            AND TRIM(LOWER(u.prenom)) = TRIM(LOWER($3))
+          LIMIT 1
+        `, [parentIdFinal, enfant.nom, enfant.prenom]);
         
         if (eleveResult.rows.length > 0) {
           eleveId = eleveResult.rows[0].id;
@@ -169,19 +169,19 @@ export async function POST(request: Request) {
         }
       }
 
-      // 3. Si toujours pas trouvé, chercher par nom/prénom/date (moins fiable)
+      // 3. Si toujours pas trouvé, chercher par nom/prénom globalement pour éviter de dupliquer un élève existant
       if (!eleveId) {
         const eleveResult = await query(`
           SELECT e.id 
           FROM eleves e
           JOIN utilisateurs u ON e.utilisateur_id = u.id
-          WHERE TRIM(u.nom) ILIKE TRIM($1) 
-            AND TRIM(u.prenom) ILIKE TRIM($2) 
-            AND e.date_naissance = $3
-        `, [enfant.nom, enfant.prenom, enfant.dateNaissance]);
+          WHERE TRIM(LOWER(u.nom)) = TRIM(LOWER($1)) 
+            AND TRIM(LOWER(u.prenom)) = TRIM(LOWER($2))
+          LIMIT 1
+        `, [enfant.nom, enfant.prenom]);
         if (eleveResult.rows.length > 0) {
           eleveId = eleveResult.rows[0].id;
-          console.log(`✅ Élève trouvé par nom/prénom/date: ${enfant.prenom} ${enfant.nom}`);
+          console.log(`✅ Élève trouvé par nom/prénom: ${enfant.prenom} ${enfant.nom}`);
         }
       }
 
@@ -267,6 +267,37 @@ export async function POST(request: Request) {
           VALUES ($1, $2)
         `, [parentIdFinal, eleveId]);
         console.log(`✅ Lien parent-élève créé: parent=${parentIdFinal}, eleve=${eleveId}`);
+      }
+
+      // 🛡️ Protection anti-doublon: Vérifier si une réinscription existe déjà pour cet élève / enfant cette année
+      const existingReinscription = await query(`
+        SELECT id, numero_dossier
+        FROM reinscriptions
+        WHERE (
+          (eleve_id IS NOT NULL AND eleve_id = $1)
+          OR (
+            parent_id = $2
+            AND TRIM(LOWER(enfant_nom)) = TRIM(LOWER($3))
+            AND TRIM(LOWER(enfant_prenom)) = TRIM(LOWER($4))
+          )
+        )
+        AND (annee_scolaire_id = $5 OR annee_scolaire_id IS NULL)
+        AND statut IN ('en_attente', 'validee', 'confirmee')
+        ORDER BY id DESC LIMIT 1
+      `, [eleveId, parentIdFinal, enfant.nom, enfant.prenom, anneeScolaireId]);
+
+      if (existingReinscription.rows.length > 0) {
+        console.log(`⚠️ Réinscription déjà existante (anti-doublon) pour ${enfant.prenom} ${enfant.nom}`);
+        reinscriptions.push({
+          id: existingReinscription.rows[0].id,
+          numero_dossier: existingReinscription.rows[0].numero_dossier,
+          enfant_nom: enfant.nom,
+          enfant_prenom: enfant.prenom,
+          classe: enfant.classe,
+          statut: 'en_attente',
+          montant_frais: montantFrais
+        });
+        continue;
       }
 
       // ⭐ CRÉER LA RÉINSCRIPTION

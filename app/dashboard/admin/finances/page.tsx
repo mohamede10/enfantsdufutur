@@ -539,12 +539,12 @@ export default function FinancesPage() {
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {p.enfants_inscrits.map((e: any) => (
                                 <span key={e.eleve_id} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded font-medium border border-blue-100">
-                                  🎓 {e.prenom} {e.nom} ({e.classe_nom || 'Sans classe'})
+                                  {e.prenom} {e.nom} ({e.classe_nom || 'Sans classe'})
                                 </span>
                               ))}
                               {p.preinscriptions.map((pre: any) => (
                                 <span key={pre.preinscription_id} className="bg-yellow-50 text-yellow-700 text-xs px-2 py-0.5 rounded font-medium border border-yellow-100">
-                                   {pre.prenom} {pre.nom} ({pre.classe_nom})
+                                  {pre.prenom} {pre.nom} ({pre.classe_nom})
                                 </span>
                               ))}
                             </div>
@@ -1132,7 +1132,7 @@ export default function FinancesPage() {
                 </h3>
                 <div className="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Total Fournitures Commandées</p>
+                    <p className="text-sm font-medium text-gray-900">Total Fournitures scolaires</p>
                     <p className="text-xs text-gray-500">
                       Total: {(selectedParentPaiement.services_breakdown?.fournitures?.total || 0).toLocaleString()} GNF
                       {(selectedParentPaiement.services_breakdown?.fournitures?.paye || 0) > 0 && (

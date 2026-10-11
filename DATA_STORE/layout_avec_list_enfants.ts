@@ -1,4 +1,3 @@
-//app\dashboard\layout.tsx
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -102,7 +101,7 @@ const menuItems = {
     { name: "Mes enfants", href: "/dashboard/parent/enfants", icon: Users },
     { name: "Cantine", href: "/dashboard/parent/cantine", icon: Utensils },
     { name: "Transport", href: "/dashboard/parent/transport", icon: Bus },
-    { name: "Librairie", href: "/dashboard/parent/librairie", icon: BookMarked },
+    { name: "Librairie", href: "/dashboard/parent/librairie", icon: BookMarked},
     { name: "Finances", href: "/dashboard/parent/finances", icon: CreditCard },
     { name: "Messages", href: "/dashboard/parent/messages", icon: MessageSquare },
   ],
@@ -144,6 +143,21 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userRole, setUserRole] = useState<string>("");
+  const [enfantsSidebar, setEnfantsSidebar] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (userRole === "PARENT") {
+      fetch("/api/parent/enfants")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          if (Array.isArray(data)) {
+            const eleves = data.filter((e: any) => e.est_eleve || e.type === "eleve" || e.eleve_id);
+            setEnfantsSidebar(eleves);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userRole]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -229,17 +243,42 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             {items.map((item) => {
               const active = isActive(item.href);
               return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 mb-1 rounded-lg transition ${active
-                    ? "bg-blue-600 text-white"
-                    : "text-black hover:bg-blue-50 hover:text-blue-600"
-                    }`}
-                >
-                  <item.icon className={`w-5 h-5 ${active ? "text-white" : ""}`} />
-                  {sidebarOpen && <span className="text-sm font-medium">{item.name}</span>}
-                </Link>
+                <div key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2 mb-1 rounded-lg transition ${active
+                      ? "bg-blue-600 text-white"
+                      : "text-black hover:bg-blue-50 hover:text-blue-600"
+                      }`}
+                  >
+                    <item.icon className={`w-5 h-5 ${active ? "text-white" : ""}`} />
+                    {sidebarOpen && <span className="text-sm font-medium">{item.name}</span>}
+                  </Link>
+
+                  {/* Sous-liens directs vers les dashboards de chaque enfant pour les parents */}
+                  {userRole === "PARENT" && item.href === "/dashboard/parent/enfants" && enfantsSidebar.length > 0 && sidebarOpen && (
+                    <div className="ml-5 pl-2 border-l-2 border-blue-100 my-1 space-y-0.5">
+                      {enfantsSidebar.map((enf) => {
+                        const childUrl = `/dashboard/parent/enfants/${enf.eleve_id || enf.id}`;
+                        const isChildActive = pathname === childUrl;
+                        return (
+                          <Link
+                            key={enf.eleve_id || enf.id}
+                            href={childUrl}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition ${
+                              isChildActive
+                                ? "bg-blue-100 text-blue-700 font-bold"
+                                : "text-gray-600 hover:text-blue-600 hover:bg-blue-50/60"
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isChildActive ? 'bg-blue-600' : 'bg-gray-400'}`}></span>
+                            <span className="truncate">{enf.prenom} {enf.nom}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>

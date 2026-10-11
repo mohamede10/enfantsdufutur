@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     const result = await query(`
-    SELECT 
+    SELECT DISTINCT ON (e.id)
       e.id,
       e.matricule,
       u.email as enfant_email,

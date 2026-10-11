@@ -8,7 +8,7 @@ import {
   Loader2, CheckCircle, Clock, AlertTriangle, Download, ExternalLink,
   User, Calendar, TrendingUp, Star, ChevronDown, ChevronUp, BookMarked,
   PlayCircle, AlertCircle, BarChart2, Eye, CreditCard, Wallet,
-  Bus, Utensils, ShoppingCart, XCircle
+  Bus, Utensils, ShoppingCart, XCircle, Users
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -88,6 +88,7 @@ export default function ParentEnfantDashboard() {
   const [bulletin, setBulletin] = useState<{ lignes: LigneBulletin[]; moyenneGenerale: number; mentionGenerale: string } | null>(null);
   const [loadingTab, setLoadingTab] = useState<Tab | null>(null);
   const [expandedMatiere, setExpandedMatiere] = useState<string | null>(null);
+  const [tousLesEnfants, setTousLesEnfants] = useState<any[]>([]);
 
   useEffect(() => {
     async function init() {
@@ -109,8 +110,12 @@ export default function ParentEnfantDashboard() {
         if (notesRes.ok) { const n = await notesRes.json(); setMatieres(n.matieres || []); setMoyenneGenerale(n.moyenneGenerale || 0); }
         if (enfantsRes.ok) {
           const enfants = await enfantsRes.json();
-          const enfant = enfants.find((e: any) => String(e.eleve_id) === String(id) || String(e.id) === String(id));
-          if (enfant) setEnfantDetails(enfant);
+          if (Array.isArray(enfants)) {
+            const listeEleves = enfants.filter((e: any) => e.est_eleve || e.type === "eleve" || e.eleve_id);
+            setTousLesEnfants(listeEleves);
+            const enfant = enfants.find((e: any) => String(e.eleve_id) === String(id) || String(e.id) === String(id));
+            if (enfant) setEnfantDetails(enfant);
+          }
         }
       } catch (e) {
         setError("Erreur de chargement");
@@ -182,13 +187,58 @@ export default function ParentEnfantDashboard() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-900">
-        <Link href="/dashboard/parent/enfants" className="hover:text-blue-600 transition flex items-center gap-1">
-          <ArrowLeft className="w-4 h-4" /> Mes Enfants
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-gray-900">
+          <Link href="/dashboard/parent/enfants" className="hover:text-blue-600 transition flex items-center gap-1 font-medium">
+            <ArrowLeft className="w-4 h-4" /> Mes Enfants
+          </Link>
+          <span>/</span>
+          <span className="text-gray-900 font-bold">{profil?.prenom} {profil?.nom}</span>
+        </div>
+        <Link
+          href="/dashboard/parent"
+          className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+        >
+          ← Retour accueil parent
         </Link>
-        <span>/</span>
-        <span className="text-gray-900 font-semibold">{profil?.prenom} {profil?.nom}</span>
       </div>
+
+      {/* Sélecteur multi-enfants */}
+      {tousLesEnfants.length > 1 && (
+        <div className="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-wide">
+            <Users className="w-4 h-4 text-blue-600" />
+            Changer d'enfant ({tousLesEnfants.length}) :
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {tousLesEnfants.map((enf: any) => {
+              const enfId = String(enf.eleve_id || enf.id);
+              const isCurrent = enfId === String(id);
+              return (
+                <Link
+                  key={enfId}
+                  href={`/dashboard/parent/enfants/${enfId}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                    isCurrent
+                      ? "bg-blue-600 text-white shadow-sm ring-2 ring-blue-300"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {enf.photo_url ? (
+                    <img src={enf.photo_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5" />
+                  )}
+                  <span>{enf.prenom} {enf.nom}</span>
+                  <span className={`text-[10px] ${isCurrent ? 'text-blue-100' : 'text-gray-500'}`}>
+                    ({enf.classe_nom || enf.niveau})
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Header enfant */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
