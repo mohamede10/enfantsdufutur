@@ -759,7 +759,7 @@ export default function GestionPreinscriptionsPage() {
 
                       {preinscriptionDetail.details_frais.librairie > 0 && (
                         <div className={`p-3 rounded-lg border ${preinscriptionDetail.echeances_paiement?.some((e: any) => e.type === 'fournitures' && e.statut === 'paye') ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-purple-50'}`}>
-                          <p className="text-xs text-gray-900">Fournitures</p>
+                          <p className="text-xs text-gray-900">Fournitures inscription</p>
                           <p className="font-bold text-purple-600">
                             {preinscriptionDetail.details_frais.librairie.toLocaleString()} GNF
                           </p>

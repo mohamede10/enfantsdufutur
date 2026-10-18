@@ -250,29 +250,23 @@ export async function GET(request: NextRequest) {
         `, [parentId]);
         const fournituresBrut = Number(fournituresRes.rows[0]?.total_fournitures) || 0;
 
-        // ========== 8. TOTAL PAYÉ ==========
+        // ========== 8. TOTAL PAYÉ (DISTINCT pour éviter double comptage) ==========
         const paiementsResult = await query(`
           SELECT COALESCE(SUM(montant), 0) as total_paye
           FROM (
-            SELECT p.id, p.montant
+            SELECT DISTINCT ON (p.id) p.id, p.montant
             FROM paiements p
             WHERE p.statut IN ('valide', 'paye')
-              AND p.eleve_id IN (
-                SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1
-              )
-            UNION ALL
-            SELECT p.id, p.montant
-            FROM paiements p
-            WHERE p.statut IN ('valide', 'paye')
-              AND p.preinscription_id IN (
-                SELECT id FROM preinscriptions WHERE parent_id = $1
-              )
-            UNION ALL
-            SELECT p.id, p.montant
-            FROM paiements p
-            WHERE p.statut IN ('valide', 'paye')
-              AND p.reinscription_id IN (
-                SELECT id FROM reinscriptions WHERE parent_id = $1
+              AND (
+                p.eleve_id IN (
+                  SELECT eleve_id FROM lien_parent_eleve WHERE parent_id = $1
+                )
+                OR p.preinscription_id IN (
+                  SELECT id FROM preinscriptions WHERE parent_id = $1
+                )
+                OR p.reinscription_id IN (
+                  SELECT id FROM reinscriptions WHERE parent_id = $1
+                )
               )
           ) paiements_uniques
         `, [parentId]);
@@ -312,18 +306,18 @@ export async function GET(request: NextRequest) {
         `, [parentId]);
 
         const echeancesScolarite: EcheanceBrute[] = echeancesRes.rows
-          .filter((e: any) => e.type !== 'fournitures')
           .map((e: any) => ({
             id: e.id,
             echeance: e.echeance,
             type: e.type,
-            montant: Number(e.montant) || 0,  // ⭐ Montant NET actuel
+            montant: Number(e.montant) || 0,
             statut: e.statut,
             date_echeance: e.date_echeance,
             preinscription_id: e.preinscription_id,
             reinscription_id: e.reinscription_id,
             enfant_nom: e.enfant_nom,
-            source_type: 'scolarite',
+            // Les fournitures dans echeances_paiement = partie du plan scolarité
+            source_type: (e.type === 'fournitures' ? 'fournitures' : 'scolarite') as 'scolarite' | 'fournitures',
           }));
 
         // ========== 10. CANTINE ÉCHÉANCES ==========
@@ -475,6 +469,8 @@ export async function GET(request: NextRequest) {
         });
 
         // ========== 16. FIFO ==========
+        // Calculer le solde restant en fonction des échéances encore en_attente/partiel
+        const totalEcheancesDues = toutesEcheances.reduce((sum, e) => sum + (Number(e.montant) || 0), 0);
         const montantARepartir = Math.min(totalNet, totalPaye);
         const echeancesReparties = repartirPaiementsFIFO(montantARepartir, echeancesAvecRemise);
 
@@ -518,9 +514,9 @@ export async function GET(request: NextRequest) {
           },
         };
 
-        // ========== 18. ÉCHÉANCES FINALES (scolarité pour le modal) ==========
+        // ========== 18. ÉCHÉANCES FINALES (toutes pour le modal) ==========
         const echeancesFinales = echeancesReparties
-          .filter((e) => e.source_type === 'scolarite')
+          .filter((e) => e.source_type === 'scolarite' || e.source_type === 'fournitures')
           .map((e) => ({
             id: e.id,
             echeance: e.echeance,

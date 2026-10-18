@@ -62,18 +62,28 @@ export default function ComptableDashboard() {
 
           const iconMap: Record<string, any> = {
             Inscription: Users,
+            "Inscription services optionnels": Users,
+            "Réinscription services optionnels": Users,
             Mensualite: GraduationCap,
+            Scolarite: GraduationCap,
+            Scolarité: GraduationCap,
             Cantine: Utensils,
             Transport: Bus,
             Bibliotheque: BookOpen,
+            Fournitures: ShoppingBag,
             Autre: DollarSign,
           };
           const colorMap: Record<string, string> = {
             Inscription: "bg-blue-500",
+            "Inscription services optionnels": "bg-blue-500",
+            "Réinscription services optionnels": "bg-indigo-500",
             Mensualite: "bg-green-500",
+            Scolarite: "bg-green-500",
+            Scolarité: "bg-green-500",
             Cantine: "bg-orange-500",
             Transport: "bg-purple-500",
             Bibliotheque: "bg-teal-500",
+            Fournitures: "bg-yellow-500",
             Autre: "bg-gray-900",
           };
 

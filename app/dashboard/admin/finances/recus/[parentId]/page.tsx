@@ -314,7 +314,7 @@ export default function ParentRecusDetailPage() {
                       <td className="px-4 py-3 text-sm text-gray-900">{recu.classe || '—'}</td>
                       <td className="px-4 py-3">
                         <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
-                          {recu.type_frais || '—'}
+                          {recu.type_frais === 'inscription' ? 'Inscription services optionnels' : recu.type_frais === 'reinscription' ? 'Réinscription services optionnels' : (recu.type_frais || '—')}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-green-600">

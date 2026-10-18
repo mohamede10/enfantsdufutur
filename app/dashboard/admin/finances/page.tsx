@@ -29,6 +29,18 @@ const CATEGORIES_DEPENSES = [
 
 const MOIS_NOMS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
+export const formatTypeFrais = (type?: string) => {
+  if (!type) return "N/A";
+  const t = type.toLowerCase().trim();
+  if (t === "inscription") return "Inscription services optionnels";
+  if (t === "reinscription") return "Réinscription services optionnels";
+  if (t === "scolarite" || t === "mensualite") return "Scolarité";
+  if (t === "cantine") return "Cantine";
+  if (t === "transport") return "Transport";
+  if (t === "fournitures" || t === "librairie") return "Fournitures";
+  return type.charAt(0).toUpperCase() + type.slice(1);
+};
+
 interface Depense {
   id: number;
   categorie: string;
@@ -410,7 +422,7 @@ export default function FinancesPage() {
                     {categoriesRecettes?.map((cat: any, index: number) => (
                       <div key={cat.name || cat.type_frais || `categorie-${index}`} className="space-y-1">
                         <div className="flex justify-between text-sm">
-                          <span className="font-medium text-gray-900 capitalize">{cat.name || cat.type_frais || "Autre"}</span>
+                          <span className="font-medium text-gray-900">{formatTypeFrais(cat.name || cat.type_frais)}</span>
                           <span className="font-bold text-gray-900">
                             {(cat.montant !== undefined ? cat.montant : (cat.total || 0)).toLocaleString()} GNF ({cat.pourcentage || 0}%)
                           </span>
@@ -634,7 +646,7 @@ export default function FinancesPage() {
                     {derniersPaiements?.map((p: any) => (
                       <tr key={p.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-gray-900">{p.enfant_prenom} {p.enfant_nom}</td>
-                        <td className="px-4 py-3 text-gray-900 capitalize">{p.type_frais}</td>
+                        <td className="px-4 py-3 text-gray-900 font-medium">{formatTypeFrais(p.type_frais || p.type)}</td>
                         <td className="px-4 py-3 text-right font-semibold text-green-600">{p.montant.toLocaleString()} GNF</td>
                         <td className="px-4 py-3 text-gray-900 capitalize">{p.mode_paiement?.replace('_', ' ')}</td>
                         <td className="px-4 py-3 text-gray-900">{new Date(p.date_paiement).toLocaleDateString('fr-FR')}</td>
@@ -708,11 +720,11 @@ export default function FinancesPage() {
                       <tr key={`p-${p.id || index}`} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-green-600 font-semibold text-xs">RECETTE</td>
                         <td className="px-4 py-3 text-gray-900 font-medium">
-                          Paiement {p.type_frais || 'N/A'} - {(p.enfant_prenom || "")} {(p.enfant_nom || "")} ({p.parent_nom || ''})
+                          Paiement {formatTypeFrais(p.type_frais || p.type)} - {p.eleve || `${p.enfant_prenom || ''} ${p.enfant_nom || ''}`.trim() || 'Élève'} {p.parent_nom ? `(${p.parent_nom})` : ''}
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-green-600">+{(p.montant || 0).toLocaleString()} GNF</td>
                         <td className="px-4 py-3 text-right text-gray-900">-</td>
-                        <td className="px-4 py-3 text-gray-900">{p.date_paiement ? new Date(p.date_paiement).toLocaleDateString('fr-FR') : "N/A"}</td>
+                        <td className="px-4 py-3 text-gray-900">{p.date_paiement ? new Date(p.date_paiement).toLocaleDateString('fr-FR') : (p.date || "N/A")}</td>
                       </tr>
                     ))}
                     {depenses?.map((d: any, index: number) => (
@@ -722,15 +734,6 @@ export default function FinancesPage() {
                         <td className="px-4 py-3 text-right text-gray-900">-</td>
                         <td className="px-4 py-3 text-right font-bold text-red-600">-{(Number(d.montant) || 0).toLocaleString()} GNF</td>
                         <td className="px-4 py-3 text-gray-900">{d.date_depense ? new Date(d.date_depense).toLocaleDateString('fr-FR') : "N/A"}</td>
-                      </tr>
-                    ))}
-                    {depenses?.map((d) => (
-                      <tr key={`d-${d.id}`} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-red-600 font-semibold text-xs">DÉPENSE</td>
-                        <td className="px-4 py-3 text-gray-900 font-medium">{d.categorie} - {d.description || ''}</td>
-                        <td className="px-4 py-3 text-right text-gray-900">-</td>
-                        <td className="px-4 py-3 text-right font-bold text-red-600">-{Number(d.montant).toLocaleString()} GNF</td>
-                        <td className="px-4 py-3 text-gray-900">{new Date(d.date_depense).toLocaleDateString('fr-FR')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -877,7 +880,7 @@ export default function FinancesPage() {
                           <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">{recu.numero_recu}</td>
                           <td className="px-4 py-3 text-gray-900">{recu.parent_nom || "—"}</td>
                           <td className="px-4 py-3 font-medium text-gray-900">{recu.enfant}</td>
-                          <td className="px-4 py-3 text-gray-900 capitalize">{recu.type_frais}</td>
+                          <td className="px-4 py-3 text-gray-900 font-medium">{formatTypeFrais(recu.type_frais)}</td>
                           <td className="px-4 py-3 text-right font-bold text-green-600">{Number(recu.montant).toLocaleString()} GNF</td>
                           <td className="px-4 py-3 text-gray-900">{new Date(recu.date_paiement).toLocaleDateString('fr-FR')}</td>
                           <td className="px-4 py-3 text-center">
@@ -912,7 +915,15 @@ export default function FinancesPage() {
             fetchParentsFinances();
             fetchDashboard();
           }}
-          soldeRestant={selectedParentPaiement.totaux.solde_restant || 0}
+          solde={{
+            total: selectedParentPaiement.totaux.solde_restant || 0,
+            details: {
+              inscription: selectedParentPaiement.services_breakdown?.scolarite?.reste ?? 0,
+              transport: selectedParentPaiement.services_breakdown?.transport?.reste ?? 0,
+              cantine: selectedParentPaiement.services_breakdown?.cantine?.reste ?? 0,
+              fournitures: selectedParentPaiement.services_breakdown?.fournitures?.reste ?? 0,
+            }
+          }}
           parentId={selectedParentPaiement.parent_id}
         />
       )}

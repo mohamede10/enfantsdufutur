@@ -634,7 +634,7 @@ export default function CantinePage() {
                 }`}
             >
               <ClipboardList className="w-4 h-4 inline mr-2" />
-              Inscriptions ({stats.preinscriptions?.length || 0})
+              Inscription services optionnels ({stats.preinscriptions?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('reinscriptions')}
@@ -644,7 +644,7 @@ export default function CantinePage() {
                 }`}
             >
               <RefreshCw className="w-4 h-4 inline mr-2" />
-              Réinscriptions ({stats.reinscriptions?.length || 0})
+              Réinscription services optionnels ({stats.reinscriptions?.length || 0})
             </button>
           </div>
         </div>

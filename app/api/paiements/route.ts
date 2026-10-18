@@ -10,7 +10,6 @@ async function generateRecuNumber(): Promise<string> {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   
-  // Récupérer le dernier numéro de reçu
   const result = await query(`
     SELECT numero_recu FROM recus 
     WHERE numero_recu LIKE $1 
@@ -22,7 +21,8 @@ async function generateRecuNumber(): Promise<string> {
   }
 
   const lastNumber = result.rows[0].numero_recu;
-  const sequence = parseInt(lastNumber.split('-')[2]) + 1;
+  const parts = lastNumber.split('-');
+  const sequence = parseInt(parts[parts.length - 1]) + 1;
   const paddedSequence = String(sequence).padStart(4, '0');
   
   return `RECU-${year}${month}-${paddedSequence}`;
@@ -93,11 +93,11 @@ export async function POST(req: NextRequest) {
   }
 
   const userRole = (session.user as any)?.role;
-  if (userRole !== "COMPTABLE" && userRole !== "SUPER_ADMIN") {
+  if (userRole !== "COMPTABLE" && userRole !== "SUPER_ADMIN" && userRole !== "DIRECTEUR_GENERAL") {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-   try {
+  try {
     const body = await req.json();
     const { 
       eleveId, 
@@ -111,46 +111,123 @@ export async function POST(req: NextRequest) {
       annee
     } = body;
 
-    // Vérifier si l'élève existe
-    const eleveCheck = await query(`
-      SELECT 
-        e.id,
-        u.nom as enfant_nom,
-        u.prenom as enfant_prenom,
-        c.nom as classe_nom,
-        c.frais_inscription as frais_total,  -- ⭐ Récupérer le montant total
-        pu.nom as parent_nom,
-        pu.prenom as parent_prenom,
-        pu.email as parent_email,
-        pu.telephone as parent_telephone
-      FROM eleves e
-      JOIN utilisateurs u ON e.utilisateur_id = u.id
-      LEFT JOIN classes c ON e.classe_id = c.id
-      LEFT JOIN lien_parent_eleve lpe ON e.id = lpe.eleve_id
-      LEFT JOIN parents pa ON lpe.parent_id = pa.id
-      LEFT JOIN utilisateurs pu ON pa.utilisateur_id = pu.id
-      WHERE e.id = $1
-    `, [eleveId]);
-
-    if (eleveCheck.rows.length === 0) {
-      return NextResponse.json({ error: "Élève non trouvé" }, { status: 404 });
+    if (!montant || montant <= 0) {
+      return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
+    }
+    if (!modePaiement) {
+      return NextResponse.json({ error: "Mode de paiement requis" }, { status: 400 });
     }
 
-    const eleve = eleveCheck.rows[0];
+    // ⭐ Récupérer les infos contextuelles (parent, enfant, classe)
+    // selon que c'est un élève inscrit, une preinscription ou une réinscription
+    let enfantNom = '';
+    let parentNom = '';
+    let parentEmail = '';
+    let classeNom = '';
+    let montantTotal = 0;
+    let totalDejaPaye = 0;
 
-    // ⭐ Récupérer le total déjà payé pour cet élève
-    const totalPayeResult = await query(`
-      SELECT COALESCE(SUM(montant), 0) as total_paye
-      FROM paiements
-      WHERE eleve_id = $1 AND statut = 'valide'
-    `, [eleveId]);
+    if (eleveId) {
+      const eleveCheck = await query(`
+        SELECT 
+          e.id,
+          u.nom as enfant_nom,
+          u.prenom as enfant_prenom,
+          c.nom as classe_nom,
+          c.frais_inscription as frais_total,
+          pu.nom as parent_nom,
+          pu.prenom as parent_prenom,
+          pu.email as parent_email
+        FROM eleves e
+        JOIN utilisateurs u ON e.utilisateur_id = u.id
+        LEFT JOIN classes c ON e.classe_id = c.id
+        LEFT JOIN lien_parent_eleve lpe ON e.id = lpe.eleve_id
+        LEFT JOIN parents pa ON lpe.parent_id = pa.id
+        LEFT JOIN utilisateurs pu ON pa.utilisateur_id = pu.id
+        WHERE e.id = $1
+        LIMIT 1
+      `, [eleveId]);
 
-    const totalDejaPaye = totalPayeResult.rows[0].total_paye || 0;
-    const montantTotal = eleve.frais_total || 0;
-    const nouveauTotalPaye = totalDejaPaye + montant;
-    const resteApresPaiement = Math.max(0, montantTotal - nouveauTotalPaye);
+      if (eleveCheck.rows.length === 0) {
+        return NextResponse.json({ error: "Élève non trouvé" }, { status: 404 });
+      }
+      const eleve = eleveCheck.rows[0];
+      enfantNom = `${eleve.enfant_prenom || ''} ${eleve.enfant_nom || ''}`.trim();
+      parentNom = `${eleve.parent_prenom || ''} ${eleve.parent_nom || ''}`.trim();
+      parentEmail = eleve.parent_email || '';
+      classeNom = eleve.classe_nom || '';
+      montantTotal = Number(eleve.frais_total) || 0;
 
-    // Démarrer une transaction
+      const payeRes = await query(`
+        SELECT COALESCE(SUM(montant), 0) as total_paye
+        FROM paiements WHERE eleve_id = $1 AND statut = 'valide'
+      `, [eleveId]);
+      totalDejaPaye = Number(payeRes.rows[0]?.total_paye) || 0;
+
+    } else if (preinscriptionId) {
+      const preCheck = await query(`
+        SELECT 
+          p.enfant_nom, p.enfant_prenom, p.classe,
+          COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.preinscription_id = p.id), p.montant_total_plan, 0) as montant_total,
+          u.nom as parent_nom,
+          u.prenom as parent_prenom,
+          u.email as parent_email
+        FROM preinscriptions p
+        JOIN parents pa ON p.parent_id = pa.id
+        JOIN utilisateurs u ON pa.utilisateur_id = u.id
+        WHERE p.id = $1
+      `, [preinscriptionId]);
+
+      if (preCheck.rows.length > 0) {
+        const pre = preCheck.rows[0];
+        enfantNom = `${pre.enfant_prenom || ''} ${pre.enfant_nom || ''}`.trim();
+        parentNom = `${pre.parent_prenom || ''} ${pre.parent_nom || ''}`.trim();
+        parentEmail = pre.parent_email || '';
+        classeNom = pre.classe || '';
+        montantTotal = Number(pre.montant_total) || 0;
+
+        const payeRes = await query(`
+          SELECT COALESCE(SUM(montant), 0) as total_paye
+          FROM paiements WHERE preinscription_id = $1 AND statut IN ('valide', 'paye')
+        `, [preinscriptionId]);
+        totalDejaPaye = Number(payeRes.rows[0]?.total_paye) || 0;
+      }
+
+    } else if (reinscriptionId) {
+      const reinCheck = await query(`
+        SELECT 
+          r.enfant_nom, r.enfant_prenom,
+          c.nom as classe_nom,
+          COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.reinscription_id = r.id), r.montant_total_plan, 0) as montant_total,
+          u.nom as parent_nom,
+          u.prenom as parent_prenom,
+          u.email as parent_email
+        FROM reinscriptions r
+        JOIN parents pa ON r.parent_id = pa.id
+        JOIN utilisateurs u ON pa.utilisateur_id = u.id
+        LEFT JOIN eleves e ON r.eleve_id = e.id
+        LEFT JOIN classes c ON e.classe_id = c.id
+        WHERE r.id = $1
+      `, [reinscriptionId]);
+
+      if (reinCheck.rows.length > 0) {
+        const rein = reinCheck.rows[0];
+        enfantNom = `${rein.enfant_prenom || ''} ${rein.enfant_nom || ''}`.trim();
+        parentNom = `${rein.parent_prenom || ''} ${rein.parent_nom || ''}`.trim();
+        parentEmail = rein.parent_email || '';
+        classeNom = rein.classe_nom || '';
+        montantTotal = Number(rein.montant_total) || 0;
+
+        const payeRes = await query(`
+          SELECT COALESCE(SUM(montant), 0) as total_paye
+          FROM paiements WHERE reinscription_id = $1 AND statut IN ('valide', 'paye')
+        `, [reinscriptionId]);
+        totalDejaPaye = Number(payeRes.rows[0]?.total_paye) || 0;
+      }
+    }
+
+    const resteApresPaiement = Math.max(0, montantTotal - totalDejaPaye - Number(montant));
+
     await query('BEGIN');
 
     try {
@@ -163,68 +240,127 @@ export async function POST(req: NextRequest) {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'valide', NOW())
         RETURNING id, date_paiement
       `, [
-        eleveId, 
+        eleveId || null, 
         montant, 
-        typeFrais, 
+        typeFrais || 'scolarite', 
         modePaiement, 
-        referenceTransaction,
+        referenceTransaction || null,
         parseInt((session.user as any).id),
         preinscriptionId || null,
         reinscriptionId || null,
-        mois || null,
-        annee || null
+        mois || new Date().getMonth() + 1,
+        annee || new Date().getFullYear()
       ]);
 
       const paiement = paiementResult.rows[0];
 
-      // 2. Générer le numéro de reçu
+      // 2. Mettre à jour les échéances correspondantes (FIFO sur preinscription/réinscription)
+      if (preinscriptionId || reinscriptionId) {
+        const whereClause = preinscriptionId 
+          ? `preinscription_id = ${preinscriptionId}`
+          : `reinscription_id = ${reinscriptionId}`;
+        
+        let montantRestant = Number(montant);
+        const echeancesRes = await query(`
+          SELECT id, montant, type FROM echeances_paiement
+          WHERE ${whereClause} AND statut IN ('en_attente', 'partiel')
+          ORDER BY date_echeance ASC NULLS LAST, id ASC
+        `);
+
+        for (const ech of echeancesRes.rows) {
+          if (montantRestant <= 0) break;
+          const montantEch = Number(ech.montant);
+          const applique = Math.min(montantRestant, montantEch);
+          
+          if (applique >= montantEch) {
+            await query(`
+              UPDATE echeances_paiement SET statut = 'paye', date_paiement = CURRENT_DATE,
+                reference_transaction = $2, mode_paiement = $3, updated_at = NOW()
+              WHERE id = $1
+            `, [ech.id, referenceTransaction || `PAY-${paiement.id}`, modePaiement]);
+          } else {
+            await query(`
+              UPDATE echeances_paiement SET statut = 'partiel', montant = montant - $2, updated_at = NOW()
+              WHERE id = $1
+            `, [ech.id, applique]);
+          }
+          montantRestant -= applique;
+        }
+
+        // Mettre à jour le solde restant de la preinscription/réinscription
+        if (preinscriptionId) {
+          const restant = await query(`
+            SELECT COALESCE(SUM(montant), 0) as restant FROM echeances_paiement
+            WHERE preinscription_id = $1 AND statut IN ('en_attente', 'partiel')
+          `, [preinscriptionId]);
+          const soldeFinal = Number(restant.rows[0]?.restant) || 0;
+          await query(`
+            UPDATE preinscriptions SET montant_restant_plan = $1,
+              frais_statut = CASE WHEN $1 = 0 THEN 'paye' ELSE 'partiel' END, updated_at = NOW()
+            WHERE id = $2
+          `, [soldeFinal, preinscriptionId]);
+        }
+
+        if (reinscriptionId) {
+          const restant = await query(`
+            SELECT COALESCE(SUM(montant), 0) as restant FROM echeances_paiement
+            WHERE reinscription_id = $1 AND statut IN ('en_attente', 'partiel')
+          `, [reinscriptionId]);
+          const soldeFinal = Number(restant.rows[0]?.restant) || 0;
+          await query(`
+            UPDATE reinscriptions SET montant_restant_plan = $1,
+              frais_statut = CASE WHEN $1 = 0 THEN 'paye' ELSE 'partiel' END, updated_at = NOW()
+            WHERE id = $2
+          `, [soldeFinal, reinscriptionId]);
+        }
+      }
+
+      // 3. Générer le numéro de reçu
       const numeroRecu = await generateRecuNumber();
 
-      // 3. Créer le reçu avec le montant total et le reste à payer
+      // 4. Créer le reçu
       const recuResult = await query(`
         INSERT INTO recus (
           numero_recu, paiement_id, eleve_id, preinscription_id, reinscription_id,
           enfant_nom, parent_nom, montant, type_frais, mode_paiement,
           date_paiement, reference, source,
-          montant_total, reste_a_payer  -- ⭐ NOUVEAUX CHAMPS
+          montant_total, reste_a_payer
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *
       `, [
         numeroRecu,
         paiement.id,
-        eleveId,
+        eleveId || null,
         preinscriptionId || null,
         reinscriptionId || null,
-        `${eleve.enfant_prenom || ''} ${eleve.enfant_nom || ''}`.trim(),
-        `${eleve.parent_prenom || ''} ${eleve.parent_nom || ''}`.trim(),
+        enfantNom,
+        parentNom,
         montant,
-        typeFrais,
+        typeFrais || 'scolarite',
         modePaiement,
         paiement.date_paiement,
-        `PAY-${paiement.id}`,
+        referenceTransaction || `PAY-${paiement.id}`,
         'paiement',
-        montantTotal,        // ⭐ Montant total à payer
-        resteApresPaiement   // ⭐ Reste à payer après ce paiement
+        montantTotal,
+        resteApresPaiement
       ]);
 
       await query('COMMIT');
 
       const recu = recuResult.rows[0];
 
-      // Formater la réponse pour le composant RecuPaiement
       const recuData = {
         numero_recu: recu.numero_recu,
-        date_paiement: recu.date_paiement.toISOString(),
-        enfant: recu.enfant_nom || `${eleve.enfant_prenom} ${eleve.enfant_nom}`,
+        date_paiement: recu.date_paiement?.toISOString?.() || new Date().toISOString(),
+        enfant: recu.enfant_nom || enfantNom,
         montant: recu.montant,
         mode_paiement: recu.mode_paiement,
         type_frais: recu.type_frais,
         reference: recu.reference,
-        classe: eleve.classe_nom || '',
-        parent_nom: recu.parent_nom || '',
-        parent_email: eleve.parent_email || '',
+        classe: classeNom,
+        parent_nom: recu.parent_nom || parentNom,
+        parent_email: parentEmail,
         source: recu.source || 'paiement',
-        // ⭐ NOUVEAUX CHAMPS
         montant_total: Number(recu.montant_total) || 0,
         reste_a_payer: Number(recu.reste_a_payer) || 0
       };

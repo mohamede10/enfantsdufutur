@@ -512,7 +512,7 @@ export default function AdminCantineDashboard() {
                   }`}
               >
                 <UserCheck className="w-4 h-4" />
-                Inscriptions ({stats.totalPreinscriptions})
+                Inscription services optionnels ({stats.totalPreinscriptions})
               </button>
               {/*<button
                 onClick={() => setActiveTab('inscriptions')}
@@ -533,7 +533,7 @@ export default function AdminCantineDashboard() {
                   }`}
               >
                 <RefreshCw className="w-4 h-4" />
-                Réinscriptions ({stats.totalReinscriptions})
+                Réinscription services optionnels ({stats.totalReinscriptions})
               </button>
             </div>
           </div>

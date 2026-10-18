@@ -53,29 +53,57 @@ export async function POST(request: NextRequest) {
     try {
       let restantADistribuer = montantTotal;
 
-      // 1. Récupérer les préinscriptions avec un solde restant (basé sur le total de toutes les échéances)
-      const preinscriptions = await query(`
+      // ======================================================
+      // 1. Récupérer TOUTES les échéances impayées (FIFO)
+      //    pour toutes les préinscriptions/réinscriptions du parent
+      // ======================================================
+      const echeancesResult = await query(`
         SELECT 
-          p.id, 
-          COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.preinscription_id = p.id), p.montant_total_plan, 0) AS montant_total_reel,
-          GREATEST(0, COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.preinscription_id = p.id), p.montant_total_plan, 0) - COALESCE((SELECT SUM(pp.montant) FROM paiements pp WHERE pp.preinscription_id = p.id AND pp.statut = 'valide'), 0)) AS montant_restant_reel,
-          p.enfant_nom, 
-          p.enfant_prenom
-        FROM preinscriptions p
-        WHERE p.parent_id = $1 AND p.statut IN ('en_attente', 'valide')
-          AND GREATEST(0, COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.preinscription_id = p.id), p.montant_total_plan, 0) - COALESCE((SELECT SUM(pp.montant) FROM paiements pp WHERE pp.preinscription_id = p.id AND pp.statut = 'valide'), 0)) > 0
-        ORDER BY p.id ASC
+          ep.id,
+          ep.echeance,
+          ep.type,
+          ep.montant,
+          ep.statut,
+          ep.date_echeance,
+          ep.preinscription_id,
+          ep.reinscription_id,
+          COALESCE(pre.enfant_prenom || ' ' || pre.enfant_nom, rein.enfant_prenom || ' ' || rein.enfant_nom) as enfant_nom
+        FROM echeances_paiement ep
+        LEFT JOIN preinscriptions pre ON ep.preinscription_id = pre.id
+        LEFT JOIN reinscriptions rein ON ep.reinscription_id = rein.id
+        WHERE ep.statut IN ('en_attente', 'partiel')
+          AND (
+            ep.preinscription_id IN (
+              SELECT id FROM preinscriptions WHERE parent_id = $1 AND statut IN ('en_attente', 'valide', 'partiel')
+            )
+            OR ep.reinscription_id IN (
+              SELECT id FROM reinscriptions WHERE parent_id = $1 AND statut IN ('en_attente', 'valide', 'partiel')
+            )
+          )
+        ORDER BY ep.date_echeance ASC NULLS LAST, ep.id ASC
       `, [parentId]);
 
-      for (const pre of preinscriptions.rows) {
-        if (restantADistribuer <= 0) break;
-        const soldePre = Number(pre.montant_restant_reel);
-        const montantApplique = Math.min(restantADistribuer, soldePre);
+      const echeances = echeancesResult.rows;
 
-        // Insérer le paiement
+      // FIFO : distribuer le montant sur les échéances dans l'ordre chronologique
+      const echeancesPayees: number[] = [];
+      const echeancesPartielles: { id: number; montantPaye: number }[] = [];
+
+      for (const ech of echeances) {
+        if (restantADistribuer <= 0) break;
+
+        const montantEcheance = Number(ech.montant) || 0;
+        if (montantEcheance <= 0) continue;
+
+        const montantApplique = Math.min(restantADistribuer, montantEcheance);
+        const nouveauStatut = montantApplique >= montantEcheance ? 'paye' : 'partiel';
+
+        // Insérer un paiement pour cette échéance
+        const paiRef = reference || `GLB-ECH-${ech.id}`;
         await query(`
           INSERT INTO paiements (
             preinscription_id,
+            reinscription_id,
             montant,
             type_frais,
             mode_paiement,
@@ -85,104 +113,150 @@ export async function POST(request: NextRequest) {
             mois,
             annee,
             saisie_par
-          ) VALUES ($1, $2, 'inscription', $3, $4, 'valide', CURRENT_DATE, EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(YEAR FROM CURRENT_DATE), $5)
-        `, [pre.id, montantApplique, modePaiement, reference || `GLB-PRE-${pre.id}`, userId]);
+          ) VALUES ($1, $2, $3, $4, $5, $6, 'valide', CURRENT_DATE,
+            EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(YEAR FROM CURRENT_DATE), $7)
+        `, [
+          ech.preinscription_id || null,
+          ech.reinscription_id || null,
+          montantApplique,
+          ech.type || 'inscription',
+          modePaiement,
+          paiRef,
+          userId
+        ]);
 
-        const nouveauSolde = Math.max(0, soldePre - montantApplique);
-        await query(`
-          UPDATE preinscriptions
-          SET montant_total_plan = COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.preinscription_id = $2 AND ep.type = 'inscription'), montant_total_plan),
-              montant_restant_plan = $1,
-              frais_statut = CASE WHEN $1 = 0 THEN 'paye' ELSE 'partiel' END
-          WHERE id = $2
-        `, [nouveauSolde, pre.id]);
+        // Mettre à jour le statut de l'échéance
+        if (nouveauStatut === 'paye') {
+          await query(`
+            UPDATE echeances_paiement 
+            SET statut = 'paye',
+                date_paiement = CURRENT_DATE,
+                reference_transaction = $2,
+                mode_paiement = $3,
+                updated_at = NOW()
+            WHERE id = $1
+          `, [ech.id, paiRef, modePaiement]);
+          echeancesPayees.push(ech.id);
+        } else {
+          // Partiel : réduire le montant restant de l'échéance
+          await query(`
+            UPDATE echeances_paiement 
+            SET statut = 'partiel',
+                montant = montant - $2,
+                updated_at = NOW()
+            WHERE id = $1
+          `, [ech.id, montantApplique]);
+          echeancesPartielles.push({ id: ech.id, montantPaye: montantApplique });
+        }
 
         restantADistribuer -= montantApplique;
       }
 
-      // 2. Récupérer les réinscriptions avec un solde restant (basé sur le total des échéances)
+      // ======================================================
+      // 2. Si surplus (plus que toutes les échéances), enregistrer comme avance
+      // ======================================================
       if (restantADistribuer > 0) {
-        const reinscriptions = await query(`
-          SELECT 
-            r.id, 
-            r.eleve_id, 
-            COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.reinscription_id = r.id), r.montant_total_plan, 0) AS montant_total_reel,
-            GREATEST(0, COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.reinscription_id = r.id), r.montant_total_plan, 0) - COALESCE((SELECT SUM(pp.montant) FROM paiements pp WHERE pp.reinscription_id = r.id AND pp.statut = 'valide'), 0)) AS montant_restant_reel,
-            r.enfant_nom, 
-            r.enfant_prenom
-          FROM reinscriptions r
-          WHERE r.parent_id = $1 AND r.statut IN ('en_attente', 'valide')
-            AND GREATEST(0, COALESCE((SELECT SUM(ep.montant) FROM echeances_paiement ep WHERE ep.reinscription_id = r.id), r.montant_total_plan, 0) - COALESCE((SELECT SUM(pp.montant) FROM paiements pp WHERE pp.reinscription_id = r.id AND pp.statut = 'valide'), 0)) > 0
-          ORDER BY r.id ASC
+        const preCheck = await query(`
+          SELECT id FROM preinscriptions 
+          WHERE parent_id = $1 AND statut IN ('en_attente', 'valide', 'partiel')
+          ORDER BY id DESC LIMIT 1
         `, [parentId]);
 
-        for (const rein of reinscriptions.rows) {
-          if (restantADistribuer <= 0) break;
-          const soldeRein = Number(rein.montant_restant_reel);
-          const montantApplique = Math.min(restantADistribuer, soldeRein);
+        const reinCheck = await query(`
+          SELECT id FROM reinscriptions
+          WHERE parent_id = $1 AND statut IN ('en_attente', 'valide', 'partiel')
+          ORDER BY id DESC LIMIT 1
+        `, [parentId]);
 
-          await query(`
-            INSERT INTO paiements (
-              reinscription_id,
-              eleve_id,
-              montant,
-              type_frais,
-              mode_paiement,
-              reference_transaction,
-              statut,
-              date_paiement,
-              mois,
-              annee,
-              saisie_par
-            ) VALUES ($1, $2, $3, 'reinscription', $4, $5, 'valide', CURRENT_DATE, EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(YEAR FROM CURRENT_DATE), $6)
-          `, [rein.id, rein.eleve_id || null, montantApplique, modePaiement, reference || `GLB-REIN-${rein.id}`, userId]);
+        const preinscriptionId = preCheck.rows[0]?.id || null;
+        const reinscriptionId = !preinscriptionId ? (reinCheck.rows[0]?.id || null) : null;
 
-          const nouveauSolde = Math.max(0, soldeRein - montantApplique);
-          await query(`
-            UPDATE reinscriptions
-            SET montant_restant_plan = $1,
-                frais_statut = CASE WHEN $1 = 0 THEN 'paye' ELSE 'partiel' END,
-                updated_at = NOW()
-            WHERE id = $2
-          `, [nouveauSolde, rein.id]);
-
-          restantADistribuer -= montantApplique;
-        }
-      }
-
-      // 3. Si surplus restant ou élèves sans pre/reinscription
-      if (restantADistribuer > 0) {
-        const enfants = await query(`
-          SELECT e.id as eleve_id
-          FROM eleves e
+        const eleveCheck = await query(`
+          SELECT e.id as eleve_id FROM eleves e
           JOIN lien_parent_eleve lpe ON e.id = lpe.eleve_id
-          WHERE lpe.parent_id = $1
-          LIMIT 1
+          WHERE lpe.parent_id = $1 LIMIT 1
         `, [parentId]);
-
-        const eleveId = enfants.rows[0]?.eleve_id || null;
+        const eleveId = eleveCheck.rows[0]?.eleve_id || null;
 
         await query(`
           INSERT INTO paiements (
-            eleve_id,
-            montant,
-            type_frais,
-            mode_paiement,
-            reference_transaction,
-            statut,
-            date_paiement,
-            mois,
-            annee,
-            saisie_par
-          ) VALUES ($1, $2, 'scolarite', $3, $4, 'valide', CURRENT_DATE, EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(YEAR FROM CURRENT_DATE), $5)
-        `, [eleveId, restantADistribuer, modePaiement, reference || `GLB-EXTRA-${parentId}`, userId]);
+            preinscription_id, reinscription_id, eleve_id,
+            montant, type_frais, mode_paiement, reference_transaction,
+            statut, date_paiement, mois, annee, saisie_par
+          ) VALUES ($1, $2, $3, $4, 'scolarite', $5, $6, 'valide', CURRENT_DATE,
+            EXTRACT(MONTH FROM CURRENT_DATE), EXTRACT(YEAR FROM CURRENT_DATE), $7)
+        `, [
+          preinscriptionId,
+          reinscriptionId,
+          eleveId,
+          restantADistribuer,
+          modePaiement,
+          reference || `GLB-EXTRA-${parentId}`,
+          userId
+        ]);
+      }
+
+      // ======================================================
+      // 3. Mettre à jour le statut des preinscriptions/réinscriptions
+      // ======================================================
+      const preinscriptionIds = [...new Set(echeances
+        .filter((e: any) => e.preinscription_id)
+        .map((e: any) => Number(e.preinscription_id))
+      )];
+
+      for (const preId of preinscriptionIds) {
+        const restantRes = await query(`
+          SELECT COUNT(*) as nb_restant,
+            COALESCE(SUM(montant), 0) as montant_restant
+          FROM echeances_paiement 
+          WHERE preinscription_id = $1 AND statut IN ('en_attente', 'partiel')
+        `, [preId]);
+
+        const nbRestant = Number(restantRes.rows[0]?.nb_restant) || 0;
+        const montantRestant = Number(restantRes.rows[0]?.montant_restant) || 0;
+
+        await query(`
+          UPDATE preinscriptions
+          SET montant_restant_plan = $1,
+              frais_statut = CASE WHEN $2 = 0 THEN 'paye' ELSE 'partiel' END,
+              updated_at = NOW()
+          WHERE id = $3
+        `, [montantRestant, nbRestant, preId]);
+      }
+
+      const reinscriptionIds = [...new Set(echeances
+        .filter((e: any) => e.reinscription_id)
+        .map((e: any) => Number(e.reinscription_id))
+      )];
+
+      for (const reinId of reinscriptionIds) {
+        const restantRes = await query(`
+          SELECT COUNT(*) as nb_restant,
+            COALESCE(SUM(montant), 0) as montant_restant
+          FROM echeances_paiement 
+          WHERE reinscription_id = $1 AND statut IN ('en_attente', 'partiel')
+        `, [reinId]);
+
+        const nbRestant = Number(restantRes.rows[0]?.nb_restant) || 0;
+        const montantRestant = Number(restantRes.rows[0]?.montant_restant) || 0;
+
+        await query(`
+          UPDATE reinscriptions
+          SET montant_restant_plan = $1,
+              frais_statut = CASE WHEN $2 = 0 THEN 'paye' ELSE 'partiel' END,
+              updated_at = NOW()
+          WHERE id = $3
+        `, [montantRestant, nbRestant, reinId]);
       }
 
       await query('COMMIT');
 
       return NextResponse.json({
         success: true,
-        message: `Paiement global de ${montantTotal.toLocaleString()} GNF enregistré avec succès`
+        message: `Paiement global de ${montantTotal.toLocaleString()} GNF enregistré avec succès`,
+        echeancesPayees: echeancesPayees.length,
+        echeancesPartielles: echeancesPartielles.length,
+        surplus: restantADistribuer > 0 ? restantADistribuer : 0
       });
 
     } catch (error) {

@@ -173,18 +173,26 @@ export default function AdminDashboard() {
 
   const iconMap: Record<string, any> = {
     Inscription: Users,
+    "Inscription services optionnels": Users,
+    "Réinscription services optionnels": Users,
     Mensualité: GraduationCap,
+    Scolarité: GraduationCap,
     Cantine: Utensils,
     Transport: Bus,
     Bibliothèque: BookOpen,
+    Fournitures: ShoppingBag,
     Autre: DollarSign,
   };
   const colorMap: Record<string, string> = {
     Inscription: "bg-blue-500",
+    "Inscription services optionnels": "bg-blue-500",
+    "Réinscription services optionnels": "bg-indigo-500",
     Mensualité: "bg-green-500",
+    Scolarité: "bg-green-500",
     Cantine: "bg-orange-500",
     Transport: "bg-purple-500",
     Bibliothèque: "bg-teal-500",
+    Fournitures: "bg-yellow-500",
     Autre: "bg-gray-900",
   };
 
@@ -267,7 +275,7 @@ export default function AdminDashboard() {
           <p className="text-2xl font-bold text-pink-600">{general.femmes || 0}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-2 mb-1 text-gray-900"><DollarSign className="w-5 h-5" /><p className="text-sm">Paiements année</p></div>
+          <div className="flex items-center gap-2 mb-1 text-gray-900"><DollarSign className="w-5 h-5" /><p className="text-sm">Total des paiements effectués</p></div>
           <p className="text-lg font-bold text-green-600"> {(financieres.totalRecettes || 0).toLocaleString()} GNF</p>
         </div>
       </div>

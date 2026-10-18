@@ -258,9 +258,9 @@ export async function GET() {
     const paiementsParType = await query(`
       SELECT
         CASE
-          WHEN type_frais = 'inscription' THEN 'Inscription'
-          WHEN type_frais = 'reinscription' THEN 'Réinscription'
-          WHEN type_frais = 'mensualite' OR type_frais = 'scolarite' THEN 'Mensualité'
+          WHEN type_frais = 'inscription' THEN 'Inscription services optionnels'
+          WHEN type_frais = 'reinscription' THEN 'Réinscription services optionnels'
+          WHEN type_frais = 'mensualite' OR type_frais = 'scolarite' THEN 'Scolarité'
           WHEN type_frais = 'cantine' THEN 'Cantine'
           WHEN type_frais = 'transport' THEN 'Transport'
           WHEN type_frais = 'librairie' OR type_frais = 'fournitures' THEN 'Fournitures'

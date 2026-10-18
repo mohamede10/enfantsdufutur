@@ -1204,7 +1204,7 @@ export default function AdminParentsPage() {
                                                         </span>
                                                         {fournitures > 0 && (
                                                             <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 font-medium">
-                                                                Fournitures: {fournitures.toLocaleString()} GNF
+                                                                Fournitures inscription : {fournitures.toLocaleString()} GNF
                                                             </span>
                                                         )}
                                                         {cantine > 0 && (
@@ -1222,7 +1222,7 @@ export default function AdminParentsPage() {
                                                 <div className="flex items-center gap-4">
                                                     <div className="text-right">
                                                         <p className="text-base font-bold text-black">
-                                                            {totalDossier.toLocaleString()} GNF
+                                                           Total à payer :  {totalDossier.toLocaleString()} GNF
                                                         </p>
                                                         {paye > 0 && (
                                                             <p className="text-xs text-green-600 font-medium">

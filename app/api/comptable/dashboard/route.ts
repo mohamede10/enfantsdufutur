@@ -71,15 +71,24 @@ export async function GET() {
     const derniersPaiementsResult = await query(`
       SELECT
         p.id,
+        p.type_frais,
+        p.type_frais as type,
         COALESCE(
           NULLIF(TRIM(CONCAT(u.prenom, ' ', u.nom)), ''),
           NULLIF(TRIM(CONCAT(pre.enfant_prenom, ' ', pre.enfant_nom)), ''),
           NULLIF(TRIM(CONCAT(rein.enfant_prenom, ' ', rein.enfant_nom)), ''),
           'Élève'
         ) as eleve,
+        COALESCE(pre.enfant_nom, rein.enfant_nom, u.nom, '') as enfant_nom,
+        COALESCE(pre.enfant_prenom, rein.enfant_prenom, u.prenom, '') as enfant_prenom,
+        COALESCE(
+          NULLIF(TRIM(CONCAT(par_u.prenom, ' ', par_u.nom)), ''),
+          NULLIF(TRIM(CONCAT(rein.parent_prenom, ' ', rein.parent_nom)), ''),
+          ''
+        ) as parent_nom,
         COALESCE(c.nom, pre.classe, rein.classe_nom, '-') as classe,
         p.montant,
-        p.type_frais as type,
+        p.date_paiement,
         TO_CHAR(p.date_paiement, 'DD/MM/YYYY') as date,
         p.statut,
         p.mode_paiement as mode
@@ -89,23 +98,33 @@ export async function GET() {
       LEFT JOIN classes c ON e.classe_id = c.id
       LEFT JOIN preinscriptions pre ON p.preinscription_id = pre.id
       LEFT JOIN reinscriptions rein ON p.reinscription_id = rein.id
+      LEFT JOIN parents par ON (par.id = pre.parent_id OR par.id = rein.parent_id)
+      LEFT JOIN utilisateurs par_u ON par.utilisateur_id = par_u.id
       WHERE p.statut IN ('valide', 'paye')
       ORDER BY p.date_paiement DESC, p.id DESC
-      LIMIT 10
+      LIMIT 20
     `);
 
     // 7. Répartition par catégorie de recettes
     const categoriesResult = await query(`
       SELECT
-        COALESCE(type_frais, 'Autre') as name,
+        CASE
+          WHEN type_frais = 'inscription' THEN 'Inscription services optionnels'
+          WHEN type_frais = 'reinscription' THEN 'Réinscription services optionnels'
+          WHEN type_frais = 'scolarite' OR type_frais = 'mensualite' THEN 'Scolarité'
+          WHEN type_frais = 'cantine' THEN 'Cantine'
+          WHEN type_frais = 'transport' THEN 'Transport'
+          WHEN type_frais = 'fournitures' OR type_frais = 'librairie' THEN 'Fournitures'
+          ELSE COALESCE(type_frais, 'Autre')
+        END as name,
         SUM(montant) as montant
       FROM paiements
       WHERE statut IN ('valide', 'paye')
-      GROUP BY type_frais
+      GROUP BY 1
       ORDER BY montant DESC
     `);
     const categoriesRecettes = categoriesResult.rows.map(cat => ({
-      name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1),
+      name: cat.name,
       montant: Number(cat.montant),
       pourcentage: totalRecettes > 0 ? Math.round((Number(cat.montant) / totalRecettes) * 100) : 0
     }));
